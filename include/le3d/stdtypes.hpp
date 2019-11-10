@@ -46,3 +46,17 @@ constexpr s32 toS32(T t)
 {
 	return static_cast<s32>(t);
 }
+
+template <typename T>
+std::string_view Typename(const T& t)
+{
+	static const std::string_view PREFIX = "class le::";
+	static const size_t PREFIX_LEN = PREFIX.length();
+	std::string_view name = typeid(t).name();
+	auto idx = name.find(PREFIX);
+	if (idx != std::string::npos)
+	{
+		name = name.substr(PREFIX_LEN, name.length() - PREFIX_LEN);
+	}
+	return name;
+}

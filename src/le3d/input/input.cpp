@@ -22,7 +22,10 @@ void onKey(GLFWwindow* pWindow, s32 key, s32 /*scancode*/, s32 action, s32 mods)
 
 void onText(GLFWwindow* pWindow, u32 codepoint) 
 {
-	g_onText(static_cast<char>(codepoint));
+	if (pWindow == g_pRenderWindow)
+	{
+		g_onText(static_cast<char>(codepoint));
+	}
 }
 
 void onMouseMove(GLFWwindow* pWindow, double x, double y) 

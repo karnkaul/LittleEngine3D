@@ -8,6 +8,8 @@ set(SUB_SOURCES
 
 	le3d/log/log.cpp
 
+	le3d/gfx/shader.cpp
+
 	le3d/threads/threads.cpp
 )
 
