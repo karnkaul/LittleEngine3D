@@ -66,7 +66,7 @@ bool Shader::init(std::string id, std::string_view vertCode, std::string_view fr
 	return m_bInit;
 }
 
-const u32 Shader::program() const
+u32 Shader::program() const
 {
 	return m_program;
 }

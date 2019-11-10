@@ -16,6 +16,8 @@
 #define STRCAT(szData, size, szText) strcat(szData, szText)
 #endif
 
+#define ARR_SIZE(arr) sizeof(arr) / sizeof(arr[0])
+
 using u8 = uint8_t;
 using s8 = int8_t;
 using u16 = uint16_t;

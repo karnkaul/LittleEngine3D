@@ -22,6 +22,6 @@ public:
 
 public:
 	bool init(std::string id, std::string_view vertCode, std::string_view fragCode);
-	const u32 program() const;
+	u32 program() const;
 };
 }
