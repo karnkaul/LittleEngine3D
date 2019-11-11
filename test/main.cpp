@@ -5,17 +5,19 @@
 #include <string>
 #include <sstream>
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "le3d/core/vector2.hpp"
 #include "le3d/core/rect2.hpp"
 #include "le3d/core/time.hpp"
-#include "le3d/log/log.hpp"
 #include "le3d/context/context.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/gfx/colour.hpp"
+#include "le3d/gfx/factory.hpp"
 #include "le3d/gfx/shader.hpp"
-#include "stb/stb_image.h"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/input/input.hpp"
-#include "le3d/env/env.hpp"
+#include "le3d/log/log.hpp"
 
 le::OnText::Token tOnText;
 le::OnInput::Token tOnInput;
@@ -31,203 +33,24 @@ std::string readFile(std::string_view path)
 {
 	std::ifstream file(path.data());
 	std::stringstream buf;
-	buf << file.rdbuf();
+	if (file.good())
+	{
+		buf << file.rdbuf();
+	}
 	return buf.str();
 }
 
-namespace le
+std::vector<u8> readBytes(std::string_view path) 
 {
-struct Verts
-{
-	u16 indices = 0;
-	u32 vao = 0;
-	u32 vbo = 0;
-	u32 ebo = 0;
-};
-
-std::vector<f32> buildVertices(std::vector<Vector2> points, std::vector<Colour> colours, std::vector<Vector2> uvs)
-{
-	assert(points.size() == colours.size() && points.size() == uvs.size() && "array size mismatch!");
-	size_t count = points.size();
-	std::vector<f32> ret;
-	ret.reserve(count * 9);
-	for (size_t i = 0; i < count; ++i)
+	std::string sPath(path);
+	std::ifstream file(path.data(), std::ios::binary);
+	std::vector<u8> buf;
+	if (file.good())
 	{
-		ret.push_back(points[i].x.toF32());
-		ret.push_back(points[i].y.toF32());
-		ret.push_back(0.0f);
-		ret.push_back(colours[i].r.toF32());
-		ret.push_back(colours[i].g.toF32());
-		ret.push_back(colours[i].b.toF32());
-		ret.push_back(colours[i].a.toF32());
-		ret.push_back(uvs[i].x.toF32());
-		ret.push_back(uvs[i].y.toF32());
+		buf = std::vector<u8>(std::istreambuf_iterator<char>(file), {});
 	}
-	return ret;
+	return buf;
 }
-
-std::vector<f32> buildQuadVerts(Rect2 model, Rect2 uvs, Colour colour)
-{
-	model.tl = context::worldToScreen(model.tl);
-	model.br = context::worldToScreen(model.br);
-	std::vector<Vector2> points = {model.topRight(), model.bottomRight(), model.bottomLeft(), model.topLeft()};
-	std::vector<Colour> colours(4, colour);
-	std::vector<Vector2> sts = {uvs.topRight(), uvs.bottomRight(), uvs.bottomLeft(), uvs.topLeft()};
-	return buildVertices(std::move(points), std::move(colours), std::move(sts));
-}
-
-Verts genQuad(Rect2 model, Rect2 uvs, Colour c)
-{
-	std::vector<f32> verts = buildQuadVerts(model, uvs, c);
-	const u32 indices[] = {0, 1, 3,
-
-						   1, 2, 3};
-	const auto stride = 9 * sizeof(float);
-	Verts v;
-	v.indices = ARR_SIZE(indices);
-	glGenVertexArrays(1, &v.vao);
-	glChk();
-	glGenBuffers(1, &v.vbo);
-	glChk();
-	glGenBuffers(1, &v.ebo);
-	glChk();
-	glBindVertexArray(v.vao);
-	glChk();
-
-	glBindBuffer(GL_ARRAY_BUFFER, v.vbo);
-	glChk();
-	glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(VEC_SIZE(verts)), verts.data(), GL_STATIC_DRAW);
-	glChk();
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, v.ebo);
-	glChk();
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	glChk();
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-	glEnableVertexAttribArray(0);
-	glChk();
-	
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glChk();
-
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(7 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-	glChk();
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glChk();
-	glBindVertexArray(0);
-	glChk();
-	return v;
-}
-
-class Primitive
-{
-private:
-	Verts m_verts;
-	Shader* m_pShader = nullptr;
-
-public:
-	Primitive();
-	~Primitive();
-	Primitive(Primitive&&);
-	Primitive& operator=(Primitive&&);
-
-public:
-	void setShader(Shader& shader);
-	void provisionQuad(Rect2 rect, Rect2 uvs, Colour colour);
-	void draw();
-
-private:
-	void release();
-};
-
-Primitive::Primitive() = default;
-Primitive::~Primitive()
-{
-	release();
-}
-Primitive::Primitive(Primitive&&) = default;
-Primitive& Primitive::operator=(Primitive&&) = default;
-
-void Primitive::setShader(Shader& shader)
-{
-	m_pShader = &shader;
-}
-
-void Primitive::provisionQuad(Rect2 model, Rect2 uvs, Colour colour)
-{
-	release();
-	m_verts = genQuad(model, uvs, colour);
-}
-
-void Primitive::draw()
-{
-	if (le::context::exists() && m_verts.vao > 0)
-	{
-		glBindVertexArray(m_verts.vao);
-		glChk();
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_verts.ebo);
-		glChk();
-		glDrawElements(GL_TRIANGLES, m_verts.indices, GL_UNSIGNED_INT, 0);
-		glChk();
-	}
-}
-
-void Primitive::release()
-{
-	if (le::context::exists() && m_verts.vao > 0)
-	{
-		glDeleteVertexArrays(1, &m_verts.vao);
-		glChk();
-		glDeleteBuffers(1, &m_verts.vbo);
-		glChk();
-		glDeleteBuffers(1, &m_verts.ebo);
-		glChk();
-	}
-	m_verts.vao = m_verts.vbo = m_verts.ebo = 0;
-	m_verts.indices = 0;
-}
-
-GLObj newTexture(std::string_view id)
-{
-	std::string path(resourcesPath);
-	path += "/";
-	path += id;
-	s32 w, h, ch;
-	GLObj hTex = 0;
-	stbi_set_flip_vertically_on_load(1);
-	auto pData = stbi_load(path.data(), &w, &h, &ch, 0);
-	if (pData)
-	{
-		glGenTextures(1, &hTex);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, hTex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, ch == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, pData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-	else
-	{
-		logE("[%s] Failed to load texture!", id.data());
-	}
-	stbi_image_free(pData);
-	return hTex;
-}
-
-void deleteTexture(GLObj& out_hTex)
-{
-	const GLuint glTex[] = {out_hTex};
-	glDeleteTextures(1, glTex);
-	out_hTex = 0;
-}
-} // namespace le
 
 s32 run()
 {
@@ -239,8 +62,14 @@ s32 run()
 		return 1;
 	}
 
-	GLObj texture = le::newTexture("textures/container.jpg");
-	GLObj t1 = le::newTexture("textures/awesomeface.png");
+	std::string path(resourcesPath);
+	path += "/textures/container.jpg";
+	auto img = readBytes(path);
+	GLObj texture = le::gfx::genTex(std::move(img));
+	path = resourcesPath;
+	path += "/textures/awesomeface.png";
+	img = readBytes(path);
+	GLObj t1 = le::gfx::genTex(std::move(img));
 
 	std::string vshFile(resourcesPath);
 	std::string fshFile(resourcesPath);
@@ -258,11 +87,16 @@ s32 run()
 
 	le::Primitive p0;
 	p0.setShader(defaultShader);
-	//le::Rect2 uvs = le::Rect2{{1, 1}, {0, 0}};
-	p0.provisionQuad(le::Rect2::sizeCentre({500, 500}, {100, 100}), le::Rect2::UV, le::Colour::White);
+	p0.provisionQuad(le::Rect2::sizeCentre({1, 1}), le::Rect2::UVs, le::Colour::White);
+	p0.m_local = glm::rotate(p0.m_local, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 view = glm::mat4(1.0f);
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+	glm::mat4 proj = glm::mat4(1.0f);
+	proj = glm::perspective(glm::radians(45.0f), (f32)WIDTH / HEIGHT, 0.1f, 100.0f);
 	le::Primitive p1;
+	p1.m_local = glm::translate(p1.m_local, glm::vec3(0.0f, 0.0f, 1.0f));
 	p1.setShader(defaultShader);
-	p1.provisionQuad(le::Rect2::sizeCentre({300, 300}, {-500, -350}), le::Rect2::UV, le::Colour::Yellow);
+	p1.provisionQuad(le::Rect2::sizeCentre({le::Fixed(0.5f), le::Fixed(0.5f)}, {le::Fixed(-0.5f), le::Fixed(-0.35f)}), le::Rect2::UVs, le::Colour::Yellow);
 	static bool bWireframe = false;
 
 	tOnText = le::input::registerText(&onText);
@@ -281,7 +115,6 @@ s32 run()
 	});
 	tOnScroll = le::input::registerScroll([](f64 dx, f64 dy) { logD("Mouse scrolled: %.2f, %.2f", dx, dy); });
 	auto test = le::input::registerFiledrop([](std::string_view path) { logD("File path: %s", path.data()); });
-	glViewport(0, 0, WIDTH, HEIGHT);
 	le::Time::reset();
 	le::Time dt;
 	le::Time t = le::Time::now();
@@ -290,7 +123,6 @@ s32 run()
 		dt = le::Time::now() - t;
 		t = le::Time::now();
 		auto padState = le::input::getGamepadState(GLFW_JOYSTICK_1);
-		logD("dt: %.2f", dt.assecs() * 1000);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glChk();
@@ -316,13 +148,13 @@ s32 run()
 			defaultShader.setS32("uMixTextures", 1);
 		}
 		//v0.draw();
-		p0.draw();
+		p0.draw(view, proj);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		// testShader.use();
 		defaultShader.setS32("uUseTexture", 0);
 		defaultShader.setS32("uMixTextures", 0);
 		//v1.draw();
-		p1.draw();
+		p1.draw(view, proj);
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -333,7 +165,7 @@ s32 run()
 		le::context::pollEvents();
 	}
 
-	le::deleteTexture(texture);
+	le::gfx::releaseTex(texture);
 	//v0.release();
 	le::context::destroy();
 	return 0;

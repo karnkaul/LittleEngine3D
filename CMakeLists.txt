@@ -53,6 +53,10 @@ set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(lib/glfw)
 set_relaxed_compile_options(glfw)
 
+# GLM
+set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
+add_subdirectory(lib/glm)
+
 # GLAD
 add_subdirectory(lib/glad)
 
@@ -77,10 +81,12 @@ set_target_compile_options(${PROJECT_NAME})
 add_dependencies(${PROJECT_NAME} 
 	glfw
 	glad
+	glm
 	stb-image
 )
 target_link_libraries(${PROJECT_NAME} 
 	glfw
 	glad
+	glm
 	stb-image
 )

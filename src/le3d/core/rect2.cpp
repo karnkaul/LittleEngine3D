@@ -4,7 +4,7 @@
 namespace le
 {
 const Rect2 Rect2::Zero = {Vector2::Zero, Vector2::Zero};
-const Rect2 Rect2::UV = {{0, 1}, {1, 0}};
+const Rect2 Rect2::UVs = {{0, 1}, {1, 0}};
 
 Rect2 Rect2::sizeCentre(Vector2 size, Vector2 centre)
 {

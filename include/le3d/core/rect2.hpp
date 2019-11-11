@@ -12,7 +12,7 @@ public:
 
 public:
 	static const Rect2 Zero;
-	static const Rect2 UV;
+	static const Rect2 UVs;
 	static Rect2 sizeCentre(Vector2 size, Vector2 centre = Vector2::Zero);
 	static Rect2 bltr(Vector2 bottomLeft, Vector2 topRight);
 	static Rect2 tlbr(Vector2 topLeft, Vector2 bottomRight);

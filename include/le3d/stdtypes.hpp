@@ -17,7 +17,7 @@
 #endif
 
 #define ARR_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
-#define VEC_SIZE(vec) (vec.empty() ? 0 : vec.size() * sizeof(vec[0]))
+#define SIZEOF_VEC(vec) (vec.empty() ? 0 : vec.size() * sizeof(vec[0]))
 
 using u8 = uint8_t;
 using s8 = int8_t;
