@@ -2,6 +2,7 @@ set(SUB_SOURCES
 	le3d/context/context.cpp
 
 	le3d/core/fixed.cpp
+	le3d/core/ubyte.cpp
 	le3d/core/vector2.cpp
 
 	le3d/env/env.cpp
@@ -11,6 +12,7 @@ set(SUB_SOURCES
 
 	le3d/log/log.cpp
 
+	le3d/gfx/colour.cpp
 	le3d/gfx/shader.cpp
 
 	le3d/threads/threads.cpp
