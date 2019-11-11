@@ -10,11 +10,15 @@ endif()
 set(EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build")
 set(LIBRARIES_PATH "${EXECUTABLE_PATH}/lib")
 
-set(SOURCES main.cpp)
+set(SOURCES 
+	app/gameloop.hpp
+	app/gameloop.cpp
+	main.cpp
+)
 list(TRANSFORM SOURCES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 set(EXE_NAME ${PROJECT_NAME}-$<CONFIG>${EXE_SUFFIX})
-add_le3d_executable(${PROJECT_NAME} ${EXE_NAME} ${SOURCES} "${GLOBAL_INCLUDE_PATHS}")
+add_le3d_executable(${PROJECT_NAME} ${EXE_NAME} "${SOURCES}" "${GLOBAL_INCLUDE_PATHS}")
 add_dependencies(${PROJECT_NAME} le3d)
 target_link_libraries(${PROJECT_NAME} le3d)
 if(W_MSBUILD)

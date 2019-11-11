@@ -5,6 +5,7 @@
 #include <sstream>
 #include <glad/glad.h>
 #include "le3d/core/vector2.hpp"
+#include "le3d/core/time.hpp"
 #include "le3d/log/log.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/gfx/colour.hpp"
@@ -82,60 +83,44 @@ void Verts::release()
 
 namespace le
 {
-Verts newQuad(Shader& shader, Vector2 size, Vector2 origin = Vector2::Zero)
+GLObj newTexture(std::string_view id)
 {
-	Vector2 hs = Fixed::OneHalf * size;
-	hs.x /= WIDTH;
-	hs.y /= HEIGHT;
-	Vector2 nXY(origin.x / WIDTH, origin.y / HEIGHT);
-	f32 verts[] = {nXY.x.toF32() + hs.x.toF32(), nXY.y.toF32() + hs.y.toF32(), 0.0f,
-
-				   nXY.x.toF32() + hs.x.toF32(), nXY.y.toF32() - hs.y.toF32(), 0.0f,
-
-				   nXY.x.toF32() - hs.x.toF32(), nXY.y.toF32() - hs.y.toF32(), 0.0f,
-
-				   nXY.x.toF32() - hs.x.toF32(), nXY.y.toF32() + hs.y.toF32(), 0.0f};
-	u32 indices[] = {0, 1, 3,
-
-					 1, 2, 3};
-	Verts v;
-	v.indices = ARR_SIZE(indices);
-	glGenVertexArrays(1, &v.vao);
-	glChk();
-	glGenBuffers(1, &v.vbo);
-	glChk();
-	glGenBuffers(1, &v.ebo);
-	glChk();
-	glBindVertexArray(v.vao);
-	glChk();
-
-	glBindBuffer(GL_ARRAY_BUFFER, v.vbo);
-	glChk();
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-	glChk();
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, v.ebo);
-	glChk();
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	glChk();
-
-	GLint position = glGetAttribLocation(shader.program(), "position");
-	if (position >= 0)
+	std::string path(resourcesPath);
+	path += "/";
+	path += id;
+	s32 w, h, ch;
+	GLObj hTex = 0;
+	stbi_set_flip_vertically_on_load(1);
+	auto pData = stbi_load(path.data(), &w, &h, &ch, 0);
+	if (pData)
 	{
-		auto glPos = toGLObj(position);
-		glVertexAttribPointer(glPos, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(glPos);
-		glChk();
+		glGenTextures(1, &hTex);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, hTex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, ch == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, pData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glChk();
-	glBindVertexArray(0);
-	glChk();
-	return v;
+	else
+	{
+		logE("[%s] Failed to load texture!", id.data());
+	}
+	stbi_image_free(pData);
+	return hTex;
 }
 
-Verts newQuad2(Shader& shader, Colour c, Vector2 size, Vector2 origin = Vector2::Zero)
+void deleteTexture(GLObj& out_hTex)
+{
+	const GLuint glTex[] = {out_hTex};
+	glDeleteTextures(1, glTex);
+	out_hTex = 0;
+}
+
+Verts newQuad(Shader& shader, Colour c, Vector2 size, Vector2 origin = Vector2::Zero)
 {
 	Vector2 hs = Fixed::OneHalf * size;
 	hs.x /= WIDTH;
@@ -214,28 +199,8 @@ s32 run()
 		return 1;
 	}
 
-	std::string containerTex(resourcesPath);
-	containerTex += "/textures/container.jpg";
-	s32 w, h, ch;
-	auto pData = stbi_load(containerTex.data(), &w, &h, &ch, 0);
-	GLObj texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	if (pData)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, pData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		logE("Failed to load texture!");
-	}
-	glBindTexture(GL_TEXTURE_2D, 0);
-	stbi_image_free(pData);
+	GLObj texture = le::newTexture("textures/container.jpg");
+	GLObj t1 = le::newTexture("textures/awesomeface.png");
 
 	std::string vshFile(resourcesPath);
 	std::string fshFile(resourcesPath);
@@ -251,8 +216,8 @@ s32 run()
 	le::Shader testShader;
 	testShader.init("test", vsh, fsh2);
 
-	Verts v0 = le::newQuad2(defaultShader, le::Colour::White, {500, 500}, {100, 100});
-	Verts v1 = le::newQuad2(defaultShader, le::Colour::Yellow, {300, 300}, {-500, -350});
+	Verts v0 = le::newQuad(defaultShader, le::Colour::White, {500, 500}, {100, 100});
+	Verts v1 = le::newQuad(defaultShader, le::Colour::Yellow, {300, 300}, {-500, -350});
 	static bool bWireframe = false;
 
 	tOnText = le::input::registerText(&onText);
@@ -272,9 +237,15 @@ s32 run()
 	tOnScroll = le::input::registerScroll([](f64 dx, f64 dy) { logD("Mouse scrolled: %.2f, %.2f", dx, dy); });
 	auto test = le::input::registerFiledrop([](std::string_view path) { logD("File path: %s", path.data()); });
 	glViewport(0, 0, WIDTH, HEIGHT);
+	le::Time::reset();
+	le::Time dt;
+	le::Time t = le::Time::now();
 	while (!le::context::isClosing())
 	{
+		dt = le::Time::now() - t;
+		t = le::Time::now();
 		auto padState = le::input::getGamepadState(GLFW_JOYSTICK_1);
+		logD("dt: %.2f", dt.assecs() * 1000);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glChk();
@@ -287,13 +258,23 @@ s32 run()
 			glChk();
 		}
 		// defaultShader.setV4("tint", 1.0f, 0.0f, 0.0f);
-		glBindTexture(GL_TEXTURE_2D, texture);
+		glActiveTexture(GL_TEXTURE0);
 		defaultShader.use();
-		defaultShader.setS32("useTexture", 1);
+		defaultShader.setS32("uUseTexture", 1);
+		defaultShader.setS32("uTexture", 0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		if (t1 > 0)
+		{
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, t1);
+			defaultShader.setS32("uTexture1", 1);
+			defaultShader.setS32("uMixTextures", 1);
+		}
 		v0.draw();
 		glBindTexture(GL_TEXTURE_2D, 0);
 		//testShader.use();
-		defaultShader.setS32("useTexture", 0);
+		defaultShader.setS32("uUseTexture", 0);
+		defaultShader.setS32("uMixTextures", 0);
 		v1.draw();
 		if (bWireframe)
 		{
@@ -305,6 +286,7 @@ s32 run()
 		le::context::pollEvents();
 	}
 
+	le::deleteTexture(texture);
 	v0.release();
 	le::context::destroy();
 	return 0;
