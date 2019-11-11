@@ -2,6 +2,8 @@ set(SUB_SOURCES
 	le3d/context/context.cpp
 
 	le3d/core/fixed.cpp
+	le3d/core/maths.cpp
+	le3d/core/rect2.cpp
 	le3d/core/time.cpp
 	le3d/core/ubyte.cpp
 	le3d/core/vector2.cpp

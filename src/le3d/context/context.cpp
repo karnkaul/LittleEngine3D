@@ -8,6 +8,7 @@ namespace le
 {
 namespace
 {
+Vector2 g_windowSize;
 GLFWwindow* g_pRenderWindow = nullptr;
 
 void frameBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
@@ -26,6 +27,7 @@ void onError(s32 code, const char* szDesc)
 
 bool context::create(u16 width, u16 height, std::string_view title)
 {
+	g_windowSize = Vector2(width, height);
 	glfwSetErrorCallback(&onError);
 	if (!glfwInit())
 	{
@@ -62,6 +64,7 @@ void context::destroy()
 	}
 	glfwTerminate();
 	g_pRenderWindow = nullptr;
+	g_windowSize = Vector2::Zero;
 	logD("Context destroyed");
 }
 
@@ -90,4 +93,25 @@ void context::swapBuffers()
 		glfwSwapBuffers(g_pRenderWindow);
 	}
 }
+
+Vector2 context::size()
+{
+	return g_windowSize;
+}
+
+Vector2 context::project(Vector2 nPos, Vector2 space)
+{
+	return {nPos.x * space.x, nPos.y * space.y};
+}
+
+Vector2 context::projectScreen(Vector2 nPos)
+{
+	return project(nPos, g_windowSize);
+}
+
+Vector2 context::worldToScreen(Vector2 world)
+{
+	return g_windowSize == Vector2::Zero ? g_windowSize : Vector2(world.x / g_windowSize.x, world.y / g_windowSize.y);
+}
 } // namespace le
+

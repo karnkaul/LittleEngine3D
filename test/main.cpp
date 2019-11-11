@@ -1,10 +1,12 @@
 #include <array>
+#include <assert.h>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <glad/glad.h>
 #include "le3d/core/vector2.hpp"
+#include "le3d/core/rect2.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/log/log.hpp"
 #include "le3d/context/context.hpp"
@@ -19,8 +21,6 @@ le::OnText::Token tOnText;
 le::OnInput::Token tOnInput;
 le::OnMouse::Token tOnMouse, tOnScroll;
 const std::string_view resourcesPath = "../test/resources";
-constexpr u16 WIDTH = 1280;
-constexpr u16 HEIGHT = 720;
 
 void onText(char c)
 {
@@ -35,54 +35,162 @@ std::string readFile(std::string_view path)
 	return buf.str();
 }
 
+namespace le
+{
 struct Verts
 {
 	u16 indices = 0;
 	u32 vao = 0;
 	u32 vbo = 0;
 	u32 ebo = 0;
+};
 
-	virtual ~Verts();
+std::vector<f32> buildVertices(std::vector<Vector2> points, std::vector<Colour> colours, std::vector<Vector2> uvs)
+{
+	assert(points.size() == colours.size() && points.size() == uvs.size() && "array size mismatch!");
+	size_t count = points.size();
+	std::vector<f32> ret;
+	ret.reserve(count * 9);
+	for (size_t i = 0; i < count; ++i)
+	{
+		ret.push_back(points[i].x.toF32());
+		ret.push_back(points[i].y.toF32());
+		ret.push_back(0.0f);
+		ret.push_back(colours[i].r.toF32());
+		ret.push_back(colours[i].g.toF32());
+		ret.push_back(colours[i].b.toF32());
+		ret.push_back(colours[i].a.toF32());
+		ret.push_back(uvs[i].x.toF32());
+		ret.push_back(uvs[i].y.toF32());
+	}
+	return ret;
+}
 
+std::vector<f32> buildQuadVerts(Rect2 model, Rect2 uvs, Colour colour)
+{
+	model.tl = context::worldToScreen(model.tl);
+	model.br = context::worldToScreen(model.br);
+	std::vector<Vector2> points = {model.topRight(), model.bottomRight(), model.bottomLeft(), model.topLeft()};
+	std::vector<Colour> colours(4, colour);
+	std::vector<Vector2> sts = {uvs.topRight(), uvs.bottomRight(), uvs.bottomLeft(), uvs.topLeft()};
+	return buildVertices(std::move(points), std::move(colours), std::move(sts));
+}
+
+Verts genQuad(Rect2 model, Rect2 uvs, Colour c)
+{
+	std::vector<f32> verts = buildQuadVerts(model, uvs, c);
+	const u32 indices[] = {0, 1, 3,
+
+						   1, 2, 3};
+	const auto stride = 9 * sizeof(float);
+	Verts v;
+	v.indices = ARR_SIZE(indices);
+	glGenVertexArrays(1, &v.vao);
+	glChk();
+	glGenBuffers(1, &v.vbo);
+	glChk();
+	glGenBuffers(1, &v.ebo);
+	glChk();
+	glBindVertexArray(v.vao);
+	glChk();
+
+	glBindBuffer(GL_ARRAY_BUFFER, v.vbo);
+	glChk();
+	glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(VEC_SIZE(verts)), verts.data(), GL_STATIC_DRAW);
+	glChk();
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, v.ebo);
+	glChk();
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glChk();
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+	glEnableVertexAttribArray(0);
+	glChk();
+	
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glChk();
+
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(7 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glChk();
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glChk();
+	glBindVertexArray(0);
+	glChk();
+	return v;
+}
+
+class Primitive
+{
+private:
+	Verts m_verts;
+	Shader* m_pShader = nullptr;
+
+public:
+	Primitive();
+	~Primitive();
+	Primitive(Primitive&&);
+	Primitive& operator=(Primitive&&);
+
+public:
+	void setShader(Shader& shader);
+	void provisionQuad(Rect2 rect, Rect2 uvs, Colour colour);
 	void draw();
+
+private:
 	void release();
 };
 
-Verts::~Verts()
+Primitive::Primitive() = default;
+Primitive::~Primitive()
 {
 	release();
 }
+Primitive::Primitive(Primitive&&) = default;
+Primitive& Primitive::operator=(Primitive&&) = default;
 
-void Verts::draw()
+void Primitive::setShader(Shader& shader)
 {
-	if (le::context::exists())
+	m_pShader = &shader;
+}
+
+void Primitive::provisionQuad(Rect2 model, Rect2 uvs, Colour colour)
+{
+	release();
+	m_verts = genQuad(model, uvs, colour);
+}
+
+void Primitive::draw()
+{
+	if (le::context::exists() && m_verts.vao > 0)
 	{
-		glBindVertexArray(vao);
+		glBindVertexArray(m_verts.vao);
 		glChk();
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_verts.ebo);
 		glChk();
-		glDrawElements(GL_TRIANGLES, indices, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, m_verts.indices, GL_UNSIGNED_INT, 0);
 		glChk();
 	}
 }
 
-void Verts::release()
+void Primitive::release()
 {
-	if (le::context::exists())
+	if (le::context::exists() && m_verts.vao > 0)
 	{
-		glDeleteVertexArrays(1, &vao);
+		glDeleteVertexArrays(1, &m_verts.vao);
 		glChk();
-		glDeleteBuffers(1, &vbo);
+		glDeleteBuffers(1, &m_verts.vbo);
 		glChk();
-		glDeleteBuffers(1, &ebo);
+		glDeleteBuffers(1, &m_verts.ebo);
 		glChk();
 	}
-	vao = vbo = ebo = 0;
-	indices = 0;
+	m_verts.vao = m_verts.vbo = m_verts.ebo = 0;
+	m_verts.indices = 0;
 }
 
-namespace le
-{
 GLObj newTexture(std::string_view id)
 {
 	std::string path(resourcesPath);
@@ -119,81 +227,13 @@ void deleteTexture(GLObj& out_hTex)
 	glDeleteTextures(1, glTex);
 	out_hTex = 0;
 }
-
-Verts newQuad(Shader& shader, Colour c, Vector2 size, Vector2 origin = Vector2::Zero)
-{
-	Vector2 hs = Fixed::OneHalf * size;
-	hs.x /= WIDTH;
-	hs.y /= HEIGHT;
-	Vector2 nXY(origin.x / WIDTH, origin.y / HEIGHT);
-	const f32 verts[] = {
-		nXY.x.toF32() + hs.x.toF32(), nXY.y.toF32() + hs.y.toF32(), 0.0f, c.r.toF32(), c.g.toF32(), c.b.toF32(), c.a.toF32(), 1.0f, 1.0f,
-
-		nXY.x.toF32() + hs.x.toF32(), nXY.y.toF32() - hs.y.toF32(), 0.0f, c.r.toF32(), c.g.toF32(), c.b.toF32(), c.a.toF32(), 1.0f, 0.0f,
-
-		nXY.x.toF32() - hs.x.toF32(), nXY.y.toF32() - hs.y.toF32(), 0.0f, c.r.toF32(), c.g.toF32(), c.b.toF32(), c.a.toF32(), 0.0f, 0.0f,
-
-		nXY.x.toF32() - hs.x.toF32(), nXY.y.toF32() + hs.y.toF32(), 0.0f, c.r.toF32(), c.g.toF32(), c.b.toF32(), c.a.toF32(), 0.0f, 1.0f};
-	const u32 indices[] = {0, 1, 3,
-
-						   1, 2, 3};
-	const auto stride = 9 * sizeof(float);
-	Verts v;
-	v.indices = ARR_SIZE(indices);
-	glGenVertexArrays(1, &v.vao);
-	glChk();
-	glGenBuffers(1, &v.vbo);
-	glChk();
-	glGenBuffers(1, &v.ebo);
-	glChk();
-	glBindVertexArray(v.vao);
-	glChk();
-
-	glBindBuffer(GL_ARRAY_BUFFER, v.vbo);
-	glChk();
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-	glChk();
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, v.ebo);
-	glChk();
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	glChk();
-
-	GLint aPos = glGetAttribLocation(shader.program(), "aPos");
-	if (aPos >= 0)
-	{
-		auto glPos = toGLObj(aPos);
-		glVertexAttribPointer(glPos, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-		glEnableVertexAttribArray(glPos);
-		glChk();
-	}
-	GLint aColour = glGetAttribLocation(shader.program(), "aColour");
-	if (aColour >= 0)
-	{
-		auto glCol = toGLObj(aColour);
-		glVertexAttribPointer(glCol, 4, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
-		glEnableVertexAttribArray(glCol);
-		glChk();
-	}
-	GLint aTexCoord = glGetAttribLocation(shader.program(), "aTexCoord");
-	if (aTexCoord >= 0)
-	{
-		auto glTexCoord = toGLObj(aTexCoord);
-		glVertexAttribPointer(glTexCoord, 2, GL_FLOAT, GL_FALSE, stride, (void*)(7 * sizeof(float)));
-		glEnableVertexAttribArray(glTexCoord);
-		glChk();
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glChk();
-	glBindVertexArray(0);
-	glChk();
-	return v;
-}
 } // namespace le
 
 s32 run()
 {
+	constexpr u16 WIDTH = 1280;
+	constexpr u16 HEIGHT = 720;
+
 	if (!le::context::create(WIDTH, HEIGHT, "Test"))
 	{
 		return 1;
@@ -216,8 +256,13 @@ s32 run()
 	le::Shader testShader;
 	testShader.init("test", vsh, fsh2);
 
-	Verts v0 = le::newQuad(defaultShader, le::Colour::White, {500, 500}, {100, 100});
-	Verts v1 = le::newQuad(defaultShader, le::Colour::Yellow, {300, 300}, {-500, -350});
+	le::Primitive p0;
+	p0.setShader(defaultShader);
+	//le::Rect2 uvs = le::Rect2{{1, 1}, {0, 0}};
+	p0.provisionQuad(le::Rect2::sizeCentre({500, 500}, {100, 100}), le::Rect2::UV, le::Colour::White);
+	le::Primitive p1;
+	p1.setShader(defaultShader);
+	p1.provisionQuad(le::Rect2::sizeCentre({300, 300}, {-500, -350}), le::Rect2::UV, le::Colour::Yellow);
 	static bool bWireframe = false;
 
 	tOnText = le::input::registerText(&onText);
@@ -258,10 +303,10 @@ s32 run()
 			glChk();
 		}
 		// defaultShader.setV4("tint", 1.0f, 0.0f, 0.0f);
-		glActiveTexture(GL_TEXTURE0);
 		defaultShader.use();
 		defaultShader.setS32("uUseTexture", 1);
 		defaultShader.setS32("uTexture", 0);
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
 		if (t1 > 0)
 		{
@@ -270,12 +315,14 @@ s32 run()
 			defaultShader.setS32("uTexture1", 1);
 			defaultShader.setS32("uMixTextures", 1);
 		}
-		v0.draw();
+		//v0.draw();
+		p0.draw();
 		glBindTexture(GL_TEXTURE_2D, 0);
-		//testShader.use();
+		// testShader.use();
 		defaultShader.setS32("uUseTexture", 0);
 		defaultShader.setS32("uMixTextures", 0);
-		v1.draw();
+		//v1.draw();
+		p1.draw();
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -287,7 +334,7 @@ s32 run()
 	}
 
 	le::deleteTexture(texture);
-	v0.release();
+	//v0.release();
 	le::context::destroy();
 	return 0;
 }
