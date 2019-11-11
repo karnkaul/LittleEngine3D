@@ -56,6 +56,9 @@ set_relaxed_compile_options(glfw)
 # GLAD
 add_subdirectory(lib/glad)
 
+# stb_image
+add_subdirectory(lib/stb)
+
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.*pp")
 include(src/sources.cmake)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
@@ -74,8 +77,10 @@ set_target_compile_options(${PROJECT_NAME})
 add_dependencies(${PROJECT_NAME} 
 	glfw
 	glad
+	stb-image
 )
 target_link_libraries(${PROJECT_NAME} 
 	glfw
 	glad
+	stb-image
 )

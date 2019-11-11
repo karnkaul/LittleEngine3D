@@ -11,7 +11,7 @@ u8 UByte::toU8() const
 
 f32 UByte::toF32() const
 {
-	return (255U - rawValue) / 255.0f;
+	return rawValue / 255.0f;
 }
 
 std::string UByte::toStr() const
