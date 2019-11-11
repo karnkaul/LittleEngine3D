@@ -12,7 +12,7 @@ private:
 protected:
 	std::string m_id;
 	std::string_view m_type;
-	u32 m_program = 0;
+	GLObj m_program = 0;
 
 public:
 	Shader();
@@ -22,6 +22,7 @@ public:
 
 public:
 	bool init(std::string id, std::string_view vertCode, std::string_view fragCode);
-	u32 program() const;
+	GLObj program() const;
+	virtual void setupAttribs();
 };
 }

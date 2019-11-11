@@ -1,6 +1,9 @@
 set(SUB_SOURCES
 	le3d/context/context.cpp
 
+	le3d/core/fixed.cpp
+	le3d/core/vector2.cpp
+
 	le3d/env/env.cpp
 	
 	le3d/input/inputImpl.hpp

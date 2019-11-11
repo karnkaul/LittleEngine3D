@@ -33,7 +33,7 @@ bool Shader::init(std::string id, std::string_view vertCode, std::string_view fr
 	if (!success)
 	{
 		glGetShaderInfoLog(vsh, buf.size(), nullptr, buf.data());
-		logE("[%s] Failed to compile vertex shader!\n\t%s", m_id.data(), buf.data());
+		logE("[%s] (%s) Failed to compile vertex shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
 	}
 	
 	u32 fsh = glCreateShader(GL_FRAGMENT_SHADER);
@@ -44,7 +44,7 @@ bool Shader::init(std::string id, std::string_view vertCode, std::string_view fr
 	if (!success)
 	{
 		glGetShaderInfoLog(vsh, buf.size(), nullptr, buf.data());
-		logE("[%s] Failed to compile fragment shader!\n\t%s", m_id.data(), buf.data());
+		logE("[%s] (%s) Failed to compile fragment shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
 	}
 	
 	m_program = glCreateProgram();
@@ -55,19 +55,31 @@ bool Shader::init(std::string id, std::string_view vertCode, std::string_view fr
 	if (!success)
 	{
 		glGetProgramInfoLog(m_program, buf.size(), nullptr, buf.data());
-		logE("[%s] Failed to link shaders!\n\t%s", m_id.data(), buf.data());
+		logE("[%s] (%s) Failed to link shaders!\n\t%s", m_id.data(), m_type.data(), buf.data());
 		glDeleteProgram(m_program);
 		m_program = 0;
 	}
 
 	glDeleteShader(vsh);
 	glDeleteShader(fsh);
-	m_bInit = success == 0;
+	m_bInit = success != 0;
+	logifI(m_bInit, "== [%s] (%s) created", m_id.data(), m_type.data());
 	return m_bInit;
 }
 
 u32 Shader::program() const
 {
 	return m_program;
+}
+
+void Shader::setupAttribs()
+{
+	GLint position = glGetAttribLocation(m_program, "position");
+	if (position >= 0)
+	{
+		auto glPos = toGLObj(position);
+		glVertexAttribPointer(glPos, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(glPos);
+	}
 }
 } // namespace le

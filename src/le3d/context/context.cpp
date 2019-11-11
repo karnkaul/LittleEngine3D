@@ -32,7 +32,7 @@ bool context::create(u16 width, u16 height, std::string_view title)
 		logE("Failed to initialise GLFW!");
 		return false;
 	}
-	g_pRenderWindow = glfwCreateWindow(1280, 720, "Test", nullptr, nullptr);
+	g_pRenderWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
 	if (!g_pRenderWindow)
 	{
 		logE("Failed to create window!");
@@ -63,6 +63,11 @@ void context::destroy()
 	glfwTerminate();
 	g_pRenderWindow = nullptr;
 	logD("Context destroyed");
+}
+
+bool context::exists()
+{
+	return g_pRenderWindow != nullptr;
 }
 
 bool context::isClosing()

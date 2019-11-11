@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <glad/glad.h>
+#include "le3d/core/vector2.hpp"
 #include "le3d/log/log.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/gfx/shader.hpp"
@@ -14,6 +15,39 @@ le::OnText::Token tOnText;
 le::OnInput::Token tOnInput;
 le::OnMouse::Token tOnMouse, tOnScroll;
 const std::string_view resourcesPath = "../test/resources";
+constexpr u16 WIDTH = 1280;
+constexpr u16 HEIGHT = 720;
+
+#define glChk() glCheckError(__FILE__, __LINE__)
+
+GLenum glCheckError(const char* file, s32 line)
+{
+	GLenum errorCode = 0;
+	while ((errorCode = glGetError()) != GL_NO_ERROR)
+	{
+		std::string_view error;
+		switch (errorCode)
+		{
+		case GL_INVALID_ENUM:
+			error = "INVALID_ENUM";
+			break;
+		case GL_INVALID_VALUE:
+			error = "INVALID_VALUE";
+			break;
+		case GL_INVALID_OPERATION:
+			error = "INVALID_OPERATION";
+			break;
+		case GL_OUT_OF_MEMORY:
+			error = "OUT_OF_MEMORY";
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			error = "INVALID_FRAMEBUFFER_OPERATION";
+			break;
+		}
+		logE("[GLError] %s | %s (%s)", error.data(), file, line);
+	}
+	return errorCode;
+}
 
 void onText(char c)
 {
@@ -28,52 +62,125 @@ std::string readFile(std::string_view path)
 	return buf.str();
 }
 
+struct Verts
+{
+	u16 indices = 0;
+	u32 vao = 0;
+	u32 vbo = 0;
+	u32 ebo = 0;
+
+	virtual ~Verts();
+
+	void draw();
+	void release();
+};
+
+Verts::~Verts()
+{
+	release();
+}
+
+void Verts::draw() 
+{
+	if (le::context::exists())
+	{
+		glBindVertexArray(vao);
+		glChk();
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+		glChk();
+		glDrawElements(GL_TRIANGLES, indices, GL_UNSIGNED_INT, 0);
+		glChk();
+	}
+}
+
+void Verts::release()
+{
+	if (le::context::exists())
+	{
+		glDeleteVertexArrays(1, &vao);
+		glChk();
+		glDeleteBuffers(1, &vbo);
+		glChk();
+		glDeleteBuffers(1, &ebo);
+		glChk();
+	}
+	vao = vbo = ebo = 0;
+	indices = 0;
+}
+
+namespace le
+{
+Verts newQuad(Shader& shader, Vector2 size, Vector2 origin = Vector2::Zero)
+{
+	Vector2 hs = Fixed::OneHalf * size;
+	hs.x /= WIDTH;
+	hs.y /= HEIGHT;
+	Vector2 nXY(origin.x / WIDTH, origin.y / HEIGHT);
+	f32 verts[] = {nXY.x.toF32() + hs.x.toF32(), nXY.y.toF32() + hs.y.toF32(), 0.0f,
+
+				   nXY.x.toF32() + hs.x.toF32(), nXY.y.toF32() - hs.y.toF32(), 0.0f,
+
+				   nXY.x.toF32() - hs.x.toF32(), nXY.y.toF32() - hs.y.toF32(), 0.0f,
+
+				   nXY.x.toF32() - hs.x.toF32(), nXY.y.toF32() + hs.y.toF32(), 0.0f};
+	u32 indices[] = {0, 1, 3,
+
+					 1, 2, 3};
+	Verts v;
+	v.indices = ARR_SIZE(indices);
+	glGenVertexArrays(1, &v.vao);
+	glChk();
+	glGenBuffers(1, &v.vbo);
+	glChk();
+	glGenBuffers(1, &v.ebo);
+	glChk();
+	glBindVertexArray(v.vao);
+	glChk();
+
+	glBindBuffer(GL_ARRAY_BUFFER, v.vbo);
+	glChk();
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+	glChk();
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, v.ebo);
+	glChk();
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glChk();
+
+	shader.setupAttribs();
+	glChk();
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glChk();
+	glBindVertexArray(0);
+	glChk();
+	return v;
+}
+} // namespace le
+
 s32 run()
 {
-	if (!le::context::create(720, 1280, "Test"))
+	if (!le::context::create(WIDTH, HEIGHT, "Test"))
 	{
 		return 1;
 	}
 
 	std::string vshFile(resourcesPath);
 	std::string fshFile(resourcesPath);
+	std::string fshFile2(resourcesPath);
 	vshFile += "/shaders/default.vsh";
 	fshFile += "/shaders/default.fsh";
+	fshFile2 += "/shaders/test.fsh";
 	auto vsh = readFile(vshFile);
 	auto fsh = readFile(fshFile);
-	le::Shader shader;
-	shader.init("default", vsh, fsh);
+	auto fsh2 = readFile(fshFile2);
+	le::Shader defaultShader;
+	defaultShader.init("default", vsh, fsh);
+	le::Shader testShader;
+	testShader.init("test", vsh, fsh2);
 
-	f32 vertices[] = {
-		0.5f,  0.5f,  0.0f,
-
-		0.5f,  -0.5f, 0.0f,
-
-		-0.5f, -0.5f, 0.0f,
-
-		-0.5f, 0.5f,  0.0f,
-	};
-	u32 indices[] = {0, 1, 3,
-
-					 1, 2, 3};
-	u32 vao, vbo, ebo;
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
-	glBindVertexArray(vao);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
+	Verts v0 = le::newQuad(defaultShader, {500, 500}, {100, 100});
+	Verts v1 = le::newQuad(testShader, {300, 300}, {-500, -350});
 	static bool bWireframe = false;
 
 	tOnText = le::input::registerText(&onText);
@@ -90,38 +197,38 @@ s32 run()
 			logD("Mouse button 0 [pressed/released] [%d/%d]!", action == GLFW_PRESS, action == GLFW_RELEASE);
 		}
 	});
-	tOnMouse = le::input::registerMouse([](f64 x, f64 y) { logD("Mouse position: %.2f, %.2f", x, y); });
 	tOnScroll = le::input::registerScroll([](f64 dx, f64 dy) { logD("Mouse scrolled: %.2f, %.2f", dx, dy); });
 	auto test = le::input::registerFiledrop([](std::string_view path) { logD("File path: %s", path.data()); });
-	glViewport(0, 0, 1280, 720);
+	glViewport(0, 0, WIDTH, HEIGHT);
 	while (!le::context::isClosing())
 	{
 		auto padState = le::input::getGamepadState(GLFW_JOYSTICK_1);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glChk();
 		glClear(GL_COLOR_BUFFER_BIT);
-		glUseProgram(shader.program());
-		glBindVertexArray(vao);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-		// glDrawArrays(GL_TRIANGLES, 0, 3);
+		glChk();
+		glChk();
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glChk();
 		}
-		glDrawElements(GL_TRIANGLES, ARR_SIZE(indices), GL_UNSIGNED_INT, 0);
+		glUseProgram(defaultShader.program());
+		v0.draw();
+		glUseProgram(testShader.program());
+		v1.draw();
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glChk();
 		}
 
 		le::context::swapBuffers();
 		le::context::pollEvents();
 	}
 
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
-
+	v0.release();
 	le::context::destroy();
 	return 0;
 }
