@@ -8,6 +8,7 @@
 #include "le3d/log/log.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/gfx/shader.hpp"
+#include "le3d/gfx/utils.hpp"
 #include "le3d/input/input.hpp"
 #include "le3d/env/env.hpp"
 
@@ -17,37 +18,6 @@ le::OnMouse::Token tOnMouse, tOnScroll;
 const std::string_view resourcesPath = "../test/resources";
 constexpr u16 WIDTH = 1280;
 constexpr u16 HEIGHT = 720;
-
-#define glChk() glCheckError(__FILE__, __LINE__)
-
-GLenum glCheckError(const char* file, s32 line)
-{
-	GLenum errorCode = 0;
-	while ((errorCode = glGetError()) != GL_NO_ERROR)
-	{
-		std::string_view error;
-		switch (errorCode)
-		{
-		case GL_INVALID_ENUM:
-			error = "INVALID_ENUM";
-			break;
-		case GL_INVALID_VALUE:
-			error = "INVALID_VALUE";
-			break;
-		case GL_INVALID_OPERATION:
-			error = "INVALID_OPERATION";
-			break;
-		case GL_OUT_OF_MEMORY:
-			error = "OUT_OF_MEMORY";
-			break;
-		case GL_INVALID_FRAMEBUFFER_OPERATION:
-			error = "INVALID_FRAMEBUFFER_OPERATION";
-			break;
-		}
-		logE("[GLError] %s | %s (%s)", error.data(), file, line);
-	}
-	return errorCode;
-}
 
 void onText(char c)
 {
@@ -80,7 +50,7 @@ Verts::~Verts()
 	release();
 }
 
-void Verts::draw() 
+void Verts::draw()
 {
 	if (le::context::exists())
 	{
@@ -147,8 +117,14 @@ Verts newQuad(Shader& shader, Vector2 size, Vector2 origin = Vector2::Zero)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	glChk();
 
-	shader.setupAttribs();
-	glChk();
+	GLint position = glGetAttribLocation(shader.program(), "position");
+	if (position >= 0)
+	{
+		auto glPos = toGLObj(position);
+		glVertexAttribPointer(glPos, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(glPos);
+		glChk();
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glChk();
@@ -214,9 +190,10 @@ s32 run()
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			glChk();
 		}
-		glUseProgram(defaultShader.program());
+		defaultShader.setV4("colour", 1.0f, 0.0f, 0.0f);
+		defaultShader.use();
 		v0.draw();
-		glUseProgram(testShader.program());
+		testShader.use();
 		v1.draw();
 		if (bWireframe)
 		{

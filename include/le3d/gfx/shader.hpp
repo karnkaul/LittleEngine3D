@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "le3d/stdtypes.hpp"
+#include "le3d/core/vector2.hpp"
 
 namespace le
 {
@@ -23,6 +24,12 @@ public:
 public:
 	bool init(std::string id, std::string_view vertCode, std::string_view fragCode);
 	GLObj program() const;
-	virtual void setupAttribs();
+
+	void use();
+	bool setBool(std::string_view id, bool bVal);
+	bool setS32(std::string_view id, s32 val);
+	bool setF32(std::string_view id, f32 val);
+	bool setV2(std::string_view id, Vector2 val);
+	bool setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w = 1.0f);
 };
 }

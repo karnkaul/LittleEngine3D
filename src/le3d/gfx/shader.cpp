@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include "le3d/log/log.hpp"
 #include "le3d/gfx/shader.hpp"
+#include "le3d/gfx/utils.hpp"
 
 namespace le
 {
@@ -72,14 +73,89 @@ u32 Shader::program() const
 	return m_program;
 }
 
-void Shader::setupAttribs()
+void Shader::use()
 {
-	GLint position = glGetAttribLocation(m_program, "position");
-	if (position >= 0)
+	glUseProgram(m_program);
+	glChk();
+}
+
+bool Shader::setBool(std::string_view id, bool bVal)
+{
+	if (!id.empty())
 	{
-		auto glPos = toGLObj(position);
-		glVertexAttribPointer(glPos, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(glPos);
+		auto glID = glGetUniformLocation(m_program, id.data());
+		if (glID >= 0)
+		{
+			use();
+			glUniform1i(glID, static_cast<GLint>(bVal));
+			glChk();
+			return true;
+		}
 	}
+	return false;
+}
+
+bool Shader::setS32(std::string_view id, s32 val)
+{
+	if (!id.empty())
+	{
+		auto glID = glGetUniformLocation(m_program, id.data());
+		if (glID >= 0)
+		{
+			use();
+			glUniform1i(glID, static_cast<GLint>(val));
+			glChk();
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Shader::setF32(std::string_view id, f32 val)
+{
+	if (!id.empty())
+	{
+		auto glID = glGetUniformLocation(m_program, id.data());
+		if (glID >= 0)
+		{
+			use();
+			glUniform1f(glID, val);
+			glChk();
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Shader::setV2(std::string_view id, Vector2 val)
+{
+	if (!id.empty())
+	{
+		auto glID = glGetUniformLocation(m_program, id.data());
+		if (glID >= 0)
+		{
+			use();
+			glUniform2f(glID, val.x.toF32(), val.y.toF32());
+			glChk();
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Shader::setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w)
+{
+	if (!id.empty())
+	{
+		auto glID = glGetUniformLocation(m_program, id.data());
+		if (glID >= 0)
+		{
+			use();
+			glUniform4f(glID, x, y, z, w);
+			glChk();
+			return true;
+		}
+	}
+	return false;
 }
 } // namespace le
