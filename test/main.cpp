@@ -22,7 +22,7 @@
 le::OnText::Token tOnText;
 le::OnInput::Token tOnInput;
 le::OnMouse::Token tOnMouse, tOnScroll;
-const std::string_view resourcesPath = "../test/resources";
+const std::string resourcesPath = "../test/resources";
 
 void onText(char c)
 {
@@ -40,7 +40,7 @@ std::string readFile(std::string_view path)
 	return buf.str();
 }
 
-std::vector<u8> readBytes(std::string_view path) 
+std::vector<u8> readBytes(std::string_view path)
 {
 	std::string sPath(path);
 	std::ifstream file(path.data(), std::ios::binary);
@@ -62,21 +62,22 @@ s32 run()
 		return 1;
 	}
 
-	std::string path(resourcesPath);
-	path += "/textures/container.jpg";
-	auto img = readBytes(path);
-	GLObj texture = le::gfx::genTex(std::move(img));
-	path = resourcesPath;
-	path += "/textures/awesomeface.png";
-	img = readBytes(path);
-	GLObj t1 = le::gfx::genTex(std::move(img));
+	// Fixed camera
+	glm::mat4 view = glm::mat4(1.0f);
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+	glm::mat4 proj = glm::mat4(1.0f);
+	proj = glm::perspective(glm::radians(45.0f), (f32)WIDTH / HEIGHT, 0.1f, 100.0f);
 
-	std::string vshFile(resourcesPath);
-	std::string fshFile(resourcesPath);
-	std::string fshFile2(resourcesPath);
-	vshFile += "/shaders/default.vsh";
-	fshFile += "/shaders/default.fsh";
-	fshFile2 += "/shaders/test.fsh";
+	std::string path(le::env::fullPath(resourcesPath + "/textures/container.jpg"));
+	auto img = readBytes(path);
+	le::Texture t0 = le::gfx::genTex("container.jpg", "diffuse", std::move(img));
+	path = le::env::fullPath(resourcesPath + "/textures/awesomeface.png");
+	img = readBytes(path);
+	le::Texture t1 = le::gfx::genTex("awesomeface.png", "diffuse", std::move(img));
+
+	std::string vshFile(le::env::fullPath(resourcesPath + "/shaders/default.vsh"));
+	std::string fshFile(le::env::fullPath(resourcesPath + "/shaders/default.fsh"));
+	std::string fshFile2(le::env::fullPath(resourcesPath + "/shaders/test.fsh"));
 	auto vsh = readFile(vshFile);
 	auto fsh = readFile(fshFile);
 	auto fsh2 = readFile(fshFile2);
@@ -85,18 +86,10 @@ s32 run()
 	le::Shader testShader;
 	testShader.init("test", vsh, fsh2);
 
-	le::Primitive p0;
-	p0.setShader(defaultShader);
-	p0.provisionQuad(le::Rect2::sizeCentre({1, 1}), le::Rect2::UVs, le::Colour::White);
-	p0.m_local = glm::rotate(p0.m_local, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	glm::mat4 view = glm::mat4(1.0f);
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-	glm::mat4 proj = glm::mat4(1.0f);
-	proj = glm::perspective(glm::radians(45.0f), (f32)WIDTH / HEIGHT, 0.1f, 100.0f);
-	le::Primitive p1;
-	p1.m_local = glm::translate(p1.m_local, glm::vec3(0.0f, 0.0f, 1.0f));
-	p1.setShader(defaultShader);
-	p1.provisionQuad(le::Rect2::sizeCentre({le::Fixed(0.5f), le::Fixed(0.5f)}, {le::Fixed(-0.5f), le::Fixed(-0.35f)}), le::Rect2::UVs, le::Colour::Yellow);
+	le::Mesh mesh = le::Mesh::debugCube();
+	mesh.m_transform.m_position = {0.5f, 0.5f, -1.0f};
+	mesh.addTextures({t0, t1});
+	defaultShader.setS32("mix_textures", 1);
 	static bool bWireframe = false;
 
 	tOnText = le::input::registerText(&onText);
@@ -122,51 +115,26 @@ s32 run()
 	{
 		dt = le::Time::now() - t;
 		t = le::Time::now();
-		auto padState = le::input::getGamepadState(GLFW_JOYSTICK_1);
+		le::context::clearFlags(le::Colour(42, 75, 75, 255));
 
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glChk();
-		glClear(GL_COLOR_BUFFER_BIT);
-		glChk();
-		glChk();
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glChk();
 		}
-		// defaultShader.setV4("tint", 1.0f, 0.0f, 0.0f);
-		defaultShader.use();
-		defaultShader.setS32("uUseTexture", 1);
-		defaultShader.setS32("uTexture", 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		if (t1 > 0)
-		{
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, t1);
-			defaultShader.setS32("uTexture1", 1);
-			defaultShader.setS32("uMixTextures", 1);
-		}
-		//v0.draw();
-		p0.draw(view, proj);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		// testShader.use();
-		defaultShader.setS32("uUseTexture", 0);
-		defaultShader.setS32("uMixTextures", 0);
-		//v1.draw();
-		p1.draw(view, proj);
+
+		mesh.m_transform.m_orientation = glm::rotate(mesh.m_transform.m_orientation, glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f));
+		mesh.draw(view, proj, defaultShader);
+		
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			glChk();
 		}
 
 		le::context::swapBuffers();
 		le::context::pollEvents();
 	}
 
-	le::gfx::releaseTex(texture);
-	//v0.release();
+	le::gfx::releaseTex(t0);
 	le::context::destroy();
 	return 0;
 }

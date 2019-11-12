@@ -10,6 +10,7 @@ namespace le
 inline GLenum glCheckError(const char* file, s32 line)
 {
 	GLenum errorCode = 0;
+	errorCode = glGetError();
 	while ((errorCode = glGetError()) != GL_NO_ERROR)
 	{
 		std::string_view error;

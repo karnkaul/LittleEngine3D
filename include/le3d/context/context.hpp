@@ -2,6 +2,7 @@
 #include <string>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/vector2.hpp"
+#include "le3d/gfx/colour.hpp"
 
 namespace le
 {
@@ -12,6 +13,7 @@ void destroy();
 
 bool exists();
 bool isClosing();
+void clearFlags(Colour colour = Colour::Black, u32 flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 void pollEvents();
 void swapBuffers();
 

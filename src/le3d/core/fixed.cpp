@@ -1,5 +1,6 @@
 #include <array>
 #include <iostream>
+#include <math.h>
 #include <string>
 #include "le3d/core/fixed.hpp"
 

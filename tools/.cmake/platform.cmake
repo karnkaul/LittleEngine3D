@@ -85,7 +85,7 @@ function(set_target_compile_options TARGET_NAME)
 			-Werror=return-type
 			$<$<NOT:$<BOOL:${W_CLANG}>>:-fexceptions>
 			$<$<BOOL:${W_CLANG}>:/W4>
-			$<$<OR:$<BOOL:LX_GCC>,$<BOOL:${W_GCC}>,$<BOOL:${W_CLANG}>>:-utf-8>
+			$<$<OR:$<BOOL:${LX_GCC}>,$<BOOL:${W_GCC}>,$<BOOL:${W_CLANG}>>:-utf-8>
 			$<$<OR:$<BOOL:${LX_CLANG}>,$<BOOL:${W_CLANG}>>:${CLANG_COMMON}>
 		)
 	elseif(W_MSBUILD)

@@ -3,6 +3,7 @@
 #include "le3d/log/log.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/input/inputImpl.hpp"
+#include "le3d/gfx/utils.hpp"
 
 namespace le
 {
@@ -48,6 +49,7 @@ bool context::create(u16 width, u16 height, std::string_view title)
 		return false;
 	}
 	inputImpl::init(*g_pRenderWindow);
+	glEnable(GL_DEPTH_TEST);
 	logD("Context created");
 	return true;
 }
@@ -78,6 +80,14 @@ bool context::isClosing()
 	return g_pRenderWindow ? glfwWindowShouldClose(g_pRenderWindow) : false;
 }
 
+void context::clearFlags(Colour colour /* = Colour::Black */, u32 flags /* = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT */)
+{
+	glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32());
+	glChk();
+	glClear(flags);
+	glChk();
+}
+
 void context::pollEvents()
 {
 	if (g_pRenderWindow)
@@ -88,6 +98,7 @@ void context::pollEvents()
 
 void context::swapBuffers()
 {
+	glBindTexture(GL_TEXTURE_2D, 0);
 	if (g_pRenderWindow)
 	{
 		glfwSwapBuffers(g_pRenderWindow);
@@ -114,4 +125,3 @@ Vector2 context::worldToScreen(Vector2 world)
 	return g_windowSize == Vector2::Zero ? g_windowSize : Vector2(world.x / g_windowSize.x, world.y / g_windowSize.y);
 }
 } // namespace le
-

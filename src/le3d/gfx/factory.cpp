@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <cstddef>
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <stb/stb_image.h>
@@ -10,161 +11,246 @@
 
 namespace le
 {
-Primitive::Primitive() = default;
-Primitive::~Primitive()
+Mesh Mesh::debugCube(f32 side)
 {
-	release();
-}
-Primitive::Primitive(Primitive&&) = default;
-Primitive& Primitive::operator=(Primitive&&) = default;
+	f32 points[] = {
+		-side, -side, -side, side,  -side, -side, side,  side,  -side,
+		side,  side,  -side, -side, side,  -side, -side, -side, -side, // front
 
-void Primitive::setShader(Shader& shader)
-{
-	m_pShader = &shader;
-}
+		-side, -side, side,  side,  -side, side,  side,  side,  side,
+		side,  side,  side,  -side, side,  side,  -side, -side, side, // back
 
-void Primitive::provisionQuad(Rect2 model, Rect2 uvs, Colour colour)
-{
-	release();
-	m_verts = gfx::genQuad(model, uvs, colour);
-}
+		-side, side,  side,  -side, side,  -side, -side, -side, -side,
+		-side, -side, -side, -side, -side, side,  -side, side,  side, // left
 
-void Primitive::draw(const glm::mat4& view, const glm::mat4& proj)
-{
-	if (le::context::exists() && m_verts.vao > 0)
+		side,  side,  side,  side,  side,  -side, side,  -side, -side,
+		side,  -side, -side, side,  -side, side,  side,  side,  side, // right
+
+		-side, -side, -side, side,  -side, -side, side,  -side, side,
+		side,  -side, side,  -side, -side, side,  -side, -side, -side, // down
+
+		-side, side,  -side, side,  side,  -side, side,  side,  side,
+		side,  side,  side,  -side, side,  side,  -side, side,  -side, // up
+	};
+	f32 norms[] = {
+		0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f,
+		0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, // front
+
+		0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+		0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f, // back
+
+		-1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,
+		-1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f, // left
+
+		1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+		1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f, // right
+
+		0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,
+		0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f, // down
+
+		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f, // up
+	};
+	assert(ARR_SIZE(norms) == ARR_SIZE(points));
+	std::vector<le::Vertex> vertices(ARR_SIZE(points) / 3, le::Vertex());
+	assert(ARR_SIZE(points) == vertices.size() * 3);
+	glm::vec2 uvs[] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}};
+	for (size_t idx = 0; idx < vertices.size(); ++idx)
 	{
-		if (m_pShader)
+		size_t stride = idx * 3;
+		vertices[idx].position = {points[stride], points[stride + 1], points[stride + 2]};
+		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
+		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
+	}
+	Mesh mesh;
+	mesh.setup(std::move(vertices), {});
+	return mesh;
+}
+
+Mesh::Mesh() = default;
+
+Mesh::~Mesh()
+{
+	release();
+}
+
+Mesh::Mesh(Mesh&&) = default;
+Mesh& Mesh::operator=(Mesh&&) = default;
+
+bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const Shader* pShader)
+{
+	if (le::context::exists())
+	{
+		release();
+		m_indices = std::move(indices);
+		m_vertices = std::move(vertices);
+
+		glGenVertexArrays(1, &m_hVerts.vao);
+		glGenBuffers(1, &m_hVerts.vbo);
+		if (!m_indices.empty())
 		{
-			m_pShader->use();
-			auto temp = glGetUniformLocation(m_pShader->program(), "uModel");
-			glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(m_local));
-			temp = glGetUniformLocation(m_pShader->program(), "uView");
-			glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(view));
-			temp = glGetUniformLocation(m_pShader->program(), "uProjection");
-			glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(proj));
+			glGenBuffers(1, &m_hVerts.ebo);
 		}
-		glBindVertexArray(m_verts.vao);
+
+		glBindVertexArray(m_hVerts.vao);
 		glChk();
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_verts.ebo);
+		glBindBuffer(GL_ARRAY_BUFFER, m_hVerts.vbo);
 		glChk();
-		glDrawElements(GL_TRIANGLES, m_verts.indices, GL_UNSIGNED_INT, 0);
+		glBufferData(GL_ARRAY_BUFFER, (s64)m_vertices.size() * (s64)sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW);
 		glChk();
+		if (!m_indices.empty())
+		{
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_hVerts.ebo);
+			glChk();
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, (s64)m_indices.size() * (s64)sizeof(u32), m_indices.data(), GL_STATIC_DRAW);
+			glChk();
+		}
+
+		const auto stride = sizeof(Vertex);
+		// Colour
+		GLint loc = 0;
+		if (pShader)
+		{
+			loc = glGetAttribLocation(pShader->m_program, "aColour");
+		}
+		if (loc >= 0)
+		{
+			glVertexAttribPointer((GLObj)loc, 4, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, colour)));
+			glEnableVertexAttribArray((GLObj)loc);
+			glChk();
+		}
+
+		// Position
+		loc = 1;
+		if (pShader)
+		{
+			loc = glGetAttribLocation(pShader->m_program, "aPosition");
+		}
+		if (loc >= 0)
+		{
+			glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position)));
+			glEnableVertexAttribArray((GLObj)loc);
+			glChk();
+		}
+
+		// Normal
+		loc = 2;
+		if (pShader)
+		{
+			loc = glGetAttribLocation(pShader->m_program, "aNormal");
+		}
+		if (loc >= 0)
+		{
+			glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, normal)));
+			glEnableVertexAttribArray((GLObj)loc);
+			glChk();
+		}
+
+		// Tex coord
+		loc = 3;
+		if (pShader)
+		{
+			loc = glGetAttribLocation(pShader->m_program, "aTexCoord");
+		}
+		if (loc >= 0)
+		{
+			glVertexAttribPointer((GLObj)loc, 2, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, texCoords)));
+			glEnableVertexAttribArray((GLObj)loc);
+			glChk();
+		}
+
+		return true;
 	}
+	return false;
 }
 
-void Primitive::release()
+void Mesh::draw(const glm::mat4& v, const glm::mat4& p, Shader& shader)
 {
-	if (le::context::exists() && m_verts.vao > 0)
+	if (le::context::exists() && m_hVerts.vao > 0)
 	{
-		glDeleteVertexArrays(1, &m_verts.vao);
+		glm::mat4 m = glm::mat4(1.0f);
+		m = glm::translate(m, m_transform.m_position) * glm::toMat4(m_transform.m_orientation) * glm::scale(m, m_transform.m_scale);
+		shader.use();
+		auto temp = glGetUniformLocation(shader.m_program, "model");
+		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(m));
+		temp = glGetUniformLocation(shader.m_program, "view");
+		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(v));
+		temp = glGetUniformLocation(shader.m_program, "projection");
+		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(p));
+		glBindVertexArray(m_hVerts.vao);
 		glChk();
-		glDeleteBuffers(1, &m_verts.vbo);
-		glChk();
-		glDeleteBuffers(1, &m_verts.ebo);
-		glChk();
+		s32 txID = 0;
+		u32 diffuse = 0;
+		for (const auto& texture : m_textures)
+		{
+			std::string id = "tex_";
+			std::string flag = "use_texture";
+			flag += std::to_string(txID);
+			id += texture.type;
+			glActiveTexture(GL_TEXTURE0 + (u32)txID);
+			if (texture.type == "diffuse")
+			{
+				id += std::to_string(++diffuse);
+			}
+			shader.setS32(id, txID++);
+			shader.setS32(flag, 1);
+			glBindTexture(GL_TEXTURE_2D, texture.id);
+			glChk();
+		}
+		glActiveTexture(GL_TEXTURE0);
+		if (m_hVerts.ebo > 0)
+		{
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_hVerts.ebo);
+			glChk();
+			glDrawElements(GL_TRIANGLES, m_hVerts.indices, GL_UNSIGNED_INT, 0);
+			glChk();
+		}
+		else
+		{
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)m_vertices.size());
+			glChk();
+		}
+		glBindVertexArray(0);
 	}
-	m_verts.vao = m_verts.vbo = m_verts.ebo = 0;
-	m_verts.indices = 0;
 }
 
-
-std::vector<f32> gfx::buildVertices(std::vector<Vector2> points, std::vector<Colour> colours, std::vector<Vector2> STs)
+void Mesh::addTexture(Texture texture)
 {
-	assert(points.size() == colours.size() && points.size() == STs.size() && "array size mismatch!");
-	size_t count = points.size();
-	std::vector<f32> ret;
-	ret.reserve(count * 9);
-	for (size_t i = 0; i < count; ++i)
+	m_textures.emplace_back(std::move(texture));
+}
+
+void Mesh::addTextures(std::vector<Texture> textures)
+{
+	for (auto&& texture : textures)
 	{
-		ret.push_back(points[i].x.toF32());
-		ret.push_back(points[i].y.toF32());
-		ret.push_back(0.0f);
-		ret.push_back(colours[i].r.toF32());
-		ret.push_back(colours[i].g.toF32());
-		ret.push_back(colours[i].b.toF32());
-		ret.push_back(colours[i].a.toF32());
-		ret.push_back(STs[i].x.toF32());
-		ret.push_back(STs[i].y.toF32());
+		addTexture(std::move(texture));
 	}
-	return ret;
 }
 
-HVerts gfx::genVerts(std::vector<Vector2> points, std::vector<Colour> colours, std::vector<Vector2> STs)
+void Mesh::release()
 {
-	HVerts v;
-	std::vector<f32> verts = buildVertices(std::move(points), std::move(colours), std::move(STs));
-	const auto stride = 9 * sizeof(float);
-	glGenVertexArrays(1, &v.vao);
-	glChk();
-	glGenBuffers(1, &v.vbo);
-	glChk();
-	glBindVertexArray(v.vao);
-	glChk();
-	glBindBuffer(GL_ARRAY_BUFFER, v.vbo);
-	glChk();
-	glGenBuffers(1, &v.ebo);
-	glChk();
-
-	glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(SIZEOF_VEC(verts)), verts.data(), GL_STATIC_DRAW);
-	glChk();
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-	glEnableVertexAttribArray(0);
-	glChk();
-
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glChk();
-
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(7 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-	glChk();
-
-	return v;
-}
-
-HVerts gfx::genQuad(Rect2 model, Rect2 uvs, Colour c)
-{
-	std::vector<Vector2> points = {model.topRight(), model.bottomRight(), model.bottomLeft(), model.topLeft()};
-	std::vector<Colour> colours(4, c);
-	std::vector<Vector2> STs = {uvs.topRight(), uvs.bottomRight(), uvs.bottomLeft(), uvs.topLeft()};
-	HVerts v;
-	const u32 indices[] = {0, 1, 3,
-
-						   1, 2, 3};
-	v = genVerts(std::move(points), std::move(colours), std::move(STs));
-	v.indices = ARR_SIZE(indices);
-	glGenBuffers(1, &v.ebo);
-	glChk();
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, v.ebo);
-	glChk();
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	glChk();
-	return v;
-}
-
-void gfx::releaseVerts(HVerts verts) 
-{
-	if (le::context::exists() && verts.vao > 0)
+	if (le::context::exists() && m_hVerts.vao > 0)
 	{
-		glDeleteVertexArrays(1, &verts.vao);
+		glDeleteVertexArrays(1, &m_hVerts.vao);
 		glChk();
-		glDeleteBuffers(1, &verts.vbo);
+		glDeleteBuffers(1, &m_hVerts.vbo);
 		glChk();
-		glDeleteBuffers(1, &verts.ebo);
+		glDeleteBuffers(1, &m_hVerts.ebo);
 		glChk();
+		m_hVerts = HVerts();
 	}
 }
 
-GLObj gfx::genTex(std::vector<u8> bytes)
+Texture gfx::genTex(std::string name, std::string type, std::vector<u8> bytes)
 {
 	s32 w, h, ch;
-	GLObj hTex = 0;
+	Texture ret;
 	stbi_set_flip_vertically_on_load(1);
 	auto pData = stbi_load_from_memory(bytes.data(), toS32(bytes.size()), &w, &h, &ch, 0);
-	//auto pData = stbi_load(path.data(), &w, &h, &ch, 0);
+	// auto pData = stbi_load(path.data(), &w, &h, &ch, 0);
 	if (pData)
 	{
+		GLObj hTex = 0;
 		glGenTextures(1, &hTex);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, hTex);
@@ -175,19 +261,22 @@ GLObj gfx::genTex(std::vector<u8> bytes)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, ch == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, pData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		ret = {hTex, std::move(name), std::move(type)};
+		logI("== [%s] %s Texture created [%u]", ret.name.data(), ret.type.data(), ret.id);
 	}
 	else
 	{
 		logE("Failed to load texture!");
 	}
 	stbi_image_free(pData);
-	return hTex;
+	return ret;
 }
 
-void gfx::releaseTex(GLObj& out_hTex)
+void gfx::releaseTex(Texture& out_tex)
 {
-	const GLuint glTex[] = {out_hTex};
+	const GLuint glTex[] = {out_tex.id};
 	glDeleteTextures(1, glTex);
-	out_hTex = 0;
+	logI("-- [%s] Texture destroyed", out_tex.name.data());
+	out_tex = Texture();
 }
 } // namespace le

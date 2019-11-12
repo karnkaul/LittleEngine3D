@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <type_traits>
 #include <GLFW/glfw3.h>
+#include <glm/gtx/quaternion.hpp>
 
 #if _MSC_VER
 #define SPRINTF(szData, size, szFormat, ...) sprintf_s(szData, size, szFormat, ##__VA_ARGS__)

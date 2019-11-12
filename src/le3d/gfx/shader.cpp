@@ -1,5 +1,6 @@
 #include <array>
 #include <glad/glad.h>
+#include "le3d/context/context.hpp"
 #include "le3d/log/log.hpp"
 #include "le3d/gfx/shader.hpp"
 #include "le3d/gfx/utils.hpp"
@@ -9,7 +10,7 @@ namespace le
 Shader::Shader() = default;
 Shader::~Shader() 
 {
-	if (m_bInit && m_program)
+	if (m_bInit && m_program && context::exists())
 	{
 		glDeleteProgram(m_program);
 		logI("-- [%s] %s destroyed", m_id.data(), m_type.data());
@@ -44,7 +45,7 @@ bool Shader::init(std::string id, std::string_view vertCode, std::string_view fr
 	glGetShaderiv(fsh, GL_COMPILE_STATUS, &success);
 	if (!success)
 	{
-		glGetShaderInfoLog(vsh, buf.size(), nullptr, buf.data());
+		glGetShaderInfoLog(fsh, buf.size(), nullptr, buf.data());
 		logE("[%s] (%s) Failed to compile fragment shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
 	}
 	
@@ -68,18 +69,13 @@ bool Shader::init(std::string id, std::string_view vertCode, std::string_view fr
 	return m_bInit;
 }
 
-u32 Shader::program() const
-{
-	return m_program;
-}
-
-void Shader::use()
+void Shader::use() const
 {
 	glUseProgram(m_program);
 	glChk();
 }
 
-bool Shader::setBool(std::string_view id, bool bVal)
+bool Shader::setBool(std::string_view id, bool bVal) const
 {
 	if (!id.empty())
 	{
@@ -95,7 +91,7 @@ bool Shader::setBool(std::string_view id, bool bVal)
 	return false;
 }
 
-bool Shader::setS32(std::string_view id, s32 val)
+bool Shader::setS32(std::string_view id, s32 val) const
 {
 	if (!id.empty())
 	{
@@ -111,7 +107,7 @@ bool Shader::setS32(std::string_view id, s32 val)
 	return false;
 }
 
-bool Shader::setF32(std::string_view id, f32 val)
+bool Shader::setF32(std::string_view id, f32 val) const
 {
 	if (!id.empty())
 	{
@@ -127,7 +123,7 @@ bool Shader::setF32(std::string_view id, f32 val)
 	return false;
 }
 
-bool Shader::setV2(std::string_view id, Vector2 val)
+bool Shader::setV2(std::string_view id, Vector2 val) const
 {
 	if (!id.empty())
 	{
@@ -143,7 +139,7 @@ bool Shader::setV2(std::string_view id, Vector2 val)
 	return false;
 }
 
-bool Shader::setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w)
+bool Shader::setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w) const
 {
 	if (!id.empty())
 	{

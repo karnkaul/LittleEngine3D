@@ -15,39 +15,64 @@ struct HVerts
 	u32 ebo = 0;
 };
 
-class Primitive
+struct Vertex
+{
+	glm::vec4 colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	glm::vec3 position = glm::vec3(0.0f);
+	glm::vec3 normal = glm::vec3(0.0f, 0.0f, 1.0f);
+	glm::vec2 texCoords = glm::vec2(0.0f, 0.0f);
+};
+
+class Transform
 {
 public:
-	glm::mat4 m_local = glm::mat4(1.0f);
+	glm::vec3 m_position = glm::vec3(0.0f);
+	glm::quat m_orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	glm::vec3 m_scale = glm::vec3(1.0f);
+};
+
+struct Texture
+{
+	GLObj id = 0;
+	std::string name;
+	std::string type;
+};
+
+class Mesh
+{
+public:
+	Transform m_transform;
 
 private:
-	HVerts m_verts;
-	class Shader* m_pShader = nullptr;
+	std::vector<Vertex> m_vertices;
+	std::vector<u32> m_indices;
+	std::vector<Texture> m_textures;
+	HVerts m_hVerts;
 
 public:
-	Primitive();
-	~Primitive();
-	Primitive(Primitive&&);
-	Primitive& operator=(Primitive&&);
+	static Mesh debugCube(f32 side = 0.5f);
 
 public:
-	void setShader(Shader& shader);
-	void provisionQuad(Rect2 rect, Rect2 uvs, Colour colour);
-	void draw(const glm::mat4& view, const glm::mat4& proj);
+	Mesh();
+	virtual ~Mesh();
+	Mesh(Mesh&&);
+	Mesh& operator=(Mesh&&);
 
-private:
+public:
+	virtual bool setup(std::vector<Vertex> vertices, std::vector<u32> indices, const class Shader* pShader = nullptr);
+	virtual void draw(const glm::mat4& v, const glm::mat4& p, class Shader& shader);
+
+public:
+	void addTexture(Texture texture);
+	void addTextures(std::vector<Texture> textures);
+
+protected:
 	void release();
 };
 
 namespace gfx
 {
-std::vector<f32> buildVertices(std::vector<Vector2> points, std::vector<Colour> colours, std::vector<Vector2> STs);
-
-HVerts genVerts(std::vector<Vector2> points, std::vector<Colour> colours, std::vector<Vector2> STs);
-HVerts genQuad(Rect2 model, Rect2 uvs, Colour c);
-void releaseVerts(HVerts verts);
-
-GLObj genTex(std::vector<u8> bytes);
-void releaseTex(GLObj& out_hTex);
-}
+Texture genTex(std::string name, std::string type, std::vector<u8> bytes);
+void releaseTex(Texture& out_tex);
+} // namespace gfx
 } // namespace le
