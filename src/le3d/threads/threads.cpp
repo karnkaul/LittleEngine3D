@@ -13,7 +13,7 @@ u32 maxThreads = 0;
 HThread nextID = 0;
 std::unordered_map<HThread, std::unique_ptr<std::thread>> threadMap;
 
-void init() 
+void init()
 {
 #if defined(TARGET_LINUX)
 	s32 threadStatus = XInitThreads();
@@ -28,9 +28,9 @@ void init()
 	maxThreads = std::thread::hardware_concurrency() - 1;
 	bInit = true;
 }
-}
+} // namespace
 
-HThread threads::requisition(Task task) 
+HThread threads::requisition(Task task)
 {
 	if (!bInit)
 	{
@@ -60,7 +60,7 @@ u32 threads::running()
 	return static_cast<u32>(threadMap.size());
 }
 
-u32 threads::idle() 
+u32 threads::idle()
 {
 	if (!bInit)
 	{
@@ -95,4 +95,4 @@ void threads::joinAll()
 		}
 	}
 }
-}
+} // namespace le

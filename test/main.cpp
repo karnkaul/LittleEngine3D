@@ -12,7 +12,9 @@
 #include "le3d/core/time.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/env/env.hpp"
+#include "le3d/game/entity.hpp"
 #include "le3d/gfx/colour.hpp"
+#include "le3d/gfx/mesh.hpp"
 #include "le3d/gfx/factory.hpp"
 #include "le3d/gfx/shader.hpp"
 #include "le3d/gfx/utils.hpp"
@@ -82,23 +84,40 @@ s32 run()
 	auto fsh = readFile(fshFile);
 	auto fsh2 = readFile(fshFile2);
 	le::Shader defaultShader;
-	defaultShader.init("default", vsh, fsh);
+	defaultShader.setup("default", vsh, fsh);
 	le::Shader testShader;
-	testShader.init("test", vsh, fsh2);
+	testShader.setup("test", vsh, fsh2);
 
 	le::Mesh mesh = le::Mesh::debugCube();
-	mesh.m_transform.m_position = {0.5f, 0.5f, -1.0f};
 	mesh.addTextures({t0, t1});
 	defaultShader.setS32("mix_textures", 1);
 	static bool bWireframe = false;
+	static bool bParented = true;
+
+	le::Prop prop0;
+	prop0.setup("awesome-container");
+	prop0.addMesh(mesh);
+	prop0.m_transform.setPosition({1.0f, 1.5f, -2.0f});
+	prop0.m_transform.setScale(2.0f);
+
+	le::Prop prop1;
+	prop1.addMesh(mesh);
+	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
+	prop1.m_transform.setScale(0.5f);
+	prop0.m_transform.setParent(&prop1.m_transform);
 
 	tOnText = le::input::registerText(&onText);
-	tOnInput = le::input::registerInput([](s32 key, s32 action, s32 mods) {
+	tOnInput = le::input::registerInput([&](s32 key, s32 action, s32 mods) {
 		if (action == GLFW_RELEASE)
 		{
 			if (key == GLFW_KEY_W && mods & GLFW_MOD_CONTROL)
 			{
 				bWireframe = !bWireframe;
+			}
+			if (key == GLFW_KEY_P && mods & GLFW_MOD_CONTROL)
+			{
+				bParented = !bParented;
+				prop0.m_transform.setParent(bParented ? &prop1.m_transform : nullptr);
 			}
 		}
 		if (key == GLFW_MOUSE_BUTTON_1)
@@ -122,9 +141,17 @@ s32 run()
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 
-		mesh.m_transform.m_orientation = glm::rotate(mesh.m_transform.m_orientation, glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f));
-		mesh.draw(view, proj, defaultShader);
-		
+		prop0.m_transform.setOrientation(
+			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
+		prop1.m_transform.setOrientation(
+			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
+		// mesh.draw(mesh.m_transform.model(), view, proj, defaultShader);
+		le::RenderState state{view, proj, &defaultShader};
+		defaultShader.setS32("mix_textures", 1);
+		prop0.render(state);
+		defaultShader.setS32("mix_textures", 0);
+		prop1.render(state);
+
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -134,6 +161,7 @@ s32 run()
 		le::context::pollEvents();
 	}
 
+	prop0.clearFixtures();
 	le::gfx::releaseTex(t0);
 	le::context::destroy();
 	return 0;

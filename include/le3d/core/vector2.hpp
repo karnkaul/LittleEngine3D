@@ -128,4 +128,4 @@ inline bool operator!=(Vector2 lhs, Vector2 rhs)
 {
 	return !(lhs == rhs);
 }
-} // namespace Core
+} // namespace le

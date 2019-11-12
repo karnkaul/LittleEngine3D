@@ -8,7 +8,7 @@
 namespace le
 {
 Shader::Shader() = default;
-Shader::~Shader() 
+Shader::~Shader()
 {
 	if (m_bInit && m_program && context::exists())
 	{
@@ -19,7 +19,7 @@ Shader::~Shader()
 Shader::Shader(Shader&&) = default;
 Shader& Shader::operator=(Shader&&) = default;
 
-bool Shader::init(std::string id, std::string_view vertCode, std::string_view fragCode)
+bool Shader::setup(std::string id, std::string_view vertCode, std::string_view fragCode)
 {
 	m_type = Typename(*this);
 	std::array<const GLchar*, 1> files;
@@ -37,7 +37,7 @@ bool Shader::init(std::string id, std::string_view vertCode, std::string_view fr
 		glGetShaderInfoLog(vsh, buf.size(), nullptr, buf.data());
 		logE("[%s] (%s) Failed to compile vertex shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
 	}
-	
+
 	u32 fsh = glCreateShader(GL_FRAGMENT_SHADER);
 	files = {fragCode.data()};
 	glShaderSource(fsh, files.size(), files.data(), nullptr);
@@ -48,7 +48,7 @@ bool Shader::init(std::string id, std::string_view vertCode, std::string_view fr
 		glGetShaderInfoLog(fsh, buf.size(), nullptr, buf.data());
 		logE("[%s] (%s) Failed to compile fragment shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
 	}
-	
+
 	m_program = glCreateProgram();
 	glAttachShader(m_program, vsh);
 	glAttachShader(m_program, fsh);

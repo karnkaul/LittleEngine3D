@@ -77,4 +77,4 @@ UByte operator*(f32 lhs, UByte rhs)
 {
 	return UByte(static_cast<u8>(static_cast<f32>(rhs.rawValue) * lhs));
 }
-} // namespace Core
+} // namespace le

@@ -31,4 +31,4 @@ UByte operator*(UByte lhs, UByte rhs);
 UByte operator/(UByte lhs, UByte rhs);
 
 UByte operator*(f32 lhs, UByte rhs);
-} // namespace Core
+} // namespace le

@@ -8,7 +8,7 @@ namespace
 std::string_view g_exePath;
 std::string_view g_pwd;
 std::vector<std::string_view> g_args;
-}
+} // namespace
 
 void env::init(s32 argc, char** argv)
 {
@@ -51,4 +51,4 @@ bool env::isDefined(std::string_view arg)
 {
 	return std::find_if(g_args.begin(), g_args.end(), [arg](std::string_view s) { return s == arg; }) != g_args.end();
 }
-}
+} // namespace le

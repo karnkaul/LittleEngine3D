@@ -7,7 +7,7 @@ namespace le
 {
 class Shader final
 {
-public: 
+public:
 	GLObj m_program = 0;
 
 private:
@@ -22,7 +22,7 @@ public:
 	Shader& operator=(Shader&&);
 
 public:
-	bool init(std::string id, std::string_view vertCode, std::string_view fragCode);
+	bool setup(std::string id, std::string_view vertCode, std::string_view fragCode);
 
 	void use() const;
 	bool setBool(std::string_view id, bool bVal) const;
@@ -31,4 +31,4 @@ public:
 	bool setV2(std::string_view id, Vector2 val) const;
 	bool setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w = 1.0f) const;
 };
-}
+} // namespace le

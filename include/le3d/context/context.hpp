@@ -21,5 +21,5 @@ Vector2 size();
 Vector2 project(Vector2 nPos, Vector2 space);
 Vector2 projectScreen(Vector2 nPos);
 Vector2 worldToScreen(Vector2 world);
-}
-}
+} // namespace context
+} // namespace le

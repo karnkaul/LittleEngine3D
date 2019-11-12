@@ -214,4 +214,4 @@ inline bool operator!=(Fixed lhs, Fixed rhs)
 {
 	return !(lhs == rhs);
 }
-} // namespace Core
+} // namespace le

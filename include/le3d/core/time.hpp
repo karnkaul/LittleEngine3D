@@ -47,4 +47,4 @@ Time operator+(const Time& lhs, const Time& rhs);
 Time operator-(const Time& lhs, const Time& rhs);
 Time operator*(const Time& lhs, const Time& rhs);
 Time operator/(const Time& lhs, const Time& rhs);
-} // namespace Core
+} // namespace le

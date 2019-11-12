@@ -36,4 +36,4 @@ public:
 
 	bool isPointIn(Vector2 point) const;
 };
-} // namespace Core
+} // namespace le

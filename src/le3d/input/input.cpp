@@ -108,7 +108,7 @@ OnFiledrop::Token input::registerFiledrop(OnFiledrop::Callback callback)
 	return g_callbacks.onFiledrop.subscribe(callback);
 }
 
-JoyState input::getJoyState(s32 id) 
+JoyState input::getJoyState(s32 id)
 {
 	JoyState ret;
 	if (glfwJoystickPresent(id))
@@ -136,7 +136,7 @@ JoyState input::getJoyState(s32 id)
 	return ret;
 }
 
-GamepadState input::getGamepadState(s32 id) 
+GamepadState input::getGamepadState(s32 id)
 {
 	GamepadState ret;
 	if (glfwJoystickIsGamepad(id) && glfwGetGamepadState(id, &ret.glfwState))

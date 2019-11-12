@@ -92,4 +92,4 @@ std::string Vector2::toStr() const
 	SPRINTF(buf.data(), buf.size(), "(%.2f, %.2f)", x.toF32(), y.toF32());
 	return std::string(buf.data());
 }
-} // namespace Core
+} // namespace le

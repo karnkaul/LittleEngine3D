@@ -42,4 +42,4 @@ Colour operator*(Fixed nCoefficient, Colour colour);
 
 bool operator==(Colour lhs, Colour rhs);
 bool operator!=(Colour lhs, Colour rhs);
-} // namespace LittleEngine
+} // namespace le

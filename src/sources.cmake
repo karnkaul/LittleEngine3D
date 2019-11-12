@@ -5,11 +5,14 @@ set(SUB_SOURCES
 	le3d/core/maths.cpp
 	le3d/core/rect2.cpp
 	le3d/core/time.cpp
+	le3d/core/transform.cpp
 	le3d/core/ubyte.cpp
 	le3d/core/vector2.cpp
 
 	le3d/env/env.cpp
-	
+
+	le3d/game/entity.cpp
+
 	le3d/input/inputImpl.hpp
 	le3d/input/input.cpp
 
@@ -17,6 +20,7 @@ set(SUB_SOURCES
 
 	le3d/gfx/colour.cpp
 	le3d/gfx/factory.cpp
+	le3d/gfx/mesh.cpp
 	le3d/gfx/shader.cpp
 
 	le3d/threads/threads.cpp

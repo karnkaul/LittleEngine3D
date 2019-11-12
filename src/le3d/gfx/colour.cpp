@@ -94,4 +94,4 @@ bool operator!=(Colour lhs, Colour rhs)
 {
 	return !(lhs == rhs);
 }
-} // namespace LittleEngine
+} // namespace le

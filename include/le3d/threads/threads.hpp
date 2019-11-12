@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #include "le3d/stdtypes.hpp"
 
 namespace le
@@ -13,4 +13,4 @@ u32 idle();
 bool join(HThread id);
 void joinAll();
 } // namespace threads
-}
+} // namespace le

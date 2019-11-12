@@ -112,4 +112,4 @@ std::string Fixed::toStr() const
 	SPRINTF(buf.data(), buf.size(), "%.2f", toF32());
 	return std::string(buf.data());
 }
-} // namespace Core
+} // namespace le

@@ -82,4 +82,4 @@ bool Rect2::isPointIn(Vector2 point) const
 {
 	return point.x >= tl.x && point.x <= br.x && point.y >= br.y && point.y <= tl.y;
 }
-} // namespace Core
+} // namespace le

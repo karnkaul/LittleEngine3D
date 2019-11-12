@@ -187,4 +187,4 @@ Time operator/(const Time& lhs, const Time& rhs)
 	return Time(lhs) /= rhs;
 }
 
-} // namespace Core
+} // namespace le
