@@ -165,4 +165,4 @@ void UFactory<FType, FHandle>::clear()
 {
 	m_instanced.clear();
 }
-} // namespace ME
+} // namespace le

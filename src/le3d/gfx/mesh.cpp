@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "le3d/context/context.hpp"
+#include "le3d/context/contextImpl.hpp"
 #include "le3d/gfx/mesh.hpp"
 #include "le3d/gfx/shader.hpp"
 #include "le3d/gfx/utils.hpp"
@@ -82,18 +83,14 @@ bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const S
 		m_vertices = std::move(vertices);
 		m_hVerts = gfx::genVAO(!m_indices.empty());
 
-		glBindVertexArray(m_hVerts.vao);
-		glChk();
-		glBindBuffer(GL_ARRAY_BUFFER, m_hVerts.vbo);
-		glChk();
-		glBufferData(GL_ARRAY_BUFFER, (s64)m_vertices.size() * (s64)sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW);
-		glChk();
+		Lock lock(context::g_glMutex);
+		glChk(glBindVertexArray(m_hVerts.vao));
+		glChk(glBindBuffer(GL_ARRAY_BUFFER, m_hVerts.vbo));
+		glChk(glBufferData(GL_ARRAY_BUFFER, (s64)m_vertices.size() * (s64)sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW));
 		if (!m_indices.empty())
 		{
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_hVerts.ebo);
-			glChk();
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, (s64)m_indices.size() * (s64)sizeof(u32), m_indices.data(), GL_STATIC_DRAW);
-			glChk();
+			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_hVerts.ebo));
+			glChk(glBufferData(GL_ELEMENT_ARRAY_BUFFER, (s64)m_indices.size() * (s64)sizeof(u32), m_indices.data(), GL_STATIC_DRAW));
 		}
 
 		const auto stride = sizeof(Vertex);
@@ -105,9 +102,8 @@ bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const S
 		}
 		if (loc >= 0)
 		{
-			glVertexAttribPointer((GLObj)loc, 4, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, colour)));
-			glEnableVertexAttribArray((GLObj)loc);
-			glChk();
+			glChk(glVertexAttribPointer((GLObj)loc, 4, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, colour))));
+			glChk(glEnableVertexAttribArray((GLObj)loc));
 		}
 
 		// Position
@@ -118,9 +114,8 @@ bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const S
 		}
 		if (loc >= 0)
 		{
-			glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position)));
-			glEnableVertexAttribArray((GLObj)loc);
-			glChk();
+			glChk(glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position))));
+			glChk(glEnableVertexAttribArray((GLObj)loc));
 		}
 
 		// Normal
@@ -131,9 +126,8 @@ bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const S
 		}
 		if (loc >= 0)
 		{
-			glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, normal)));
-			glEnableVertexAttribArray((GLObj)loc);
-			glChk();
+			glChk(glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, normal))));
+			glChk(glEnableVertexAttribArray((GLObj)loc));
 		}
 
 		// Tex coord
@@ -144,9 +138,8 @@ bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const S
 		}
 		if (loc >= 0)
 		{
-			glVertexAttribPointer((GLObj)loc, 2, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, texCoords)));
-			glEnableVertexAttribArray((GLObj)loc);
-			glChk();
+			glChk(glVertexAttribPointer((GLObj)loc, 2, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, texCoords))));
+			glChk(glEnableVertexAttribArray((GLObj)loc));
 		}
 
 		return true;
@@ -158,6 +151,7 @@ void Mesh::draw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shad
 {
 	if (le::context::exists() && m_hVerts.vao > 0)
 	{
+		Lock lock(context::g_glMutex);
 		shader.use();
 		auto temp = glGetUniformLocation(shader.m_program, "model");
 		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(m));
@@ -165,39 +159,34 @@ void Mesh::draw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shad
 		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(v));
 		temp = glGetUniformLocation(shader.m_program, "projection");
 		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(p));
-		glBindVertexArray(m_hVerts.vao);
-		glChk();
+		glChk(glBindVertexArray(m_hVerts.vao));
 		shader.setS32("use_texture1", m_material.textures.empty() ? 0 : 1);
 		s32 txID = 0;
 		u32 diffuse = 0;
 		for (const auto& texture : m_material.textures)
 		{
-			std::string id = "tex_";
-			std::string flag = "use_texture";
+			std::string id = "material.tex_";
+			std::string flag = "material.use_texture";
 			flag += std::to_string(txID);
 			id += texture.type;
-			glActiveTexture(GL_TEXTURE0 + (u32)txID);
+			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
 			if (texture.type == "diffuse")
 			{
 				id += std::to_string(++diffuse);
 			}
 			shader.setS32(id, txID++);
 			shader.setS32(flag, 1);
-			glBindTexture(GL_TEXTURE_2D, texture.id);
-			glChk();
+			glChk(glBindTexture(GL_TEXTURE_2D, texture.id));
 		}
-		glActiveTexture(GL_TEXTURE0);
+		glChk(glActiveTexture(GL_TEXTURE0));
 		if (m_hVerts.ebo > 0)
 		{
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_hVerts.ebo);
-			glChk();
-			glDrawElements(GL_TRIANGLES, m_hVerts.indices, GL_UNSIGNED_INT, 0);
-			glChk();
+			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_hVerts.ebo));
+			glChk(glDrawElements(GL_TRIANGLES, m_hVerts.indices, GL_UNSIGNED_INT, 0));
 		}
 		else
 		{
-			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)m_vertices.size());
-			glChk();
+			glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)m_vertices.size()));
 		}
 		glBindVertexArray(0);
 	}

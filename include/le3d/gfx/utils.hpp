@@ -1,39 +1,19 @@
 #pragma once
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include "le3d/core/log.hpp"
+#include "le3d/stdtypes.hpp"
 
 namespace le
 {
-#define glChk() le::glCheckError(__FILE__, __LINE__)
+#define glChk(expr)                           \
+	do                                        \
+	{                                         \
+		expr;                                 \
+		le::glCheckError(__FILE__, __LINE__); \
+	} while (0);
 
-inline GLenum glCheckError(const char* file, s32 line)
-{
-	GLenum errorCode = 0;
-	errorCode = glGetError();
-	while ((errorCode = glGetError()) != GL_NO_ERROR)
-	{
-		std::string_view error;
-		switch (errorCode)
-		{
-		case GL_INVALID_ENUM:
-			error = "INVALID_ENUM";
-			break;
-		case GL_INVALID_VALUE:
-			error = "INVALID_VALUE";
-			break;
-		case GL_INVALID_OPERATION:
-			error = "INVALID_OPERATION";
-			break;
-		case GL_OUT_OF_MEMORY:
-			error = "OUT_OF_MEMORY";
-			break;
-		case GL_INVALID_FRAMEBUFFER_OPERATION:
-			error = "INVALID_FRAMEBUFFER_OPERATION";
-			break;
-		}
-		LOG_E("[GLError] %s | %s (%d)", error.data(), file, line);
-	}
-	return errorCode;
-}
+constexpr glm::vec3 g_nUp = glm::vec3(0.0f, 1.0f, 0.0f);
+constexpr glm::vec3 g_nRight = glm::vec3(1.0f, 0.0f, 0.0f);
+constexpr glm::vec3 g_nFront = glm::vec3(0.0f, 0.0f, 1.0f);
+
+s32 glCheckError(const char* szFile, s32 line);
 } // namespace le

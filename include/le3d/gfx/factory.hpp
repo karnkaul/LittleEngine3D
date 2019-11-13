@@ -1,8 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "le3d/stdtypes.hpp"
-#include "le3d/core/rect2.hpp"
-#include "le3d/gfx/colour.hpp"
 
 namespace le
 {

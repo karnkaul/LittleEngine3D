@@ -26,34 +26,23 @@ void Entity::setup(std::string name)
 	m_type = Typename(*this);
 	LOG_D("[%s] %s set up", m_name.data(), m_type.data());
 }
-
-bool Entity::isSet(Flag flag) const
-{
-	return m_flags[toIdx(flag)];
-}
-
 bool Entity::isEnabled() const
 {
-	return isSet(Flag::Enabled);
-}
-
-void Entity::setFlag(Flag flag, bool bValue)
-{
-	m_flags[toIdx(flag)] = bValue;
+	return m_flags.isSet((s32)Flag::Enabled);
 }
 
 void Entity::setEnabled(bool bEnabled)
 {
-	setFlag(Flag::Enabled, bEnabled);
+	m_flags.set((s32)Flag::Enabled, bEnabled);
 }
 
 void Prop::render(const RenderState& state)
 {
-	if (isSet(Flag::Wireframe))
+	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-	Shader* pShader = isSet(Flag::ForceShader) ? m_pShader : state.pShader;
+	Shader* pShader = m_flags.isSet((s32)Flag::ForceShader) ? m_pShader : state.pShader;
 	for (auto& fixture : m_fixtures)
 	{
 		assert(pShader && "null shader!");
@@ -65,7 +54,7 @@ void Prop::render(const RenderState& state)
 #endif
 		fixture.pMesh->draw(m_transform.model(), state.view, state.projection, *pShader);
 	}
-	if (isSet(Flag::Wireframe))
+	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
@@ -84,6 +73,6 @@ void Prop::clearFixtures()
 void Prop::setShader(Shader* pShader, bool bForce)
 {
 	m_pShader = pShader;
-	setFlag(Flag::ForceShader, bForce);
+	m_flags.set((s32)Flag::ForceShader, bForce);
 }
 } // namespace le

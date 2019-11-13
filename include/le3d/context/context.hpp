@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "le3d/stdtypes.hpp"
-#include "le3d/core/vector2.hpp"
+#include "le3d/thirdParty.hpp"
 #include "le3d/gfx/colour.hpp"
 
 namespace le
@@ -18,9 +18,9 @@ void pollEvents();
 void swapBuffers();
 
 f32 nativeAR();
-Vector2 size();
-Vector2 project(Vector2 nPos, Vector2 space);
-Vector2 projectScreen(Vector2 nPos);
-Vector2 worldToScreen(Vector2 world);
+glm::vec2 size();
+glm::vec2 project(glm::vec2 nPos, glm::vec2 space);
+glm::vec2 projectScreen(glm::vec2 nPos);
+glm::vec2 worldToScreen(glm::vec2 world);
 } // namespace context
 } // namespace le

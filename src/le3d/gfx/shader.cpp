@@ -1,6 +1,7 @@
 #include <array>
 #include <glad/glad.h>
 #include "le3d/context/context.hpp"
+#include "le3d/context/contextImpl.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/gfx/shader.hpp"
 #include "le3d/gfx/utils.hpp"
@@ -12,7 +13,7 @@ Shader::~Shader()
 {
 	if (m_bInit && m_program && context::exists())
 	{
-		glDeleteProgram(m_program);
+		glChk(glDeleteProgram(m_program));
 		LOG_I("-- [%s] %s destroyed", m_id.data(), m_type.data());
 	}
 }
@@ -26,26 +27,27 @@ bool Shader::setup(std::string id, std::string_view vertCode, std::string_view f
 	s32 success;
 	m_id = std::move(id);
 
+	Lock lock(context::g_glMutex);
 	u32 vsh = glCreateShader(GL_VERTEX_SHADER);
 	files = {vertCode.data()};
-	glShaderSource(vsh, files.size(), files.data(), nullptr);
+	glShaderSource(vsh, (GLsizei)files.size(), files.data(), nullptr);
 	glCompileShader(vsh);
 	std::array<char, 512> buf;
 	glGetShaderiv(vsh, GL_COMPILE_STATUS, &success);
 	if (!success)
 	{
-		glGetShaderInfoLog(vsh, buf.size(), nullptr, buf.data());
+		glGetShaderInfoLog(vsh, (GLsizei)buf.size(), nullptr, buf.data());
 		LOG_E("[%s] (%s) Failed to compile vertex shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
 	}
 
 	u32 fsh = glCreateShader(GL_FRAGMENT_SHADER);
 	files = {fragCode.data()};
-	glShaderSource(fsh, files.size(), files.data(), nullptr);
+	glShaderSource(fsh, (GLsizei)files.size(), files.data(), nullptr);
 	glCompileShader(fsh);
 	glGetShaderiv(fsh, GL_COMPILE_STATUS, &success);
 	if (!success)
 	{
-		glGetShaderInfoLog(fsh, buf.size(), nullptr, buf.data());
+		glGetShaderInfoLog(fsh, (GLsizei)buf.size(), nullptr, buf.data());
 		LOG_E("[%s] (%s) Failed to compile fragment shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
 	}
 
@@ -56,7 +58,7 @@ bool Shader::setup(std::string id, std::string_view vertCode, std::string_view f
 	glGetProgramiv(m_program, GL_LINK_STATUS, &success);
 	if (!success)
 	{
-		glGetProgramInfoLog(m_program, buf.size(), nullptr, buf.data());
+		glGetProgramInfoLog(m_program, (GLsizei)buf.size(), nullptr, buf.data());
 		LOG_E("[%s] (%s) Failed to link shaders!\n\t%s", m_id.data(), m_type.data(), buf.data());
 		glDeleteProgram(m_program);
 		m_program = 0;
@@ -71,8 +73,7 @@ bool Shader::setup(std::string id, std::string_view vertCode, std::string_view f
 
 void Shader::use() const
 {
-	glUseProgram(m_program);
-	glChk();
+	glChk(glUseProgram(m_program));
 }
 
 bool Shader::setBool(std::string_view id, bool bVal) const
@@ -83,8 +84,7 @@ bool Shader::setBool(std::string_view id, bool bVal) const
 		if (glID >= 0)
 		{
 			use();
-			glUniform1i(glID, static_cast<GLint>(bVal));
-			glChk();
+			glChk(glUniform1i(glID, static_cast<GLint>(bVal)));
 			return true;
 		}
 	}
@@ -99,8 +99,7 @@ bool Shader::setS32(std::string_view id, s32 val) const
 		if (glID >= 0)
 		{
 			use();
-			glUniform1i(glID, static_cast<GLint>(val));
-			glChk();
+			glChk(glUniform1i(glID, static_cast<GLint>(val)));
 			return true;
 		}
 	}
@@ -115,15 +114,14 @@ bool Shader::setF32(std::string_view id, f32 val) const
 		if (glID >= 0)
 		{
 			use();
-			glUniform1f(glID, val);
-			glChk();
+			glChk(glUniform1f(glID, val));
 			return true;
 		}
 	}
 	return false;
 }
 
-bool Shader::setV2(std::string_view id, Vector2 val) const
+bool Shader::setV2(std::string_view id, glm::vec2 val) const
 {
 	if (!id.empty())
 	{
@@ -131,12 +129,16 @@ bool Shader::setV2(std::string_view id, Vector2 val) const
 		if (glID >= 0)
 		{
 			use();
-			glUniform2f(glID, val.x.toF32(), val.y.toF32());
-			glChk();
+			glChk(glUniform2f(glID, val.x, val.y));
 			return true;
 		}
 	}
 	return false;
+}
+
+bool Shader::setV4(std::string_view id, glm::vec4 val) const
+{
+	return setV4(id, val.x, val.y, val.z, val.w);
 }
 
 bool Shader::setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w) const
@@ -147,8 +149,7 @@ bool Shader::setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w) const
 		if (glID >= 0)
 		{
 			use();
-			glUniform4f(glID, x, y, z, w);
-			glChk();
+			glChk(glUniform4f(glID, x, y, z, w));
 			return true;
 		}
 	}

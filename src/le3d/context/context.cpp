@@ -4,17 +4,25 @@
 #include "le3d/context/context.hpp"
 #include "le3d/input/inputImpl.hpp"
 #include "le3d/gfx/utils.hpp"
+#include "contextImpl.hpp"
 
 namespace le
 {
+namespace context
+{
+std::thread::id g_contextThreadID;
+std::mutex g_glMutex;
+} // namespace context
+
 namespace
 {
-Vector2 g_windowSize;
+glm::vec2 g_windowSize;
 f32 g_nativeAR = 1.0f;
 GLFWwindow* g_pRenderWindow = nullptr;
 
 void frameBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 {
+	Lock lock(context::g_glMutex);
 	if (pWindow == g_pRenderWindow)
 	{
 		g_windowSize = {width, height};
@@ -31,35 +39,40 @@ void onError(s32 code, const char* szDesc)
 
 bool context::create(u16 width, u16 height, std::string_view title)
 {
-	g_windowSize = Vector2(width, height);
-	glfwSetErrorCallback(&onError);
-	if (!glfwInit())
 	{
-		LOG_E("Failed to initialise GLFW!");
-		return false;
+		Lock lock(g_glMutex);
+		g_windowSize = glm::vec2(width, height);
+		glfwSetErrorCallback(&onError);
+		if (!glfwInit())
+		{
+			LOG_E("Failed to initialise GLFW!");
+			return false;
+		}
+		g_pRenderWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
+		if (!g_pRenderWindow)
+		{
+			LOG_E("Failed to create window!");
+			return false;
+		}
+		glfwSetFramebufferSizeCallback(g_pRenderWindow, &frameBufferResizeCallback);
+		glfwMakeContextCurrent(g_pRenderWindow);
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+		{
+			LOG_E("Failed to initialise GLAD!");
+			return false;
+		}
+		inputImpl::init(*g_pRenderWindow);
+		g_contextThreadID = std::this_thread::get_id();
+		glEnable(GL_DEPTH_TEST);
 	}
-	g_pRenderWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
-	if (!g_pRenderWindow)
-	{
-		LOG_E("Failed to create window!");
-		return false;
-	}
-	glfwSetFramebufferSizeCallback(g_pRenderWindow, &frameBufferResizeCallback);
-	glfwMakeContextCurrent(g_pRenderWindow);
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		LOG_E("Failed to initialise GLAD!");
-		return false;
-	}
-	inputImpl::init(*g_pRenderWindow);
 	frameBufferResizeCallback(g_pRenderWindow, width, height);
-	glEnable(GL_DEPTH_TEST);
 	LOG_D("Context created");
 	return true;
 }
 
 void context::destroy()
 {
+	Lock lock(g_glMutex);
 	if (g_pRenderWindow)
 	{
 		glfwSetWindowShouldClose(g_pRenderWindow, true);
@@ -70,7 +83,8 @@ void context::destroy()
 	}
 	glfwTerminate();
 	g_pRenderWindow = nullptr;
-	g_windowSize = Vector2::Zero;
+	g_windowSize = glm::vec2(0.0f);
+	g_contextThreadID = std::thread::id();
 	LOG_D("Context destroyed");
 }
 
@@ -86,14 +100,14 @@ bool context::isClosing()
 
 void context::clearFlags(Colour colour /* = Colour::Black */, u32 flags /* = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT */)
 {
-	glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32());
-	glChk();
+	Lock lock(g_glMutex);
+	glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
 	glClear(flags);
-	glChk();
 }
 
 void context::pollEvents()
 {
+	Lock lock(g_glMutex);
 	if (g_pRenderWindow)
 	{
 		glfwPollEvents();
@@ -102,6 +116,7 @@ void context::pollEvents()
 
 void context::swapBuffers()
 {
+	Lock lock(g_glMutex);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	if (g_pRenderWindow)
 	{
@@ -114,23 +129,23 @@ f32 context::nativeAR()
 	return g_nativeAR;
 }
 
-Vector2 context::size()
+glm::vec2 context::size()
 {
 	return g_windowSize;
 }
 
-Vector2 context::project(Vector2 nPos, Vector2 space)
+glm::vec2 context::project(glm::vec2 nPos, glm::vec2 space)
 {
 	return {nPos.x * space.x, nPos.y * space.y};
 }
 
-Vector2 context::projectScreen(Vector2 nPos)
+glm::vec2 context::projectScreen(glm::vec2 nPos)
 {
 	return project(nPos, g_windowSize);
 }
 
-Vector2 context::worldToScreen(Vector2 world)
+glm::vec2 context::worldToScreen(glm::vec2 world)
 {
-	return g_windowSize == Vector2::Zero ? g_windowSize : Vector2(world.x / g_windowSize.x, world.y / g_windowSize.y);
+	return g_windowSize == glm::vec2(0.0f) ? g_windowSize : glm::vec2(world.x / g_windowSize.x, world.y / g_windowSize.y);
 }
 } // namespace le

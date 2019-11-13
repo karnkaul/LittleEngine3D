@@ -4,14 +4,11 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <glad/glad.h>
-#include <glm/gtc/type_ptr.hpp>
 
-#include "le3d/core/vector2.hpp"
-#include "le3d/core/rect2.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/env/env.hpp"
+#include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/gfx/colour.hpp"
 #include "le3d/gfx/mesh.hpp"
@@ -21,17 +18,8 @@
 #include "le3d/input/input.hpp"
 #include "le3d/core/log.hpp"
 
-le::OnText::Token tOnText;
 le::OnInput::Token tOnInput;
-le::OnMouse::Token tOnMouse, tOnScroll;
 const std::string resourcesPath = "../test/resources";
-
-#if defined(DEBUGGING)
-void onText(char c)
-{
-	LOG_D("%c pressed", c);
-}
-#endif
 
 std::string readFile(std::string_view path)
 {
@@ -66,11 +54,12 @@ s32 run()
 		return 1;
 	}
 
-	// Fixed camera
-	glm::mat4 view = glm::mat4(1.0f);
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-	glm::mat4 proj = glm::mat4(1.0f);
-	proj = glm::perspective(glm::radians(45.0f), le::context::nativeAR(), 0.1f, 100.0f);
+	le::FreeCam camera;
+	//le::input::setCursorMode(le::CursorMode::Disabled);
+	// le::Camera camera;
+	camera.m_orientation = glm::rotate(camera.m_orientation, glm::radians(90.0f), le::g_nUp);
+	camera.m_position = {0.0f, 0.0f, 3.0f};
+	camera.m_flags.set((s32)le::FreeCam::Flag::FixedSpeed, false);
 
 	std::string path(le::env::fullPath(resourcesPath + "/textures/container.jpg"));
 	auto img = readBytes(path);
@@ -111,16 +100,26 @@ s32 run()
 	prop0.m_transform.setParent(&prop1.m_transform);
 	prop1.setShader(&testShader, true);
 
-#if defined(DEBUGGING)
-	tOnText = le::input::registerText(&onText);
-#endif
+	std::vector<le::Prop> props;
+	for (s32 i = 0; i < 5; ++i)
+	{
+		le::Prop prop;
+		prop.addFixture(mesh);
+		props.emplace_back(std::move(prop));
+	}
+	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
+	props[1].m_transform.setPosition({-0.5f, 1.5f, 4.0f});
+	props[2].m_transform.setPosition({1.5f, -0.5f, 4.0f});
+	props[3].m_transform.setPosition({-3.0f, -1.0f, 2.0f});
+	props[4].m_transform.setPosition({-4.0f, 1.0f, -2.0f});
+
 	tOnInput = le::input::registerInput([&](s32 key, s32 action, s32 mods) {
 		if (action == GLFW_RELEASE)
 		{
 			if (key == GLFW_KEY_W && mods & GLFW_MOD_CONTROL)
 			{
 				bWireframe = !bWireframe;
-				prop0.setFlag(le::Entity::Flag::Wireframe, bWireframe);
+				prop0.m_flags.set((s32)le::Entity::Flag::Wireframe, bWireframe);
 			}
 			if (key == GLFW_KEY_P && mods & GLFW_MOD_CONTROL)
 			{
@@ -134,7 +133,6 @@ s32 run()
 		}
 	});
 #if defined(DEBUGGING)
-	tOnScroll = le::input::registerScroll([](f64 dx, f64 dy) { LOG_D("Mouse scrolled: %.2f, %.2f", dx, dy); });
 	auto test = le::input::registerFiledrop([](std::string_view path) { LOG_D("File path: %s", path.data()); });
 #endif
 	le::Time::reset();
@@ -144,17 +142,24 @@ s32 run()
 	{
 		dt = le::Time::now() - t;
 		t = le::Time::now();
+		camera.tick(dt);
 		le::context::clearFlags(le::Colour(42, 75, 75, 255));
 
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
 		prop1.m_transform.setOrientation(
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
-		le::RenderState state{view, proj, &defaultShader};
+		le::RenderState state;
+		state.view = camera.view();
+		state.projection = camera.perspectiveProj(le::context::nativeAR());
+		state.pShader = &defaultShader;
 		defaultShader.setS32("mix_textures", 1);
 		prop0.render(state);
-		defaultShader.setS32("mix_textures", 0);
 		prop1.render(state);
+		for (auto& prop : props)
+		{
+			prop.render(state);
+		}
 
 		le::context::swapBuffers();
 		le::context::pollEvents();

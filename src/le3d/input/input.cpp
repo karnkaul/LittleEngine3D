@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <unordered_map>
+#include "le3d/context/context.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/input/input.hpp"
 #include "inputImpl.hpp"
@@ -15,6 +16,7 @@ struct Callbacks
 	OnMouse onMouse;
 	OnMouse onScroll;
 	OnFiledrop onFiledrop;
+	OnFocus onFocus;
 };
 
 Callbacks g_callbacks;
@@ -76,6 +78,14 @@ void onFiledrop(GLFWwindow* pWindow, s32 count, const char** szPaths)
 		}
 	}
 }
+
+void onFocus(GLFWwindow* pWindow, s32 entered)
+{
+	if (pWindow == g_pRenderWindow)
+	{
+		g_callbacks.onFocus(entered != 0);
+	}
+}
 } // namespace
 
 std::string_view input::toStr(s32 key)
@@ -108,6 +118,80 @@ OnFiledrop::Token input::registerFiledrop(OnFiledrop::Callback callback)
 	return g_callbacks.onFiledrop.subscribe(callback);
 }
 
+OnFocus::Token input::registerFocus(OnFocus::Callback callback)
+{
+	return g_callbacks.onFocus.subscribe(callback);
+}
+
+void input::setCursorMode(CursorMode mode)
+{
+	if (context::exists())
+	{
+		s32 val = glfwGetInputMode(g_pRenderWindow, GLFW_CURSOR);
+		switch (mode)
+		{
+		case CursorMode::Default:
+			val = GLFW_CURSOR_NORMAL;
+			break;
+
+		case CursorMode::Hidden:
+			val = GLFW_CURSOR_HIDDEN;
+			break;
+
+		case CursorMode::Disabled:
+			val = GLFW_CURSOR_DISABLED;
+			break;
+
+		default:
+			break;
+		}
+		glfwSetInputMode(g_pRenderWindow, GLFW_CURSOR, val);
+	}
+}
+
+CursorMode input::cursorMode()
+{
+	CursorMode ret = CursorMode::Default;
+	if (context::exists())
+	{
+		s32 val = glfwGetInputMode(g_pRenderWindow, GLFW_CURSOR);
+		switch (val)
+		{
+		case GLFW_CURSOR_NORMAL:
+			ret = CursorMode::Default;
+			break;
+
+		case GLFW_CURSOR_HIDDEN:
+			ret = CursorMode::Hidden;
+			break;
+
+		case GLFW_CURSOR_DISABLED:
+			ret = CursorMode::Disabled;
+			break;
+
+		default:
+			break;
+		}
+	}
+	return ret;
+}
+
+glm::vec2 input::cursorPos()
+{
+	if (context::exists())
+	{
+		f64 x, y;
+		glfwGetCursorPos(g_pRenderWindow, &x, &y);
+		return {(f32)x, (f32)y};
+	}
+	return {};
+}
+
+void input::setCursorPos(glm::vec2 pos)
+{
+	glfwSetCursorPos(g_pRenderWindow, pos.x, pos.y);
+}
+
 JoyState input::getJoyState(s32 id)
 {
 	JoyState ret;
@@ -116,13 +200,13 @@ JoyState input::getJoyState(s32 id)
 		ret.id = id;
 		s32 count;
 		const auto axes = glfwGetJoystickAxes(id, &count);
-		ret.axes.reserve(toIdx(count));
+		ret.axes.reserve((size_t)count);
 		for (s32 idx = 0; idx < count; ++idx)
 		{
 			ret.axes.push_back(axes[idx]);
 		}
 		const auto buttons = glfwGetJoystickButtons(id, &count);
-		ret.buttons.reserve(toIdx(count));
+		ret.buttons.reserve((size_t)count);
 		for (s32 idx = 0; idx < count; ++idx)
 		{
 			ret.buttons.push_back(buttons[idx]);
@@ -162,5 +246,6 @@ void inputImpl::init(GLFWwindow& window)
 	glfwSetMouseButtonCallback(g_pRenderWindow, &onMouseButton);
 	glfwSetScrollCallback(g_pRenderWindow, &onScroll);
 	glfwSetDropCallback(g_pRenderWindow, &onFiledrop);
+	glfwSetCursorEnterCallback(g_pRenderWindow, &onFocus);
 }
 } // namespace le

@@ -5,13 +5,22 @@
 #include <vector>
 #include "le3d/delegate.hpp"
 #include "le3d/stdtypes.hpp"
+#include "le3d/thirdParty.hpp"
 
 namespace le
 {
 using OnText = Delegate<char>;
 using OnInput = Delegate<s32, s32, s32>;
 using OnMouse = Delegate<f64, f64>;
+using OnFocus = Delegate<bool>;
 using OnFiledrop = Delegate<std::string_view>;
+
+enum class CursorMode
+{
+	Default = 0,
+	Hidden,
+	Disabled,
+};
 
 struct JoyState
 {
@@ -41,6 +50,13 @@ OnMouse::Token registerMouse(OnMouse::Callback callback);
 OnMouse::Token registerScroll(OnMouse::Callback callback);
 // Callback parameters: (std::string filepath)
 OnFiledrop::Token registerFiledrop(OnFiledrop::Callback callback);
+// Callback parameters: (bool bInFocus)
+OnFocus::Token registerFocus(OnFocus::Callback callback);
+
+void setCursorMode(CursorMode mode);
+CursorMode cursorMode();
+glm::vec2 cursorPos();
+void setCursorPos(glm::vec2 pos);
 
 JoyState getJoyState(s32 id);
 GamepadState getGamepadState(s32 id);

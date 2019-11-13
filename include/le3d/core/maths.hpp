@@ -111,7 +111,7 @@ T transformRange(T value, T oldMin, T oldMax, T newMin, T newMax)
 }
 
 template <typename T>
-inline T lerp(T min, T max, Fixed alpha)
+inline T lerp(T min, T max, T alpha)
 {
 	return min + alpha * (max - min);
 }

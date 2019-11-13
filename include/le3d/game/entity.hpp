@@ -3,6 +3,7 @@
 #include <optional>
 #include <vector>
 #include "le3d/stdtypes.hpp"
+#include "le3d/core/flags.hpp"
 #include "le3d/core/transform.hpp"
 
 namespace le
@@ -26,31 +27,27 @@ public:
 	};
 
 public:
-#if defined(DEBUGGING)
-	bool m_bDEBUG = false;
-#endif
 	Transform m_transform;
 	std::string m_name;
 	std::string m_type;
-
-protected:
-	std::bitset<toIdx(Flag::_COUNT)> m_flags;
+	Flags<(size_t)Flag::_COUNT> m_flags;
+#if defined(DEBUGGING)
+	bool m_bDEBUG = false;
+#endif
 
 public:
 	Entity();
 	Entity(Entity&&);
 	Entity& operator=(Entity&&);
-	~Entity();
+	virtual ~Entity();
 
 public:
 	virtual void setup(std::string name);
 	virtual void render(const RenderState& state);
 
 public:
-	bool isSet(Flag flag) const;
 	bool isEnabled() const;
 
-	void setFlag(Flag flag, bool bValue);
 	void setEnabled(bool bEnabled);
 };
 
@@ -64,7 +61,6 @@ protected:
 	};
 
 protected:
-
 	std::vector<Fixture> m_fixtures;
 	Shader* m_pShader = nullptr;
 

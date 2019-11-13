@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "le3d/stdtypes.hpp"
-#include "le3d/core/vector2.hpp"
+#include "le3d/thirdParty.hpp"
 
 namespace le
 {
@@ -28,7 +28,8 @@ public:
 	bool setBool(std::string_view id, bool bVal) const;
 	bool setS32(std::string_view id, s32 val) const;
 	bool setF32(std::string_view id, f32 val) const;
-	bool setV2(std::string_view id, Vector2 val) const;
+	bool setV2(std::string_view id, glm::vec2 val) const;
+	bool setV4(std::string_view id, glm::vec4 val) const;
 	bool setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w = 1.0f) const;
 };
 } // namespace le
