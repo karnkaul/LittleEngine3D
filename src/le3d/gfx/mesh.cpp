@@ -167,10 +167,10 @@ void Mesh::draw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shad
 		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(p));
 		glBindVertexArray(m_hVerts.vao);
 		glChk();
+		shader.setS32("use_texture1", m_material.textures.empty() ? 0 : 1);
 		s32 txID = 0;
 		u32 diffuse = 0;
-		shader.setS32("use_texture1", m_textures.empty() ? 0 : 1);
-		for (const auto& texture : m_textures)
+		for (const auto& texture : m_material.textures)
 		{
 			std::string id = "tex_";
 			std::string flag = "use_texture";
@@ -186,7 +186,6 @@ void Mesh::draw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shad
 			glBindTexture(GL_TEXTURE_2D, texture.id);
 			glChk();
 		}
-		//shader.setS32("use_texture1", 0);
 		glActiveTexture(GL_TEXTURE0);
 		if (m_hVerts.ebo > 0)
 		{
@@ -202,16 +201,6 @@ void Mesh::draw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shad
 		}
 		glBindVertexArray(0);
 	}
-}
-
-void Mesh::addTexture(Texture texture)
-{
-	m_textures.emplace_back(std::move(texture));
-}
-
-void Mesh::addTextures(std::vector<Texture> textures)
-{
-	std::move(textures.begin(), textures.end(), std::back_inserter(m_textures));
 }
 
 void Mesh::release()

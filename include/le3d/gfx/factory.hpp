@@ -29,6 +29,11 @@ struct Texture
 	std::string type;
 };
 
+struct Material
+{
+	std::vector<Texture> textures;
+};
+
 namespace gfx
 {
 HVerts genVAO(bool bEBO);

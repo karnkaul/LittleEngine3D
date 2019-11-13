@@ -31,7 +31,7 @@ void Transform::setOrientation(glm::quat orientation)
 	m_bDirty = true;
 }
 
-void Transform::setScale(f32 scale) 
+void Transform::setScale(f32 scale)
 {
 	m_scale = {scale, scale, scale};
 	m_bDirty = true;

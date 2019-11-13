@@ -21,10 +21,14 @@ public:
 	{
 		Enabled = 0,
 		Wireframe,
+		ForceShader,
 		_COUNT,
 	};
 
 public:
+#if defined(DEBUGGING)
+	bool m_bDEBUG = false;
+#endif
 	Transform m_transform;
 	std::string m_name;
 	std::string m_type;
@@ -60,13 +64,17 @@ protected:
 	};
 
 protected:
+
 	std::vector<Fixture> m_fixtures;
+	Shader* m_pShader = nullptr;
 
 public:
 	void render(const RenderState& state) override;
 
 public:
-	void addMesh(Mesh& mesh, std::optional<glm::mat4> model = std::nullopt);
+	void addFixture(Mesh& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void clearFixtures();
+
+	void setShader(Shader* pShader, bool bForce);
 };
-}
+} // namespace le

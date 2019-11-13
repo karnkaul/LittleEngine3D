@@ -1,6 +1,6 @@
 #include <iostream>
 #include <glad/glad.h>
-#include "le3d/log/log.hpp"
+#include "le3d/core/log.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/input/inputImpl.hpp"
 #include "le3d/gfx/utils.hpp"
@@ -10,19 +10,22 @@ namespace le
 namespace
 {
 Vector2 g_windowSize;
+f32 g_nativeAR = 1.0f;
 GLFWwindow* g_pRenderWindow = nullptr;
 
 void frameBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 {
 	if (pWindow == g_pRenderWindow)
 	{
+		g_windowSize = {width, height};
+		g_nativeAR = (f32)width / height;
 		glViewport(0, 0, width, height);
 	}
 }
 
 void onError(s32 code, const char* szDesc)
 {
-	std::cerr << "GLFW Error [" << code << "]: " << std::string(szDesc) << std::endl;
+	LOG_E("GLFW Error [%d]: %s", code, szDesc);
 }
 } // namespace
 
@@ -32,25 +35,26 @@ bool context::create(u16 width, u16 height, std::string_view title)
 	glfwSetErrorCallback(&onError);
 	if (!glfwInit())
 	{
-		logE("Failed to initialise GLFW!");
+		LOG_E("Failed to initialise GLFW!");
 		return false;
 	}
 	g_pRenderWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
 	if (!g_pRenderWindow)
 	{
-		logE("Failed to create window!");
+		LOG_E("Failed to create window!");
 		return false;
 	}
 	glfwSetFramebufferSizeCallback(g_pRenderWindow, &frameBufferResizeCallback);
 	glfwMakeContextCurrent(g_pRenderWindow);
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
-		logE("Failed to initialise GLAD!");
+		LOG_E("Failed to initialise GLAD!");
 		return false;
 	}
 	inputImpl::init(*g_pRenderWindow);
+	frameBufferResizeCallback(g_pRenderWindow, width, height);
 	glEnable(GL_DEPTH_TEST);
-	logD("Context created");
+	LOG_D("Context created");
 	return true;
 }
 
@@ -67,7 +71,7 @@ void context::destroy()
 	glfwTerminate();
 	g_pRenderWindow = nullptr;
 	g_windowSize = Vector2::Zero;
-	logD("Context destroyed");
+	LOG_D("Context destroyed");
 }
 
 bool context::exists()
@@ -103,6 +107,11 @@ void context::swapBuffers()
 	{
 		glfwSwapBuffers(g_pRenderWindow);
 	}
+}
+
+f32 context::nativeAR()
+{
+	return g_nativeAR;
 }
 
 Vector2 context::size()

@@ -19,17 +19,19 @@
 #include "le3d/gfx/shader.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/input/input.hpp"
-#include "le3d/log/log.hpp"
+#include "le3d/core/log.hpp"
 
 le::OnText::Token tOnText;
 le::OnInput::Token tOnInput;
 le::OnMouse::Token tOnMouse, tOnScroll;
 const std::string resourcesPath = "../test/resources";
 
+#if defined(DEBUGGING)
 void onText(char c)
 {
-	logD("%c pressed", c);
+	LOG_D("%c pressed", c);
 }
+#endif
 
 std::string readFile(std::string_view path)
 {
@@ -68,7 +70,7 @@ s32 run()
 	glm::mat4 view = glm::mat4(1.0f);
 	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 	glm::mat4 proj = glm::mat4(1.0f);
-	proj = glm::perspective(glm::radians(45.0f), (f32)WIDTH / HEIGHT, 0.1f, 100.0f);
+	proj = glm::perspective(glm::radians(45.0f), le::context::nativeAR(), 0.1f, 100.0f);
 
 	std::string path(le::env::fullPath(resourcesPath + "/textures/container.jpg"));
 	auto img = readBytes(path);
@@ -88,31 +90,37 @@ s32 run()
 	le::Shader testShader;
 	testShader.setup("test", vsh, fsh2);
 
+	le::Material mat;
+	mat.textures = {t0, t1};
 	le::Mesh mesh = le::Mesh::debugCube();
-	mesh.addTextures({t0, t1});
+	mesh.m_material = std::move(mat);
 	defaultShader.setS32("mix_textures", 1);
 	static bool bWireframe = false;
 	static bool bParented = true;
 
 	le::Prop prop0;
 	prop0.setup("awesome-container");
-	prop0.addMesh(mesh);
+	prop0.addFixture(mesh);
 	prop0.m_transform.setPosition({1.0f, 1.5f, -2.0f});
 	prop0.m_transform.setScale(2.0f);
 
 	le::Prop prop1;
-	prop1.addMesh(mesh);
+	prop1.addFixture(mesh);
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.5f);
 	prop0.m_transform.setParent(&prop1.m_transform);
+	prop1.setShader(&testShader, true);
 
+#if defined(DEBUGGING)
 	tOnText = le::input::registerText(&onText);
+#endif
 	tOnInput = le::input::registerInput([&](s32 key, s32 action, s32 mods) {
 		if (action == GLFW_RELEASE)
 		{
 			if (key == GLFW_KEY_W && mods & GLFW_MOD_CONTROL)
 			{
 				bWireframe = !bWireframe;
+				prop0.setFlag(le::Entity::Flag::Wireframe, bWireframe);
 			}
 			if (key == GLFW_KEY_P && mods & GLFW_MOD_CONTROL)
 			{
@@ -122,11 +130,13 @@ s32 run()
 		}
 		if (key == GLFW_MOUSE_BUTTON_1)
 		{
-			logD("Mouse button 0 [pressed/released] [%d/%d]!", action == GLFW_PRESS, action == GLFW_RELEASE);
+			LOG_D("Mouse button 0 [pressed/released] [%d/%d]!", action == GLFW_PRESS, action == GLFW_RELEASE);
 		}
 	});
-	tOnScroll = le::input::registerScroll([](f64 dx, f64 dy) { logD("Mouse scrolled: %.2f, %.2f", dx, dy); });
-	auto test = le::input::registerFiledrop([](std::string_view path) { logD("File path: %s", path.data()); });
+#if defined(DEBUGGING)
+	tOnScroll = le::input::registerScroll([](f64 dx, f64 dy) { LOG_D("Mouse scrolled: %.2f, %.2f", dx, dy); });
+	auto test = le::input::registerFiledrop([](std::string_view path) { LOG_D("File path: %s", path.data()); });
+#endif
 	le::Time::reset();
 	le::Time dt;
 	le::Time t = le::Time::now();
@@ -136,26 +146,15 @@ s32 run()
 		t = le::Time::now();
 		le::context::clearFlags(le::Colour(42, 75, 75, 255));
 
-		if (bWireframe)
-		{
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		}
-
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
 		prop1.m_transform.setOrientation(
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
-		// mesh.draw(mesh.m_transform.model(), view, proj, defaultShader);
 		le::RenderState state{view, proj, &defaultShader};
 		defaultShader.setS32("mix_textures", 1);
 		prop0.render(state);
 		defaultShader.setS32("mix_textures", 0);
 		prop1.render(state);
-
-		if (bWireframe)
-		{
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		}
 
 		le::context::swapBuffers();
 		le::context::pollEvents();

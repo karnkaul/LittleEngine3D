@@ -1,7 +1,7 @@
 #include <array>
 #include <glad/glad.h>
 #include "le3d/context/context.hpp"
-#include "le3d/log/log.hpp"
+#include "le3d/core/log.hpp"
 #include "le3d/gfx/shader.hpp"
 #include "le3d/gfx/utils.hpp"
 
@@ -13,7 +13,7 @@ Shader::~Shader()
 	if (m_bInit && m_program && context::exists())
 	{
 		glDeleteProgram(m_program);
-		logI("-- [%s] %s destroyed", m_id.data(), m_type.data());
+		LOG_I("-- [%s] %s destroyed", m_id.data(), m_type.data());
 	}
 }
 Shader::Shader(Shader&&) = default;
@@ -35,7 +35,7 @@ bool Shader::setup(std::string id, std::string_view vertCode, std::string_view f
 	if (!success)
 	{
 		glGetShaderInfoLog(vsh, buf.size(), nullptr, buf.data());
-		logE("[%s] (%s) Failed to compile vertex shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
+		LOG_E("[%s] (%s) Failed to compile vertex shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
 	}
 
 	u32 fsh = glCreateShader(GL_FRAGMENT_SHADER);
@@ -46,7 +46,7 @@ bool Shader::setup(std::string id, std::string_view vertCode, std::string_view f
 	if (!success)
 	{
 		glGetShaderInfoLog(fsh, buf.size(), nullptr, buf.data());
-		logE("[%s] (%s) Failed to compile fragment shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
+		LOG_E("[%s] (%s) Failed to compile fragment shader!\n\t%s", m_id.data(), m_type.data(), buf.data());
 	}
 
 	m_program = glCreateProgram();
@@ -57,7 +57,7 @@ bool Shader::setup(std::string id, std::string_view vertCode, std::string_view f
 	if (!success)
 	{
 		glGetProgramInfoLog(m_program, buf.size(), nullptr, buf.data());
-		logE("[%s] (%s) Failed to link shaders!\n\t%s", m_id.data(), m_type.data(), buf.data());
+		LOG_E("[%s] (%s) Failed to link shaders!\n\t%s", m_id.data(), m_type.data(), buf.data());
 		glDeleteProgram(m_program);
 		m_program = 0;
 	}
@@ -65,7 +65,7 @@ bool Shader::setup(std::string id, std::string_view vertCode, std::string_view f
 	glDeleteShader(vsh);
 	glDeleteShader(fsh);
 	m_bInit = success != 0;
-	logifI(m_bInit, "== [%s] (%s) created", m_id.data(), m_type.data());
+	LOGIF_I(m_bInit, "== [%s] (%s) created", m_id.data(), m_type.data());
 	return m_bInit;
 }
 

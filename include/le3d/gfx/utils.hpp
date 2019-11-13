@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "le3d/log/log.hpp"
+#include "le3d/core/log.hpp"
 
 namespace le
 {
@@ -32,7 +32,7 @@ inline GLenum glCheckError(const char* file, s32 line)
 			error = "INVALID_FRAMEBUFFER_OPERATION";
 			break;
 		}
-		logE("[GLError] %s | %s (%d)", error.data(), file, line);
+		LOG_E("[GLError] %s | %s (%d)", error.data(), file, line);
 	}
 	return errorCode;
 }

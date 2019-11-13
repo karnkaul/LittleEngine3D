@@ -2,34 +2,34 @@
 
 namespace le
 {
-#define logE(msg, ...) log(le::LogLevel::Error, msg, ##__VA_ARGS__)
-#define logifE(cond, msg, ...)                        \
+#define LOG_E(msg, ...) log(le::LogLevel::Error, msg, ##__VA_ARGS__)
+#define LOGIF_E(cond, msg, ...)                       \
 	if (cond)                                         \
 	{                                                 \
 		log(le::LogLevel::Error, msg, ##__VA_ARGS__); \
 	}
-#define logW(msg, ...) log(le::LogLevel::Warning, msg, ##__VA_ARGS__)
-#define logifW(cond, msg, ...)                          \
+#define LOG_W(msg, ...) log(le::LogLevel::Warning, msg, ##__VA_ARGS__)
+#define LOGIF_W(cond, msg, ...)                         \
 	if (cond)                                           \
 	{                                                   \
 		log(le::LogLevel::Warning, msg, ##__VA_ARGS__); \
 	}
-#define logI(msg, ...) log(le::LogLevel::Info, msg, ##__VA_ARGS__)
-#define logifI(cond, msg, ...)                       \
+#define LOG_I(msg, ...) log(le::LogLevel::Info, msg, ##__VA_ARGS__)
+#define LOGIF_I(cond, msg, ...)                      \
 	if (cond)                                        \
 	{                                                \
 		log(le::LogLevel::Info, msg, ##__VA_ARGS__); \
 	}
 #if defined(DEBUGGING)
-#define logD(msg, ...) log(le::LogLevel::Debug, msg, ##__VA_ARGS__)
-#define logifD(cond, msg, ...)                        \
+#define LOG_D(msg, ...) log(le::LogLevel::Debug, msg, ##__VA_ARGS__)
+#define LOGIF_D(cond, msg, ...)                       \
 	if (cond)                                         \
 	{                                                 \
 		log(le::LogLevel::Debug, msg, ##__VA_ARGS__); \
 	}
 #else
-#define logD(msg, ...)
-#define logifD(cond, msg, ...)
+#define LOG_D(msg, ...)
+#define LOGIF_D(cond, msg, ...)
 #endif
 
 enum class LogLevel

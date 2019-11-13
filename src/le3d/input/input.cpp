@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <unordered_map>
-#include "le3d/log/log.hpp"
+#include "le3d/core/log.hpp"
 #include "le3d/input/input.hpp"
 #include "inputImpl.hpp"
 

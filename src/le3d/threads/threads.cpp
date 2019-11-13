@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <thread>
 #include "le3d/threads/threads.hpp"
-#include "le3d/log/log.hpp"
+#include "le3d/core/log.hpp"
 
 namespace le
 {
@@ -19,7 +19,7 @@ void init()
 	s32 threadStatus = XInitThreads();
 	if (threadStatus == 0)
 	{
-		logE("[OS] ERROR calling XInitThreads()! UB follows.");
+		LOG_E("[OS] ERROR calling XInitThreads()! UB follows.");
 		maxThreads = 0;
 		bInit = true;
 		return;
@@ -46,7 +46,7 @@ HThread threads::requisition(Task task)
 	}
 	else
 	{
-		logE("[threads] Max threads reached! [%u]", maxThreads);
+		LOG_E("[threads] Max threads reached! [%u]", maxThreads);
 	}
 	return 0;
 }

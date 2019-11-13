@@ -6,7 +6,7 @@
 #include "le3d/gfx/factory.hpp"
 #include "le3d/gfx/shader.hpp"
 #include "le3d/gfx/utils.hpp"
-#include "le3d/log/log.hpp"
+#include "le3d/core/log.hpp"
 
 namespace le
 {
@@ -57,11 +57,11 @@ Texture gfx::genTex(std::string name, std::string type, std::vector<u8> bytes)
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		ret = {hTex, std::move(name), std::move(type)};
-		logI("== [%s] %s Texture created [%u]", ret.name.data(), ret.type.data(), ret.id);
+		LOG_I("== [%s] %s Texture created [%u]", ret.name.data(), ret.type.data(), ret.id);
 	}
 	else
 	{
-		logE("Failed to load texture!");
+		LOG_E("Failed to load texture!");
 	}
 	stbi_image_free(pData);
 	return ret;
@@ -71,7 +71,7 @@ void gfx::releaseTex(Texture& out_tex)
 {
 	const GLuint glTex[] = {out_tex.id};
 	glDeleteTextures(1, glTex);
-	logI("-- [%s] Texture destroyed", out_tex.name.data());
+	LOG_I("-- [%s] Texture destroyed", out_tex.name.data());
 	out_tex = Texture();
 }
 } // namespace le

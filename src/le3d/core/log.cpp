@@ -7,7 +7,7 @@
 #include <mutex>
 #include <unordered_map>
 #include "le3d/stdtypes.hpp"
-#include "le3d/log/log.hpp"
+#include "le3d/core/log.hpp"
 #if _MSC_VER
 #include "Windows.h"
 #endif

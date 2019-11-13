@@ -17,6 +17,7 @@ void clearFlags(Colour colour = Colour::Black, u32 flags = GL_COLOR_BUFFER_BIT |
 void pollEvents();
 void swapBuffers();
 
+f32 nativeAR();
 Vector2 size();
 Vector2 project(Vector2 nPos, Vector2 space);
 Vector2 projectScreen(Vector2 nPos);
