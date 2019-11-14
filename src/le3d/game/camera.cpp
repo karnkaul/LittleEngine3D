@@ -82,10 +82,10 @@ FreeCam::FreeCam()
 	m_tLook = input::registerMouse([this](f64 x, f64 y) {
 		if (m_flags.isSet((s32)Flag::Enabled) && m_flags.isSet((s32)Flag::Looking))
 		{
-			m_nextMousePos = {(f32)x, (f32)y};
+			m_nextCursorPos = {(f32)x, (f32)y};
 			if (!m_flags.isSet((s32)Flag::InitPos))
 			{
-				m_mousePos = {(f32)x, (f32)y};
+				m_cursorPos = {(f32)x, (f32)y};
 				m_flags.set((s32)Flag::InitPos, true);
 			}
 		}
@@ -110,21 +110,19 @@ void FreeCam::tick(Time dt)
 	}
 
 	// Look
-	if (m_mousePos != m_nextMousePos)
+	glm::vec2 dCursorPos = m_nextCursorPos - m_cursorPos;
+	if (glm::length2(dCursorPos) > m_minCursorDPosSqr)
 	{
-		glm::vec2 delta = m_nextMousePos - m_mousePos;
-		m_yaw = glm::normalize(glm::rotate(m_yaw, -delta.x * m_lookSens * dt.assecs(), g_nUp));
-		m_pitch = glm::normalize(glm::rotate(m_pitch, -delta.y * m_lookSens * dt.assecs(), g_nRight));
-		/*m_yaw += (delta.x * m_lookSens * dt.assecs());
-		m_pitch += (delta.y* m_lookSens * dt.assecs());*/
-		m_mousePos = m_nextMousePos;
+		m_yaw += (dCursorPos.x * m_lookSens * dt.assecs());
+		m_pitch += (dCursorPos.y* m_lookSens * dt.assecs());
+		m_cursorPos = m_nextCursorPos;
 	}
-	m_orientation = m_yaw * m_pitch;
-	/*m_orientation = glm::angleAxis(glm::radians(-m_pitch), g_nRight);
-	m_orientation *= glm::angleAxis(glm::radians(-m_yaw), g_nUp);*/
+	glm::quat pitch = glm::angleAxis(glm::radians(-m_pitch), g_nRight);
+	glm::quat yaw = glm::angleAxis(glm::radians(-m_yaw), g_nUp);
+	m_orientation = yaw * pitch;
 
 	// Move
-	m_dPos = glm::vec3(0.0f);
+	glm::vec3 dPos = glm::vec3(0.0f);
 	const glm::vec3 nForward = -glm::normalize(glm::rotate(m_orientation, g_nFront));
 	const glm::vec3 nRight = glm::normalize(glm::rotate(m_orientation, g_nRight));
 
@@ -138,36 +136,36 @@ void FreeCam::tick(Time dt)
 		case GLFW_KEY_W:
 		case GLFW_KEY_UP:
 		{
-			m_dPos += nForward;
+			dPos += nForward;
 			break;
 		}
 
 		case GLFW_KEY_D:
 		case GLFW_KEY_RIGHT:
 		{
-			m_dPos += nRight;
+			dPos += nRight;
 			break;
 		}
 
 		case GLFW_KEY_S:
 		case GLFW_KEY_DOWN:
 		{
-			m_dPos -= nForward;
+			dPos -= nForward;
 			break;
 		}
 
 		case GLFW_KEY_A:
 		case GLFW_KEY_LEFT:
 		{
-			m_dPos -= nRight;
+			dPos -= nRight;
 			break;
 		}
 		}
 	}
-	if (glm::length2(m_dPos) > 0.0f)
+	if (glm::length2(dPos) > 0.0f)
 	{
-		m_dPos = glm::normalize(m_dPos);
-		m_position += (m_dPos * dt.assecs() * m_speed);
+		dPos = glm::normalize(dPos);
+		m_position += (dPos * dt.assecs() * m_speed);
 	}
 }
 } // namespace le

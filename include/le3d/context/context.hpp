@@ -8,12 +8,12 @@ namespace le
 {
 namespace context
 {
-bool create(u16 width, u16 height, std::string_view title);
-void destroy();
+bool glCreate(u16 width, u16 height, std::string_view title);
+void glDestroy();
 
 bool exists();
 bool isClosing();
-void clearFlags(Colour colour = Colour::Black, u32 flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void glClearFlags(Colour colour = Colour::Black, u32 flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 void pollEvents();
 void swapBuffers();
 

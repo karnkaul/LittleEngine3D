@@ -79,75 +79,13 @@ bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const S
 	if (le::context::exists())
 	{
 		release();
-		m_indices = std::move(indices);
-		m_vertices = std::move(vertices);
-		m_hVerts = gfx::genVAO(!m_indices.empty());
-
-		Lock lock(context::g_glMutex);
-		glChk(glBindVertexArray(m_hVerts.vao));
-		glChk(glBindBuffer(GL_ARRAY_BUFFER, m_hVerts.vbo));
-		glChk(glBufferData(GL_ARRAY_BUFFER, (s64)m_vertices.size() * (s64)sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW));
-		if (!m_indices.empty())
-		{
-			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_hVerts.ebo));
-			glChk(glBufferData(GL_ELEMENT_ARRAY_BUFFER, (s64)m_indices.size() * (s64)sizeof(u32), m_indices.data(), GL_STATIC_DRAW));
-		}
-
-		const auto stride = sizeof(Vertex);
-		// Colour
-		GLint loc = 0;
-		if (pShader)
-		{
-			loc = glGetAttribLocation(pShader->m_program, "aColour");
-		}
-		if (loc >= 0)
-		{
-			glChk(glVertexAttribPointer((GLObj)loc, 4, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, colour))));
-			glChk(glEnableVertexAttribArray((GLObj)loc));
-		}
-
-		// Position
-		loc = 1;
-		if (pShader)
-		{
-			loc = glGetAttribLocation(pShader->m_program, "aPosition");
-		}
-		if (loc >= 0)
-		{
-			glChk(glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position))));
-			glChk(glEnableVertexAttribArray((GLObj)loc));
-		}
-
-		// Normal
-		loc = 2;
-		if (pShader)
-		{
-			loc = glGetAttribLocation(pShader->m_program, "aNormal");
-		}
-		if (loc >= 0)
-		{
-			glChk(glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, normal))));
-			glChk(glEnableVertexAttribArray((GLObj)loc));
-		}
-
-		// Tex coord
-		loc = 3;
-		if (pShader)
-		{
-			loc = glGetAttribLocation(pShader->m_program, "aTexCoord");
-		}
-		if (loc >= 0)
-		{
-			glChk(glVertexAttribPointer((GLObj)loc, 2, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, texCoords))));
-			glChk(glEnableVertexAttribArray((GLObj)loc));
-		}
-
+		m_hVerts = gfx::newVertices(vertices, indices, pShader);
 		return true;
 	}
 	return false;
 }
 
-void Mesh::draw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shader& shader)
+void Mesh::glDraw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shader& shader)
 {
 	if (le::context::exists() && m_hVerts.vao > 0)
 	{
@@ -182,11 +120,11 @@ void Mesh::draw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shad
 		if (m_hVerts.ebo > 0)
 		{
 			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_hVerts.ebo));
-			glChk(glDrawElements(GL_TRIANGLES, m_hVerts.indices, GL_UNSIGNED_INT, 0));
+			glChk(glDrawElements(GL_TRIANGLES, m_hVerts.iCount, GL_UNSIGNED_INT, 0));
 		}
 		else
 		{
-			glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)m_vertices.size()));
+			glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)m_hVerts.vCount));
 		}
 		glBindVertexArray(0);
 	}
@@ -194,6 +132,6 @@ void Mesh::draw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shad
 
 void Mesh::release()
 {
-	gfx::releaseVAO(m_hVerts);
+	gfx::gl::releaseVAO(m_hVerts);
 }
 } // namespace le

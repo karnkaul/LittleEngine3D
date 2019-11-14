@@ -20,7 +20,7 @@ Shader::~Shader()
 Shader::Shader(Shader&&) = default;
 Shader& Shader::operator=(Shader&&) = default;
 
-bool Shader::setup(std::string id, std::string_view vertCode, std::string_view fragCode)
+bool Shader::glSetup(std::string id, std::string_view vertCode, std::string_view fragCode)
 {
 	m_type = Typename(*this);
 	std::array<const GLchar*, 1> files;
@@ -121,7 +121,7 @@ bool Shader::setF32(std::string_view id, f32 val) const
 	return false;
 }
 
-bool Shader::setV2(std::string_view id, glm::vec2 val) const
+bool Shader::setV2(std::string_view id, const glm::vec2& val) const
 {
 	if (!id.empty())
 	{
@@ -136,12 +136,12 @@ bool Shader::setV2(std::string_view id, glm::vec2 val) const
 	return false;
 }
 
-bool Shader::setV4(std::string_view id, glm::vec4 val) const
+bool Shader::setV4(std::string_view id, Colour colour) const
 {
-	return setV4(id, val.x, val.y, val.z, val.w);
+	return setV4(id, glm::vec4(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
 }
 
-bool Shader::setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w) const
+bool Shader::setV4(std::string_view id, const glm::vec4& val) const
 {
 	if (!id.empty())
 	{
@@ -149,7 +149,7 @@ bool Shader::setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w) const
 		if (glID >= 0)
 		{
 			use();
-			glChk(glUniform4f(glID, x, y, z, w));
+			glChk(glUniform4f(glID, val.x, val.y, val.z, val.w));
 			return true;
 		}
 	}

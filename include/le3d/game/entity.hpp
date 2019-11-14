@@ -5,16 +5,12 @@
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
 #include "le3d/core/transform.hpp"
+#if defined(DEBUGGING)
+#include "le3d/gfx/factory.hpp"
+#endif
 
 namespace le
 {
-struct RenderState
-{
-	glm::mat4 view;
-	glm::mat4 projection;
-	class Shader* pShader = nullptr;
-};
-
 class Entity
 {
 public:
@@ -32,6 +28,7 @@ public:
 	std::string m_type;
 	Flags<(size_t)Flag::_COUNT> m_flags;
 #if defined(DEBUGGING)
+	HVerts m_hDebugVecs[3];
 	bool m_bDEBUG = false;
 #endif
 
@@ -43,7 +40,7 @@ public:
 
 public:
 	virtual void setup(std::string name);
-	virtual void render(const RenderState& state);
+	virtual void render(const struct RenderState& state);
 
 public:
 	bool isEnabled() const;

@@ -20,7 +20,7 @@ glm::vec2 g_windowSize;
 f32 g_nativeAR = 1.0f;
 GLFWwindow* g_pRenderWindow = nullptr;
 
-void frameBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
+void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 {
 	Lock lock(context::g_glMutex);
 	if (pWindow == g_pRenderWindow)
@@ -37,24 +37,23 @@ void onError(s32 code, const char* szDesc)
 }
 } // namespace
 
-bool context::create(u16 width, u16 height, std::string_view title)
+bool context::glCreate(u16 width, u16 height, std::string_view title)
 {
+	g_windowSize = glm::vec2(width, height);
+	glfwSetErrorCallback(&onError);
+	if (!glfwInit())
+	{
+		LOG_E("Failed to initialise GLFW!");
+		return false;
+	}
+	g_pRenderWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
+	if (!g_pRenderWindow)
+	{
+		LOG_E("Failed to create window!");
+		return false;
+	}
 	{
 		Lock lock(g_glMutex);
-		g_windowSize = glm::vec2(width, height);
-		glfwSetErrorCallback(&onError);
-		if (!glfwInit())
-		{
-			LOG_E("Failed to initialise GLFW!");
-			return false;
-		}
-		g_pRenderWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
-		if (!g_pRenderWindow)
-		{
-			LOG_E("Failed to create window!");
-			return false;
-		}
-		glfwSetFramebufferSizeCallback(g_pRenderWindow, &frameBufferResizeCallback);
 		glfwMakeContextCurrent(g_pRenderWindow);
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		{
@@ -65,12 +64,13 @@ bool context::create(u16 width, u16 height, std::string_view title)
 		g_contextThreadID = std::this_thread::get_id();
 		glEnable(GL_DEPTH_TEST);
 	}
-	frameBufferResizeCallback(g_pRenderWindow, width, height);
+	glframeBufferResizeCallback(g_pRenderWindow, width, height);
+	glfwSetFramebufferSizeCallback(g_pRenderWindow, &glframeBufferResizeCallback);
 	LOG_D("Context created");
 	return true;
 }
 
-void context::destroy()
+void context::glDestroy()
 {
 	Lock lock(g_glMutex);
 	if (g_pRenderWindow)
@@ -98,7 +98,7 @@ bool context::isClosing()
 	return g_pRenderWindow ? glfwWindowShouldClose(g_pRenderWindow) : false;
 }
 
-void context::clearFlags(Colour colour /* = Colour::Black */, u32 flags /* = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT */)
+void context::glClearFlags(Colour colour /* = Colour::Black */, u32 flags /* = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT */)
 {
 	Lock lock(g_glMutex);
 	glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
@@ -107,7 +107,6 @@ void context::clearFlags(Colour colour /* = Colour::Black */, u32 flags /* = GL_
 
 void context::pollEvents()
 {
-	Lock lock(g_glMutex);
 	if (g_pRenderWindow)
 	{
 		glfwPollEvents();
@@ -116,8 +115,6 @@ void context::pollEvents()
 
 void context::swapBuffers()
 {
-	Lock lock(g_glMutex);
-	glBindTexture(GL_TEXTURE_2D, 0);
 	if (g_pRenderWindow)
 	{
 		glfwSwapBuffers(g_pRenderWindow);

@@ -48,17 +48,14 @@ public:
 	f32 m_speed = m_defaultSpeed;
 	f32 m_minSpeed = 1.0f;
 	f32 m_maxSpeed = 1000.0f;
-	f32 m_lookSens = 0.2f;
-	/*f32 m_lookSens = 20.0f;*/
+	f32 m_lookSens = 20.0f;
 
 protected:
-	glm::quat m_pitch = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-	glm::quat m_yaw = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-	glm::vec3 m_dPos = glm::vec3(0.0f);
-	glm::vec2 m_mousePos = glm::vec2(0.0f);
-	glm::vec2 m_nextMousePos = glm::vec2(0.0f);
-	/*f32 m_pitch = 0.0f;
-	f32 m_yaw = 0.0f;*/
+	glm::vec2 m_cursorPos = glm::vec2(0.0f);
+	glm::vec2 m_nextCursorPos = glm::vec2(0.0f);
+	f32 m_minCursorDPosSqr = 0.2f;
+	f32 m_pitch = 0.0f;
+	f32 m_yaw = 0.0f;
 	f32 m_dSpeed = 0.0f;
 	bool m_bTicked = false;
 

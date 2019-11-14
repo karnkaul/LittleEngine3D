@@ -22,14 +22,14 @@ public:
 	Shader& operator=(Shader&&);
 
 public:
-	bool setup(std::string id, std::string_view vertCode, std::string_view fragCode);
+	bool glSetup(std::string id, std::string_view vertCode, std::string_view fragCode);
 
 	void use() const;
 	bool setBool(std::string_view id, bool bVal) const;
 	bool setS32(std::string_view id, s32 val) const;
 	bool setF32(std::string_view id, f32 val) const;
-	bool setV2(std::string_view id, glm::vec2 val) const;
-	bool setV4(std::string_view id, glm::vec4 val) const;
-	bool setV4(std::string_view id, f32 x, f32 y, f32 z, f32 w = 1.0f) const;
+	bool setV2(std::string_view id, const glm::vec2& val) const;
+	bool setV4(std::string_view id, const glm::vec4& val) const;
+	bool setV4(std::string_view id, Colour colour) const;
 };
 } // namespace le

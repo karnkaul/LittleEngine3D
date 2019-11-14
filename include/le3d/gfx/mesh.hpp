@@ -12,8 +12,6 @@ public:
 	Material m_material;
 
 private:
-	std::vector<Vertex> m_vertices;
-	std::vector<u32> m_indices;
 	HVerts m_hVerts;
 
 public:
@@ -27,7 +25,7 @@ public:
 
 public:
 	virtual bool setup(std::vector<Vertex> vertices, std::vector<u32> indices, const class Shader* pShader = nullptr);
-	virtual void draw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, class Shader& shader);
+	virtual void glDraw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, class Shader& shader);
 
 protected:
 	void release();

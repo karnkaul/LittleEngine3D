@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include "le3d/core/log.hpp"
 #include "le3d/game/entity.hpp"
+#include "le3d/gfx/factory.hpp"
 #include "le3d/gfx/mesh.hpp"
 #include "le3d/gfx/shader.hpp"
 
@@ -16,6 +17,12 @@ Entity::~Entity()
 	{
 		LOG_D("[%s] %s destroyed", m_name.data(), m_type.data());
 	}
+#if defined(DEBUGGING)
+	for (auto& vao : m_hDebugVecs)
+	{
+		gfx::gl::releaseVAO(vao);
+	}
+#endif
 }
 
 void Entity::render(const RenderState& /*state*/) {}
@@ -24,6 +31,9 @@ void Entity::setup(std::string name)
 {
 	m_name = std::move(name);
 	m_type = Typename(*this);
+#if defined(DEBUGGING)
+	m_hDebugVecs[0] = gfx::gl::genVAO(false);
+#endif
 	LOG_D("[%s] %s set up", m_name.data(), m_type.data());
 }
 bool Entity::isEnabled() const
@@ -49,10 +59,10 @@ void Prop::render(const RenderState& state)
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{
-			pShader->setV4("tint", 1.0f, 0.0f, 0.0f, 0.0f);
+			pShader->setV4("tint", Colour::Red);
 		}
 #endif
-		fixture.pMesh->draw(m_transform.model(), state.view, state.projection, *pShader);
+		fixture.pMesh->glDraw(m_transform.model(), state.view, state.projection, *pShader);
 	}
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{

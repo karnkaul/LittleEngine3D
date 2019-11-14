@@ -49,7 +49,7 @@ s32 run()
 	constexpr u16 WIDTH = 1280;
 	constexpr u16 HEIGHT = 720;
 
-	if (!le::context::create(WIDTH, HEIGHT, "Test"))
+	if (!le::context::glCreate(WIDTH, HEIGHT, "Test"))
 	{
 		return 1;
 	}
@@ -57,16 +57,15 @@ s32 run()
 	le::FreeCam camera;
 	//le::input::setCursorMode(le::CursorMode::Disabled);
 	// le::Camera camera;
-	camera.m_orientation = glm::rotate(camera.m_orientation, glm::radians(90.0f), le::g_nUp);
 	camera.m_position = {0.0f, 0.0f, 3.0f};
 	camera.m_flags.set((s32)le::FreeCam::Flag::FixedSpeed, false);
 
 	std::string path(le::env::fullPath(resourcesPath + "/textures/container.jpg"));
 	auto img = readBytes(path);
-	le::Texture t0 = le::gfx::genTex("container.jpg", "diffuse", std::move(img));
+	le::Texture t0 = le::gfx::gl::genTex("container.jpg", "diffuse", std::move(img));
 	path = le::env::fullPath(resourcesPath + "/textures/awesomeface.png");
 	img = readBytes(path);
-	le::Texture t1 = le::gfx::genTex("awesomeface.png", "diffuse", std::move(img));
+	le::Texture t1 = le::gfx::gl::genTex("awesomeface.png", "diffuse", std::move(img));
 
 	std::string vshFile(le::env::fullPath(resourcesPath + "/shaders/default.vsh"));
 	std::string fshFile(le::env::fullPath(resourcesPath + "/shaders/default.fsh"));
@@ -75,9 +74,9 @@ s32 run()
 	auto fsh = readFile(fshFile);
 	auto fsh2 = readFile(fshFile2);
 	le::Shader defaultShader;
-	defaultShader.setup("default", vsh, fsh);
+	defaultShader.glSetup("default", vsh, fsh);
 	le::Shader testShader;
-	testShader.setup("test", vsh, fsh2);
+	testShader.glSetup("test", vsh, fsh2);
 
 	le::Material mat;
 	mat.textures = {t0, t1};
@@ -143,7 +142,7 @@ s32 run()
 		dt = le::Time::now() - t;
 		t = le::Time::now();
 		camera.tick(dt);
-		le::context::clearFlags(le::Colour(42, 75, 75, 255));
+		le::context::glClearFlags(le::Colour(42, 75, 75, 255));
 
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
@@ -166,8 +165,8 @@ s32 run()
 	}
 
 	prop0.clearFixtures();
-	le::gfx::releaseTex(t0);
-	le::context::destroy();
+	le::gfx::gl::releaseTex(t0);
+	le::context::glDestroy();
 	return 0;
 }
 
