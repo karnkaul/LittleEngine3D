@@ -77,8 +77,13 @@ s32 run()
 	auto fshLight = readFile(lightFSH);
 	le::Shader lightingShader;
 	lightingShader.glSetup("default", vsh, fsh);
-	lightingShader.setV3("objectColour", {1.0f, 0.5f, 0.31f});
-	lightingShader.setV3("lightColour", {1.0f, 1.0f, 1.0f});
+	lightingShader.setV3("light.ambient", glm::vec3(0.2f));
+	lightingShader.setV3("light.diffuse", glm::vec3(0.5f));
+	lightingShader.setV3("light.specular", glm::vec3(1.0f));
+	lightingShader.setV3("material.ambient", {1.0f, 0.5f, 0.31f});
+	lightingShader.setV3("material.diffuse", {1.0f, 0.5f, 0.31f});
+	lightingShader.setV3("material.specular", glm::vec3(0.2f));
+	lightingShader.setF32("material.shininess", 32.0f);
 	le::Shader lightShader;
 	lightShader.glSetup("light", vsh, fshLight);
 
@@ -158,11 +163,11 @@ s32 run()
 		state.view = camera.view();
 		state.projection = camera.perspectiveProj(le::context::nativeAR());
 		state.pShader = &lightingShader;
-		lightingShader.setS32("mix_textures", 1);
+		//lightingShader.setS32("mix_textures", 1);
 		// static glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 		static glm::vec3 lightPos(0.0f, 0.0f, 2.0f);
 		prop0.m_transform.setPosition(glm::vec3(0.0f, 0.0f, -2.0f));
-		lightingShader.setV3("lightPos", lightPos);
+		lightingShader.setV3("light.position", lightPos);
 		prop0.render(state);
 		/*prop1.render(state);
 		for (auto& prop : props)
