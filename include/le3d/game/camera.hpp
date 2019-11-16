@@ -48,11 +48,11 @@ public:
 	f32 m_speed = m_defaultSpeed;
 	f32 m_minSpeed = 1.0f;
 	f32 m_maxSpeed = 1000.0f;
-	f32 m_lookSens = 20.0f;
+	f32 m_mouseLookSens = 20.0f;
+	f32 m_joyLookSens = 50.0f;
 
 protected:
-	glm::vec2 m_cursorPos = glm::vec2(0.0f);
-	glm::vec2 m_nextCursorPos = glm::vec2(0.0f);
+	f32 m_minJoyRightDPosSqr = 0.05f;
 	f32 m_minCursorDPosSqr = 0.2f;
 	f32 m_pitch = 0.0f;
 	f32 m_yaw = 0.0f;
@@ -60,6 +60,8 @@ protected:
 	bool m_bTicked = false;
 
 private:
+	glm::vec2 m_cursorPos = glm::vec2(0.0f);
+	glm::vec2 m_nextCursorPos = glm::vec2(0.0f);
 	std::set<s32> m_heldKeys;
 	OnInput::Token m_tMove;
 	OnMouse::Token m_tLook;

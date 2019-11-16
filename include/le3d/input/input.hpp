@@ -35,6 +35,9 @@ struct GamepadState
 	GLFWgamepadstate glfwState;
 	std::string name;
 	s32 id = 0;
+
+	f32 getAxis(s32 axis) const;
+	bool isPressed(s32 button) const;
 };
 
 namespace input
@@ -60,6 +63,7 @@ void setCursorPos(glm::vec2 pos);
 
 JoyState getJoyState(s32 id);
 GamepadState getGamepadState(s32 id);
+f32 triggerToAxis(f32 triggerValue);
 std::string getClipboard();
 } // namespace input
 } // namespace le

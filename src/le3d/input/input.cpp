@@ -88,6 +88,20 @@ void onFocus(GLFWwindow* pWindow, s32 entered)
 }
 } // namespace
 
+f32 GamepadState::getAxis(s32 axis) const
+{
+	s32 max;
+	glfwGetJoystickAxes(id, &max);
+	return axis >= 0 && axis < max ? glfwState.axes[axis] : 0.0f;
+}
+
+bool GamepadState::isPressed(s32 button) const
+{
+	s32 max;
+	glfwGetJoystickButtons(id, &max); 
+	return button >= 0 && button <= max ? glfwState.buttons[button] : false;
+}
+
 std::string_view input::toStr(s32 key)
 {
 	return glfwGetKeyName(key, 0);
@@ -230,6 +244,11 @@ GamepadState input::getGamepadState(s32 id)
 		return ret;
 	}
 	return ret;
+}
+
+f32 input::triggerToAxis(f32 triggerValue)
+{
+	return (triggerValue + 1.0f) * 0.5f;
 }
 
 std::string input::getClipboard()

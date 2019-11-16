@@ -101,20 +101,53 @@ void FreeCam::tick(Time dt)
 	{
 		return;
 	}
+	GamepadState pad0 = input::getGamepadState(0);
 
 	// Speed
-	if (!m_flags.isSet((s32)Flag::FixedSpeed) && m_dSpeed != 0.0f)
+	if (!m_flags.isSet((s32)Flag::FixedSpeed))
 	{
-		m_speed = Maths::clamp(m_speed + (m_dSpeed * dt.assecs() * 100), m_minSpeed, m_maxSpeed);
-		m_dSpeed = Maths::lerp(m_dSpeed, 0.0f, 0.75f);
+		if (pad0.isPressed(GLFW_GAMEPAD_BUTTON_LEFT_BUMPER))
+		{
+			m_dSpeed -= (dt.assecs() * 10);
+		}
+		else if (pad0.isPressed(GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER))
+		{
+			m_dSpeed += (dt.assecs() * 10);
+		}
+		if (m_dSpeed * m_dSpeed > 0.0f)
+		{
+			m_speed = Maths::clamp(m_speed + (m_dSpeed * dt.assecs() * 100), m_minSpeed, m_maxSpeed);
+			m_dSpeed = Maths::lerp(m_dSpeed, 0.0f, 0.75f);
+			if (m_dSpeed * m_dSpeed < 0.01f)
+			{
+				m_dSpeed = 0.0f;
+			}
+		}
+	}
+	
+	// Elevation
+	f32 elevation = input::triggerToAxis(pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER))
+					- input::triggerToAxis(pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_TRIGGER));
+	if (elevation * elevation > 0.01f)
+	{
+		m_position.y += (elevation * dt.assecs() * m_speed);
 	}
 
 	// Look
+	f32 dLook = m_joyLookSens * dt.assecs();
+	const glm::vec2 padRight(pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_X), pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_Y));
+	if (glm::length2(padRight) > m_minJoyRightDPosSqr)
+	{
+		m_pitch += (padRight.y * dLook);
+		m_yaw += (padRight.x * dLook);
+	}
+
+	dLook = m_mouseLookSens * dt.assecs();
 	glm::vec2 dCursorPos = m_nextCursorPos - m_cursorPos;
 	if (glm::length2(dCursorPos) > m_minCursorDPosSqr)
 	{
-		m_yaw += (dCursorPos.x * m_lookSens * dt.assecs());
-		m_pitch += (dCursorPos.y * m_lookSens * dt.assecs());
+		m_yaw += (dCursorPos.x * dLook);
+		m_pitch += (dCursorPos.y * dLook);
 		m_cursorPos = m_nextCursorPos;
 	}
 	glm::quat pitch = glm::angleAxis(glm::radians(-m_pitch), g_nRight);
@@ -125,6 +158,13 @@ void FreeCam::tick(Time dt)
 	glm::vec3 dPos = glm::vec3(0.0f);
 	const glm::vec3 nForward = -glm::normalize(glm::rotate(m_orientation, g_nFront));
 	const glm::vec3 nRight = glm::normalize(glm::rotate(m_orientation, g_nRight));
+	const glm::vec2 padLeft(pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_X), -pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_Y));
+
+	if (glm::length2(padLeft) > m_minJoyRightDPosSqr)
+	{
+		dPos += (nForward * padLeft.y);
+		dPos += (nRight * padLeft.x);
+	}
 
 	for (auto key : m_heldKeys)
 	{
