@@ -5,7 +5,7 @@
 #include <stb/stb_image.h>
 #include "le3d/context/context.hpp"
 #include "le3d/context/contextImpl.hpp"
-#include "le3d/gfx/factory.hpp"
+#include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/shader.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/core/log.hpp"
@@ -62,7 +62,7 @@ Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> byte
 			glChk(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, ch == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, pData));
 			glChk(glGenerateMipmap(GL_TEXTURE_2D));
 			glChk(glBindTexture(GL_TEXTURE_2D, 0));
-			ret = {hTex, std::move(name), std::move(type)};
+			ret = {std::move(name), std::move(type), hTex};
 			LOG_I("== [%s] %s Texture created [%u]", ret.name.data(), ret.type.data(), ret.id);
 		}
 		else
@@ -163,17 +163,17 @@ HVerts gfx::newVertices(std::vector<Vertex> vertices, std::vector<u32> indices /
 	return ret;
 }
 
-void gfx::render(const HVerts& hVerts, const glm::mat4& model, const glm::mat4& normalModel, const RenderState& state)
+void gfx::draw(const HVerts& hVerts, const glm::mat4& model, const glm::mat4& normalModel, const RenderState& state, const Shader& shader)
 {
 	Lock lock(context::g_glMutex);
-	state.pShader->use();
-	auto temp = glGetUniformLocation(state.pShader->m_program, "model");
+	shader.use();
+	auto temp = glGetUniformLocation(shader.m_program, "model");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(model));
-	temp = glGetUniformLocation(state.pShader->m_program, "normalModel");
+	temp = glGetUniformLocation(shader.m_program, "normalModel");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(normalModel));
-	temp = glGetUniformLocation(state.pShader->m_program, "view");
+	temp = glGetUniformLocation(shader.m_program, "view");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(state.view));
-	temp = glGetUniformLocation(state.pShader->m_program, "projection");
+	temp = glGetUniformLocation(shader.m_program, "projection");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(state.projection));
 	glChk(glBindVertexArray(hVerts.vao));
 	glChk(glActiveTexture(GL_TEXTURE0));

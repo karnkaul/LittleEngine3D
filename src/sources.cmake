@@ -18,7 +18,7 @@ set(SUB_SOURCES
 	le3d/input/input.cpp
 
 	le3d/gfx/colour.cpp
-	le3d/gfx/factory.cpp
+	le3d/gfx/gfx.cpp
 	le3d/gfx/mesh.cpp
 	le3d/gfx/shader.cpp
 	le3d/gfx/utils.cpp

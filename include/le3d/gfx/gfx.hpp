@@ -24,14 +24,9 @@ struct Vertex
 
 struct Texture
 {
-	GLObj id = 0;
 	std::string name;
 	std::string type;
-};
-
-struct Material
-{
-	std::vector<Texture> textures;
+	GLObj id = 0;
 };
 
 struct RenderState
@@ -57,7 +52,7 @@ HVerts genBuffers(std::vector<Vertex> vertices, std::vector<u32> indices = {}, c
 
 HVerts newVertices(std::vector<Vertex> vertices, std::vector<u32> indices = {}, const Shader* pShader = nullptr);
 
-void render(const HVerts& hVerts, const glm::mat4& model, const glm::mat4& normalModel, const RenderState& state);
+void draw(const HVerts& hVerts, const glm::mat4& model, const glm::mat4& normalModel, const RenderState& state, const Shader& shader);
 
 namespace tutorial
 {

@@ -12,7 +12,7 @@
 #include "le3d/game/entity.hpp"
 #include "le3d/gfx/colour.hpp"
 #include "le3d/gfx/mesh.hpp"
-#include "le3d/gfx/factory.hpp"
+#include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/shader.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/input/input.hpp"
@@ -60,9 +60,15 @@ s32 run()
 	camera.m_position = {0.0f, 0.0f, 3.0f};
 	camera.m_flags.set((s32)le::FreeCam::Flag::FixedSpeed, false);
 
-	std::string path(le::env::fullPath(resourcesPath + "/textures/container.jpg"));
+	auto path = le::env::fullPath(resourcesPath + "/textures/blank_1px.bmp");
 	auto img = readBytes(path);
-	le::Texture t0 = le::gfx::gl::genTex("container.jpg", "diffuse", std::move(img));
+	le::Texture blankTex = le::gfx::gl::genTex("blank", "diffuse", std::move(img));
+	path = (le::env::fullPath(resourcesPath + "/textures/container2.png"));
+	img = readBytes(path);
+	le::Texture t0 = le::gfx::gl::genTex("container2.png", "diffuse", std::move(img));
+	path = le::env::fullPath(resourcesPath + "/textures/container2_specular.png");
+	img = readBytes(path);
+	le::Texture t0s = le::gfx::gl::genTex("container2_specular.png", "specular", std::move(img));
 	path = le::env::fullPath(resourcesPath + "/textures/awesomeface.png");
 	img = readBytes(path);
 	le::Texture t1 = le::gfx::gl::genTex("awesomeface.png", "diffuse", std::move(img));
@@ -71,42 +77,56 @@ s32 run()
 	std::string fshFile(le::env::fullPath(resourcesPath + "/shaders/default.fsh"));
 	std::string fshFile2(le::env::fullPath(resourcesPath + "/shaders/test.fsh"));
 	std::string lightFSH(le::env::fullPath(resourcesPath + "/shaders/basic_light.fsh"));
+	std::string litTexFSH(le::env::fullPath(resourcesPath + "/shaders/lit_texture.fsh"));
 	auto vsh = readFile(vshFile);
 	auto fsh = readFile(fshFile);
 	auto fsh2 = readFile(fshFile2);
 	auto fshLight = readFile(lightFSH);
-	le::Shader lightingShader;
-	lightingShader.glSetup("default", vsh, fsh);
-	lightingShader.setV3("light.ambient", glm::vec3(0.2f));
-	lightingShader.setV3("light.diffuse", glm::vec3(0.5f));
-	lightingShader.setV3("light.specular", glm::vec3(1.0f));
-	lightingShader.setV3("material.ambient", {1.0f, 0.5f, 0.31f});
-	lightingShader.setV3("material.diffuse", {1.0f, 0.5f, 0.31f});
-	lightingShader.setV3("material.specular", glm::vec3(0.2f));
-	lightingShader.setF32("material.shininess", 32.0f);
+	auto litTex = readFile(litTexFSH);
+	le::Shader litShader;
+	litShader.glSetup("default", vsh, fsh);
+	litShader.setV3("light.ambient", glm::vec3(0.2f));
+	litShader.setV3("light.diffuse", glm::vec3(0.5f));
+	litShader.setV3("light.specular", glm::vec3(1.0f));
+	litShader.setV3("material.ambient", {1.0f, 0.5f, 0.31f});
+	litShader.setV3("material.diffuse", {1.0f, 0.5f, 0.31f});
+	litShader.setV3("material.specular", glm::vec3(0.2f));
+	litShader.setF32("material.shininess", 32.0f);
+	litShader.m_flags.set((s32)le::Shader::Flag::Untextured, true);
 	le::Shader lightShader;
 	lightShader.glSetup("light", vsh, fshLight);
+	lightShader.m_flags.set((s32)le::Shader::Flag::Unlit, true);
+	lightShader.m_flags.set((s32)le::Shader::Flag::Untextured, true);
+	le::Shader litTexShader;
+	litTexShader.glSetup("litTexture", vsh, litTex);
+	litTexShader.setV3("light.ambient", glm::vec3(0.2f));
+	litTexShader.setV3("light.diffuse", glm::vec3(0.5f));
+	litTexShader.setV3("light.specular", glm::vec3(1.0f));
+	litTexShader.setF32("material.shininess", 32.0f);
 
-	le::Material mat;
-	mat.textures = {t0, t1};
 	le::Mesh mesh = le::Mesh::debugCube();
-	mesh.m_material = std::move(mat);
-	lightingShader.setS32("mix_textures", 1);
+	le::Texture bad;
+	mesh.m_textures = {t0, t0s};
+	//mesh.m_textures = {bad};
+	//lightingShader.setS32("mix_textures", 1);
 	static bool bWireframe = false;
 	static bool bParented = true;
 
 	le::Prop prop0;
 	prop0.setup("awesome-container");
 	prop0.addFixture(mesh);
-	prop0.m_transform.setPosition({1.0f, 1.5f, -2.0f});
-	prop0.m_transform.setScale({2.0f, 1.0f, 1.0f});
+	glm::mat4 offset(1.0f);
+	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
+	prop0.addFixture(mesh, offset);
+	prop0.m_transform.setPosition({2.0f, 2.5f, -2.0f});
+	prop0.m_transform.setScale(2.0f);
 
 	le::Prop prop1;
 	prop1.addFixture(mesh);
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
-	// prop1.m_transform.setScale(0.5f);
-	// prop0.m_transform.setParent(&prop1.m_transform);
-	// prop1.setShader(&lightShader, true);
+	prop1.m_transform.setScale(0.25f);
+	prop0.m_transform.setParent(&prop1.m_transform);
+	prop1.setShader(&litShader);
 
 	le::HVerts light0 = le::gfx::tutorial::newLight(mesh.VAO());
 
@@ -115,6 +135,8 @@ s32 run()
 	{
 		le::Prop prop;
 		prop.addFixture(mesh);
+		//prop.setShader(&litShader);
+		prop.setShader(&litShader);
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -153,7 +175,7 @@ s32 run()
 		dt = le::Time::now() - t;
 		t = le::Time::now();
 		camera.tick(dt);
-		le::context::glClearFlags(le::Colour(42, 75, 75, 255));
+		le::context::glClearFlags();
 
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
@@ -162,24 +184,26 @@ s32 run()
 		le::RenderState state;
 		state.view = camera.view();
 		state.projection = camera.perspectiveProj(le::context::nativeAR());
-		state.pShader = &lightingShader;
+		state.pShader = &litShader;
+		state.pShader = &litTexShader;
 		//lightingShader.setS32("mix_textures", 1);
 		// static glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 		static glm::vec3 lightPos(0.0f, 0.0f, 2.0f);
-		prop0.m_transform.setPosition(glm::vec3(0.0f, 0.0f, -2.0f));
-		lightingShader.setV3("light.position", lightPos);
+		litShader.setV3("light.position", lightPos);
+		litTexShader.setV3("light.position", lightPos);
+		//prop0.setShader(&litShader);
 		prop0.render(state);
-		/*prop1.render(state);
+		prop1.render(state);
 		for (auto& prop : props)
 		{
+			prop.setShader(&litTexShader);
 			prop.render(state);
-		}*/
+		}
 
 		glm::mat4 m(1.0f);
 		m = glm::translate(m, lightPos);
 		m = glm::scale(m, glm::vec3(0.2f));
-		state.pShader = &lightShader;
-		le::gfx::render(light0, m, m, state);
+		le::gfx::draw(light0, m, m, state, lightShader);
 
 		le::context::swapBuffers();
 		le::context::pollEvents();

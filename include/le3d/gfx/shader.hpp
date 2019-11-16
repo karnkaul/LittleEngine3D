@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "le3d/stdtypes.hpp"
+#include "le3d/core/flags.hpp"
 #include "le3d/thirdParty.hpp"
 
 namespace le
@@ -8,7 +9,16 @@ namespace le
 class Shader final
 {
 public:
+	enum class Flag
+	{
+		Untextured = 0,
+		Unlit,
+		_COUNT
+	};
+
+public:
 	GLObj m_program = 0;
+	Flags<(s32)Flag::_COUNT> m_flags;
 
 private:
 	bool m_bInit = false;

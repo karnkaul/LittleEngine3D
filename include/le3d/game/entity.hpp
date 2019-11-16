@@ -6,7 +6,7 @@
 #include "le3d/core/flags.hpp"
 #include "le3d/core/transform.hpp"
 #if defined(DEBUGGING)
-#include "le3d/gfx/factory.hpp"
+#include "le3d/gfx/gfx.hpp"
 #endif
 
 namespace le
@@ -18,7 +18,6 @@ public:
 	{
 		Enabled = 0,
 		Wireframe,
-		ForceShader,
 		_COUNT,
 	};
 
@@ -68,6 +67,6 @@ public:
 	void addFixture(Mesh& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void clearFixtures();
 
-	void setShader(Shader* pShader, bool bForce);
+	void setShader(Shader* pShader);
 };
 } // namespace le

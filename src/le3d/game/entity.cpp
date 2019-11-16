@@ -2,7 +2,7 @@
 #include <glad/glad.h>
 #include "le3d/core/log.hpp"
 #include "le3d/game/entity.hpp"
-#include "le3d/gfx/factory.hpp"
+#include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/mesh.hpp"
 #include "le3d/gfx/shader.hpp"
 
@@ -52,19 +52,25 @@ void Prop::render(const RenderState& state)
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-	Shader* pShader = m_flags.isSet((s32)Flag::ForceShader) ? m_pShader : state.pShader;
+	Shader* pShader = m_pShader ? m_pShader : state.pShader;
 	for (auto& fixture : m_fixtures)
 	{
 		assert(pShader && "null shader!");
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{
-			pShader->setV4("tint", Colour::Red);
+			//pShader->setV4("tint", Colour::Red);
+			fixture.pMesh->m_renderFlags.set((s32)Mesh::Flag::BlankMagenta, true);
 		}
 #endif
-		const auto& v = state.view;
-		pShader->setV3("viewPos", glm::vec3(-v[3][0], -v[3][1], -v[3][2]));
-		fixture.pMesh->glDraw(m_transform.model(), m_transform.normalModel(), state.view, state.projection, *pShader);
+		glm::mat4 m = m_transform.model();
+		glm::mat4 nm = m_transform.normalModel();
+		if (fixture.oModel)
+		{
+			m *= *fixture.oModel;
+			nm *= *fixture.oModel;
+		}
+		fixture.pMesh->glDraw(m, nm, state, pShader);
 	}
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
@@ -82,9 +88,8 @@ void Prop::clearFixtures()
 	m_fixtures.clear();
 }
 
-void Prop::setShader(Shader* pShader, bool bForce)
+void Prop::setShader(Shader* pShader)
 {
 	m_pShader = pShader;
-	m_flags.set((s32)Flag::ForceShader, bForce);
 }
 } // namespace le
