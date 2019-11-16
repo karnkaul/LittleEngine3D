@@ -56,5 +56,12 @@ HVerts genBuffers(std::vector<Vertex> vertices, std::vector<u32> indices = {}, c
 } // namespace gl
 
 HVerts newVertices(std::vector<Vertex> vertices, std::vector<u32> indices = {}, const Shader* pShader = nullptr);
+
+void render(const HVerts& hVerts, const glm::mat4& model, const glm::mat4& normalModel, const RenderState& state);
+
+namespace tutorial
+{
+HVerts newLight(const HVerts& hVBO);
+}
 } // namespace gfx
 } // namespace le

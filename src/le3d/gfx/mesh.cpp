@@ -74,6 +74,11 @@ Mesh::~Mesh()
 Mesh::Mesh(Mesh&&) = default;
 Mesh& Mesh::operator=(Mesh&&) = default;
 
+const HVerts& Mesh::VAO() const
+{
+	return m_hVerts;
+}
+
 bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const Shader* pShader)
 {
 	if (le::context::exists())
@@ -85,7 +90,7 @@ bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const S
 	return false;
 }
 
-void Mesh::glDraw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Shader& shader)
+void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const glm::mat4& v, const glm::mat4& p, Shader& shader)
 {
 	if (le::context::exists() && m_hVerts.vao > 0)
 	{
@@ -93,10 +98,13 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, Sh
 		shader.use();
 		auto temp = glGetUniformLocation(shader.m_program, "model");
 		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(m));
+		temp = glGetUniformLocation(shader.m_program, "normalModel");
+		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(nm));
 		temp = glGetUniformLocation(shader.m_program, "view");
 		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(v));
 		temp = glGetUniformLocation(shader.m_program, "projection");
 		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(p));
+		temp = glGetUniformLocation(shader.m_program, "viewPos");
 		glChk(glBindVertexArray(m_hVerts.vao));
 		shader.setS32("use_texture1", m_material.textures.empty() ? 0 : 1);
 		s32 txID = 0;

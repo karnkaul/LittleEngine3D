@@ -136,6 +136,21 @@ bool Shader::setV2(std::string_view id, const glm::vec2& val) const
 	return false;
 }
 
+bool Shader::setV3(std::string_view id, const glm::vec3& val) const
+{
+	if (!id.empty())
+	{
+		auto glID = glGetUniformLocation(m_program, id.data());
+		if (glID >= 0)
+		{
+			use();
+			glChk(glUniform3f(glID, val.x, val.y, val.z));
+			return true;
+		}
+	}
+	return false;
+}
+
 bool Shader::setV4(std::string_view id, Colour colour) const
 {
 	return setV4(id, glm::vec4(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));

@@ -71,6 +71,11 @@ glm::vec3 Transform::scale() const
 	return m_scale;
 }
 
+bool Transform::isIsotropic() const
+{
+	return m_scale.x == m_scale.y == m_scale.z && m_pParent && m_pParent->isIsotropic();
+}
+
 glm::vec3 Transform::worldPos() const
 {
 	return glm::vec3(model()[3]);
@@ -108,5 +113,16 @@ glm::mat4 Transform::model() const
 		m_bDirty = false;
 	}
 	return m_mat;
+}
+
+glm::mat4 Transform::normalModel() const
+{
+	if (!isIsotropic())
+	{
+		glm::mat3 normal = model();
+		normal = glm::inverse(glm::transpose(normal));
+		return glm::mat4(normal);
+	}
+	return model();
 }
 } // namespace le

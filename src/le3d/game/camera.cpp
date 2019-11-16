@@ -114,7 +114,7 @@ void FreeCam::tick(Time dt)
 	if (glm::length2(dCursorPos) > m_minCursorDPosSqr)
 	{
 		m_yaw += (dCursorPos.x * m_lookSens * dt.assecs());
-		m_pitch += (dCursorPos.y* m_lookSens * dt.assecs());
+		m_pitch += (dCursorPos.y * m_lookSens * dt.assecs());
 		m_cursorPos = m_nextCursorPos;
 	}
 	glm::quat pitch = glm::angleAxis(glm::radians(-m_pitch), g_nRight);

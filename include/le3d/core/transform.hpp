@@ -33,11 +33,13 @@ public:
 	glm::vec3 position() const;
 	glm::quat orientation() const;
 	glm::vec3 scale() const;
+	bool isIsotropic() const;
 
 	glm::vec3 worldPos() const;
 	glm::quat worldOrn() const;
 	glm::vec3 worldScl() const;
 
 	glm::mat4 model() const;
+	glm::mat4 normalModel() const;
 };
 } // namespace le

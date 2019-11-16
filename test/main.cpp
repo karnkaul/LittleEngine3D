@@ -55,7 +55,7 @@ s32 run()
 	}
 
 	le::FreeCam camera;
-	//le::input::setCursorMode(le::CursorMode::Disabled);
+	// le::input::setCursorMode(le::CursorMode::Disabled);
 	// le::Camera camera;
 	camera.m_position = {0.0f, 0.0f, 3.0f};
 	camera.m_flags.set((s32)le::FreeCam::Flag::FixedSpeed, false);
@@ -70,19 +70,23 @@ s32 run()
 	std::string vshFile(le::env::fullPath(resourcesPath + "/shaders/default.vsh"));
 	std::string fshFile(le::env::fullPath(resourcesPath + "/shaders/default.fsh"));
 	std::string fshFile2(le::env::fullPath(resourcesPath + "/shaders/test.fsh"));
+	std::string lightFSH(le::env::fullPath(resourcesPath + "/shaders/basic_light.fsh"));
 	auto vsh = readFile(vshFile);
 	auto fsh = readFile(fshFile);
 	auto fsh2 = readFile(fshFile2);
-	le::Shader defaultShader;
-	defaultShader.glSetup("default", vsh, fsh);
-	le::Shader testShader;
-	testShader.glSetup("test", vsh, fsh2);
+	auto fshLight = readFile(lightFSH);
+	le::Shader lightingShader;
+	lightingShader.glSetup("default", vsh, fsh);
+	lightingShader.setV3("objectColour", {1.0f, 0.5f, 0.31f});
+	lightingShader.setV3("lightColour", {1.0f, 1.0f, 1.0f});
+	le::Shader lightShader;
+	lightShader.glSetup("light", vsh, fshLight);
 
 	le::Material mat;
 	mat.textures = {t0, t1};
 	le::Mesh mesh = le::Mesh::debugCube();
 	mesh.m_material = std::move(mat);
-	defaultShader.setS32("mix_textures", 1);
+	lightingShader.setS32("mix_textures", 1);
 	static bool bWireframe = false;
 	static bool bParented = true;
 
@@ -90,14 +94,16 @@ s32 run()
 	prop0.setup("awesome-container");
 	prop0.addFixture(mesh);
 	prop0.m_transform.setPosition({1.0f, 1.5f, -2.0f});
-	prop0.m_transform.setScale(2.0f);
+	prop0.m_transform.setScale({2.0f, 1.0f, 1.0f});
 
 	le::Prop prop1;
 	prop1.addFixture(mesh);
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
-	prop1.m_transform.setScale(0.5f);
-	prop0.m_transform.setParent(&prop1.m_transform);
-	prop1.setShader(&testShader, true);
+	// prop1.m_transform.setScale(0.5f);
+	// prop0.m_transform.setParent(&prop1.m_transform);
+	// prop1.setShader(&lightShader, true);
+
+	le::HVerts light0 = le::gfx::tutorial::newLight(mesh.VAO());
 
 	std::vector<le::Prop> props;
 	for (s32 i = 0; i < 5; ++i)
@@ -151,14 +157,24 @@ s32 run()
 		le::RenderState state;
 		state.view = camera.view();
 		state.projection = camera.perspectiveProj(le::context::nativeAR());
-		state.pShader = &defaultShader;
-		defaultShader.setS32("mix_textures", 1);
+		state.pShader = &lightingShader;
+		lightingShader.setS32("mix_textures", 1);
+		// static glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+		static glm::vec3 lightPos(0.0f, 0.0f, 2.0f);
+		prop0.m_transform.setPosition(glm::vec3(0.0f, 0.0f, -2.0f));
+		lightingShader.setV3("lightPos", lightPos);
 		prop0.render(state);
-		prop1.render(state);
+		/*prop1.render(state);
 		for (auto& prop : props)
 		{
 			prop.render(state);
-		}
+		}*/
+
+		glm::mat4 m(1.0f);
+		m = glm::translate(m, lightPos);
+		m = glm::scale(m, glm::vec3(0.2f));
+		state.pShader = &lightShader;
+		le::gfx::render(light0, m, m, state);
 
 		le::context::swapBuffers();
 		le::context::pollEvents();

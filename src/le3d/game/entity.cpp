@@ -62,7 +62,9 @@ void Prop::render(const RenderState& state)
 			pShader->setV4("tint", Colour::Red);
 		}
 #endif
-		fixture.pMesh->glDraw(m_transform.model(), state.view, state.projection, *pShader);
+		const auto& v = state.view;
+		pShader->setV3("viewPos", glm::vec3(-v[3][0], -v[3][1], -v[3][2]));
+		fixture.pMesh->glDraw(m_transform.model(), m_transform.normalModel(), state.view, state.projection, *pShader);
 	}
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{

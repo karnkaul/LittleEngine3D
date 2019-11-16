@@ -117,18 +117,9 @@ HVerts gfx::gl::genBuffers(std::vector<Vertex> vertices, std::vector<u32> indice
 		const auto stride = sizeof(Vertex);
 		// Colour
 		GLint loc = 0;
-		if (pShader)
-		{
-			loc = glGetAttribLocation(pShader->m_program, "aColour");
-		}
-		if (loc >= 0)
-		{
-			glChk(glVertexAttribPointer((GLObj)loc, 4, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, colour))));
-			glChk(glEnableVertexAttribArray((GLObj)loc));
-		}
 
 		// Position
-		loc = 1;
+		loc = 0;
 		if (pShader)
 		{
 			loc = glGetAttribLocation(pShader->m_program, "aPosition");
@@ -140,7 +131,7 @@ HVerts gfx::gl::genBuffers(std::vector<Vertex> vertices, std::vector<u32> indice
 		}
 
 		// Normal
-		loc = 2;
+		loc = 1;
 		if (pShader)
 		{
 			loc = glGetAttribLocation(pShader->m_program, "aNormal");
@@ -152,7 +143,7 @@ HVerts gfx::gl::genBuffers(std::vector<Vertex> vertices, std::vector<u32> indice
 		}
 
 		// Tex coord
-		loc = 3;
+		loc = 2;
 		if (pShader)
 		{
 			loc = glGetAttribLocation(pShader->m_program, "aTexCoord");
@@ -166,9 +157,53 @@ HVerts gfx::gl::genBuffers(std::vector<Vertex> vertices, std::vector<u32> indice
 	return hVerts;
 }
 
-HVerts gfx::newVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* =  */, const Shader* pShader /* = nullptr */) 
+HVerts gfx::newVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* =  */, const Shader* pShader /* = nullptr */)
 {
 	HVerts ret = gl::genBuffers(std::move(vertices), std::move(indices), pShader);
+	return ret;
+}
+
+void gfx::render(const HVerts& hVerts, const glm::mat4& model, const glm::mat4& normalModel, const RenderState& state)
+{
+	Lock lock(context::g_glMutex);
+	state.pShader->use();
+	auto temp = glGetUniformLocation(state.pShader->m_program, "model");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(model));
+	temp = glGetUniformLocation(state.pShader->m_program, "normalModel");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(normalModel));
+	temp = glGetUniformLocation(state.pShader->m_program, "view");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(state.view));
+	temp = glGetUniformLocation(state.pShader->m_program, "projection");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(state.projection));
+	glChk(glBindVertexArray(hVerts.vao));
+	glChk(glActiveTexture(GL_TEXTURE0));
+	if (hVerts.ebo > 0)
+	{
+		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo));
+		glChk(glDrawElements(GL_TRIANGLES, hVerts.iCount, GL_UNSIGNED_INT, 0));
+	}
+	else
+	{
+		glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)hVerts.vCount));
+	}
+	glBindVertexArray(0);
+}
+
+HVerts gfx::tutorial::newLight(const HVerts& hVBO)
+{
+	HVerts ret;
+	if (context::exists())
+	{
+		ret.vbo = hVBO.vbo;
+		ret.vCount = hVBO.vCount;
+		const auto stride = sizeof(Vertex);
+		Lock lock(context::g_glMutex);
+		glChk(glGenVertexArrays(1, &ret.vao));
+		glChk(glBindVertexArray(ret.vao));
+		glChk(glBindBuffer(GL_ARRAY_BUFFER, ret.vbo));
+		glChk(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position))));
+		glChk(glEnableVertexAttribArray(0));
+	}
 	return ret;
 }
 } // namespace le

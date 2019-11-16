@@ -29,6 +29,7 @@ public:
 	bool setS32(std::string_view id, s32 val) const;
 	bool setF32(std::string_view id, f32 val) const;
 	bool setV2(std::string_view id, const glm::vec2& val) const;
+	bool setV3(std::string_view id, const glm::vec3& val) const;
 	bool setV4(std::string_view id, const glm::vec4& val) const;
 	bool setV4(std::string_view id, Colour colour) const;
 };

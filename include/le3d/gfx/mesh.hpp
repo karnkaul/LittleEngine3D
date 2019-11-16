@@ -24,8 +24,11 @@ public:
 	Mesh& operator=(Mesh&&);
 
 public:
+	const HVerts& VAO() const;
+
+public:
 	virtual bool setup(std::vector<Vertex> vertices, std::vector<u32> indices, const class Shader* pShader = nullptr);
-	virtual void glDraw(const glm::mat4& m, const glm::mat4& v, const glm::mat4& p, class Shader& shader);
+	virtual void glDraw(const glm::mat4& m, const glm::mat4& nm, const glm::mat4& v, const glm::mat4& p, class Shader& shader);
 
 protected:
 	void release();
