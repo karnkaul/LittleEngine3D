@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <glad/glad.h>
+#include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/gfx/gfx.hpp"
@@ -55,7 +56,7 @@ void Prop::render(const RenderState& state)
 	Shader* pShader = m_pShader ? m_pShader : state.pShader;
 	for (auto& fixture : m_fixtures)
 	{
-		assert(pShader && "null shader!");
+		ASSERT(pShader, "null shader!");
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{

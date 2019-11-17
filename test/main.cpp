@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 
+#include "le3d/core/assert.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/env/env.hpp"
@@ -176,6 +177,15 @@ s32 run()
 		t = le::Time::now();
 		camera.tick(dt);
 		le::context::glClearFlags();
+
+		static bool bAsserted = false;
+		static le::Time assertElapsed;
+		assertElapsed += dt;
+		if (!bAsserted && assertElapsed >= le::Time::secs(2.0f))
+		{
+			bAsserted = true;
+			ASSERT(false, "Test assert");
+		}
 
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));

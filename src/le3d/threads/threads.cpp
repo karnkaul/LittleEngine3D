@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <thread>
+#include "le3d/core/assert.hpp"
 #include "le3d/threads/threads.hpp"
 #include "le3d/core/log.hpp"
 
@@ -36,7 +37,7 @@ HThread threads::requisition(Task task)
 	{
 		init();
 	}
-	assert(threadMap.size() < maxThreads && "Max threads reached!");
+	ASSERT(threadMap.size() < maxThreads, "Max threads reached!");
 	if (threadMap.size() < maxThreads)
 	{
 		auto id = ++nextID;

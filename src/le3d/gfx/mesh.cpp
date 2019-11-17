@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
+#include "le3d/core/assert.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/context/contextImpl.hpp"
 #include "le3d/gfx/mesh.hpp"
@@ -48,9 +49,9 @@ Mesh Mesh::debugCube(f32 side)
 		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f, // up
 	};
-	assert(ARR_SIZE(norms) == ARR_SIZE(points));
+	ASSERT(ARR_SIZE(norms) == ARR_SIZE(points), "invalid points/normals array sizes!");
 	std::vector<le::Vertex> vertices(ARR_SIZE(points) / 3, le::Vertex());
-	assert(ARR_SIZE(points) == vertices.size() * 3);
+	ASSERT(ARR_SIZE(points) == vertices.size() * 3, "invalid points / vertices array sizes!");
 	glm::vec2 uvs[] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}};
 	for (size_t idx = 0; idx < vertices.size(); ++idx)
 	{
@@ -96,7 +97,7 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 	{
 		auto* pShader = pCustomShader ? pCustomShader : state.pShader;
 		bool bResetTint = false;
-		assert(pShader && "shader is null!");
+		ASSERT(pShader, "shader is null!");
 		{
 			Lock lock(context::g_glMutex);
 			pShader->use();
