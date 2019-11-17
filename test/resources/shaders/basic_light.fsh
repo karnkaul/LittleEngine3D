@@ -1,4 +1,7 @@
-#version 330 core
+#ifdef GL_ES
+	precision mediump float;
+#endif
+
 out vec4 fragColour;
 
 void main()

@@ -23,14 +23,18 @@ Shader& Shader::operator=(Shader&&) = default;
 bool Shader::glSetup(std::string id, std::string_view vertCode, std::string_view fragCode)
 {
 	m_type = Typename(*this);
-	std::array<const GLchar*, 1> files;
 	s32 success;
 	m_id = std::move(id);
 
+#if defined(__arm__)
+	static const std::string_view VERSION = "#version 300 es\n";
+#else
+	static const std::string_view VERSION = "#version 330 core\n";
+#endif
 	Lock lock(context::g_glMutex);
 	u32 vsh = glCreateShader(GL_VERTEX_SHADER);
-	files = {vertCode.data()};
-	glShaderSource(vsh, (GLsizei)files.size(), files.data(), nullptr);
+	const GLchar* files[] = {VERSION.data(), vertCode.data()};
+	glShaderSource(vsh, (GLsizei)ARR_SIZE(files), files, nullptr);
 	glCompileShader(vsh);
 	std::array<char, 512> buf;
 	glGetShaderiv(vsh, GL_COMPILE_STATUS, &success);
@@ -41,8 +45,8 @@ bool Shader::glSetup(std::string id, std::string_view vertCode, std::string_view
 	}
 
 	u32 fsh = glCreateShader(GL_FRAGMENT_SHADER);
-	files = {fragCode.data()};
-	glShaderSource(fsh, (GLsizei)files.size(), files.data(), nullptr);
+	files[1] = fragCode.data();
+	glShaderSource(fsh, (GLsizei)ARR_SIZE(files), files, nullptr);
 	glCompileShader(fsh);
 	glGetShaderiv(fsh, GL_COMPILE_STATUS, &success);
 	if (!success)

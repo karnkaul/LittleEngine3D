@@ -178,15 +178,6 @@ s32 run()
 		camera.tick(dt);
 		le::context::glClearFlags();
 
-		static bool bAsserted = false;
-		static le::Time assertElapsed;
-		assertElapsed += dt;
-		if (!bAsserted && assertElapsed >= le::Time::secs(2.0f))
-		{
-			bAsserted = true;
-			ASSERT(false, "Test assert");
-		}
-
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
 		prop1.m_transform.setOrientation(

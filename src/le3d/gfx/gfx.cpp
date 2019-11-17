@@ -60,7 +60,9 @@ Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> byte
 			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 			glChk(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, ch == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, pData));
+#if !defined(__arm__)
 			glChk(glGenerateMipmap(GL_TEXTURE_2D));
+#endif
 			glChk(glBindTexture(GL_TEXTURE_2D, 0));
 			ret = {std::move(name), std::move(type), hTex};
 			LOG_I("== [%s] %s Texture created [%u]", ret.name.data(), ret.type.data(), ret.id);

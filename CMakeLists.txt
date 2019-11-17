@@ -63,6 +63,14 @@ add_subdirectory(lib/glad)
 # stb_image
 add_subdirectory(lib/stb)
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+	find_library(GL GL)
+	if(GL STREQUAL "GL_NOTFOUND")
+		message("Fatal error: cannot build without OpenGL!" FATAL_ERROR)
+	endif()
+	message("Warning: Unsupported platform; ensure xorg-dev etc is installed!")
+endif()
+
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.*pp")
 include(src/sources.cmake)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})

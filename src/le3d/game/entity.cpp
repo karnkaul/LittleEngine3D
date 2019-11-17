@@ -57,6 +57,10 @@ void Prop::render(const RenderState& state)
 	for (auto& fixture : m_fixtures)
 	{
 		ASSERT(pShader, "null shader!");
+#if defined(__arm__)
+		// Compensate for lack of uniform initialisation in GLES
+		pShader->setV4("tint", Colour::White);
+#endif
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{

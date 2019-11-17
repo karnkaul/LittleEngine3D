@@ -58,7 +58,7 @@ protected:
 
 protected:
 	std::vector<Fixture> m_fixtures;
-	Shader* m_pShader = nullptr;
+	class Shader* m_pShader = nullptr;
 
 public:
 	void render(const RenderState& state) override;
