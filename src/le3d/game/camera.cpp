@@ -90,7 +90,7 @@ FreeCam::FreeCam()
 			}
 		}
 	});
-	m_tZoom = input::registerScroll([this](f32 /*dx*/, f32 dy) { m_dSpeed += dy; });
+	m_tZoom = input::registerScroll([this](f64 /*dx*/, f64 dy) { m_dSpeed += (f32)dy; });
 	m_tFocus = input::registerFocus([this](bool /*bFocus*/) { m_flags.set((s32)Flag::InitPos, false); });
 	m_flags.set((s32)Flag::Enabled, true);
 }
