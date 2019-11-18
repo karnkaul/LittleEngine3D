@@ -29,7 +29,14 @@ struct Texture
 	GLObj id = 0;
 };
 
-struct Light
+struct LitTint
+{
+	glm::vec3 ambient = glm::vec3(1.0f);
+	glm::vec3 diffuse = glm::vec3(1.0f);
+	glm::vec3 specular = glm::vec3(1.0f);
+};
+
+struct LightData
 {
 	glm::vec3 ambient = glm::vec3(0.2f);
 	glm::vec3 diffuse = glm::vec3(0.5f);
@@ -38,13 +45,13 @@ struct Light
 
 struct DirLight
 {
-	Light light;
+	LightData light;
 	glm::vec3 direction = glm::vec3(-1.0f, -1.0f, 1.0f);
 };
 
-struct PointLight
+struct PtLight
 {
-	Light light;
+	LightData light;
 	glm::vec3 position = glm::vec3(0.0f);
 	f32 constant = 1.0f;
 	f32 linear = 0.09f;
@@ -55,7 +62,7 @@ struct RenderState
 {
 	glm::mat4 view;
 	glm::mat4 projection;
-	std::vector<PointLight> pointLights;
+	std::vector<PtLight> pointLights;
 	std::vector<DirLight> dirLights;
 	class Shader* pShader = nullptr;
 };

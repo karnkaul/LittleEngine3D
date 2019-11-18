@@ -23,10 +23,10 @@ public:
 public:
 	GLObj m_program = 0;
 	Flags<(s32)Flag::_COUNT> m_flags;
+	std::string m_id;
 
 private:
 	bool m_bInit = false;
-	std::string m_id;
 	std::string_view m_type;
 
 public:
@@ -47,6 +47,6 @@ public:
 	bool setV4(std::string_view id, const glm::vec4& val) const;
 	bool setV4(std::string_view id, Colour colour) const;
 
-	void setupLights(const std::vector<DirLight>& dirLights, const std::vector<PointLight>& pointLights) const;
+	void setupLights(const std::vector<DirLight>& dirLights, const std::vector<PtLight>& pointLights) const;
 };
 } // namespace le

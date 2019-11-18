@@ -14,7 +14,7 @@ const u8 Shader::MAX_POINT_LIGHTS = 4;
 Shader::Shader() = default;
 Shader::~Shader()
 {
-	if (m_bInit && m_program && context::exists())
+	if (m_bInit && m_program && !m_id.empty() && context::exists())
 	{
 		glChk(glDeleteProgram(m_program));
 		LOG_I("-- [%s] %s destroyed", m_id.data(), m_type.data());
@@ -28,6 +28,12 @@ bool Shader::glSetup(std::string id, std::string_view vertCode, std::string_view
 	m_type = Typename(*this);
 	s32 success;
 	m_id = std::move(id);
+
+	if (vertCode.empty())
+	{
+		LOG_E("[%s] (%s) Failed to compile vertex shader: empty input string!", m_id.data(), m_type.data());
+		return m_bInit = false;
+	}
 
 #if defined(__arm__)
 	static const std::string_view VERSION = "#version 300 es\n";
@@ -178,13 +184,13 @@ bool Shader::setV4(std::string_view id, const glm::vec4& val) const
 	return false;
 }
 
-void Shader::setupLights(const std::vector<DirLight>& dirLights, const std::vector<PointLight>& pointLights) const
+void Shader::setupLights(const std::vector<DirLight>& dirLights, const std::vector<PtLight>& pointLights) const
 {
 	use();
 	size_t i;
-	Light blank;
+	LightData blank;
 	blank.ambient = blank.diffuse = blank.specular = glm::vec3(0.0f);
-	PointLight blankP;
+	PtLight blankP;
 	blankP.light = blank;
 	DirLight blankD;
 	blankD.light = blank;
@@ -211,6 +217,7 @@ void Shader::setupLights(const std::vector<DirLight>& dirLights, const std::vect
 		setF32(id + "constant", pointLight.constant);
 		setF32(id + "linear", pointLight.linear);
 		setF32(id + "quadratic", pointLight.quadratic);
+		setV3(id + "position", pointLight.position);
 	}
 }
 } // namespace le

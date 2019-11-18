@@ -14,6 +14,7 @@ set(SUB_SOURCES
 
 	le3d/game/camera.cpp
 	le3d/game/entity.cpp
+	le3d/game/resources.cpp
 
 	le3d/input/inputImpl.hpp
 	le3d/input/input.cpp

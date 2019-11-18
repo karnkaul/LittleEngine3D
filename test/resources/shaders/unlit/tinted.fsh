@@ -4,9 +4,6 @@
 
 out vec4 fragColour;
 
-in vec4 vertColour;
-in vec2 texCoord;
-
 #ifdef GL_ES
 	uniform vec4 tint;
 #else
@@ -15,5 +12,5 @@ in vec2 texCoord;
 
 void main()
 {
-	fragColour = tint * vertColour;
+	fragColour = tint;
 }

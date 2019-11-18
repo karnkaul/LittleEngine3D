@@ -12,7 +12,9 @@ namespace le
 class Mesh
 {
 public:
+	LitTint m_untextuedTint;
 	std::vector<Texture> m_textures;
+	f32 m_shininess = 32.0f;
 #if defined(DEBUGGING)
 	enum class Flag
 	{

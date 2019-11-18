@@ -101,11 +101,13 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 		{
 			Lock lock(context::g_glMutex);
 			pShader->use();
+			pShader->setF32("material.shininess", m_shininess);
 			const auto& v = state.view;
 			pShader->setV3("viewPos", glm::vec3(-v[3][0], -v[3][1], -v[3][2]));
 			s32 txID = 0;
 			u32 diffuse = 0;
 			u32 specular = 0;
+			glChk(glBindTexture(GL_TEXTURE_2D, 0));
 #if defined(DEBUGGING)
 			if (m_renderFlags.isSet((s32)Flag::Blank) || m_renderFlags.isSet((s32)Flag::BlankMagenta))
 			{
@@ -120,12 +122,24 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 			else
 #endif
 			{
-				if (!pShader->m_flags.isSet((s32)Shader::Flag::Untextured) && m_textures.empty())
+				if (pShader->m_flags.isSet((s32)Shader::Flag::Untextured))
 				{
-					pShader->setV4("tint", Colour::Magenta);
-					glChk(glActiveTexture(GL_TEXTURE0));
-					glChk(glBindTexture(GL_TEXTURE_2D, 1));
-					bResetTint = true;
+					if (!pShader->m_flags.isSet((s32)Shader::Flag::Unlit))
+					{
+						pShader->setV3("material.ambient", m_untextuedTint.ambient);
+						pShader->setV3("material.diffuse", m_untextuedTint.diffuse);
+						pShader->setV3("material.specular", m_untextuedTint.specular);
+					}
+				}
+				else
+				{
+					if (m_textures.empty())
+					{
+						pShader->setV4("tint", Colour::Magenta);
+						glChk(glActiveTexture(GL_TEXTURE0));
+						glChk(glBindTexture(GL_TEXTURE_2D, 1));
+						bResetTint = true;
+					}
 				}
 				for (const auto& texture : m_textures)
 				{

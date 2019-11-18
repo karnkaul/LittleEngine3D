@@ -3,6 +3,7 @@
 #include "le3d/core/log.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/input/inputImpl.hpp"
+#include "le3d/game/resources.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "contextImpl.hpp"
 
@@ -81,6 +82,7 @@ void context::glDestroy()
 			glfwPollEvents();
 		}
 	}
+	le::shaders::unloadAll();
 	glfwTerminate();
 	g_pRenderWindow = nullptr;
 	g_windowSize = glm::vec2(0.0f);
