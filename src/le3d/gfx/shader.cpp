@@ -8,6 +8,9 @@
 
 namespace le
 {
+const u8 Shader::MAX_DIR_LIGHTS = 4;
+const u8 Shader::MAX_POINT_LIGHTS = 4;
+
 Shader::Shader() = default;
 Shader::~Shader()
 {
@@ -173,5 +176,41 @@ bool Shader::setV4(std::string_view id, const glm::vec4& val) const
 		}
 	}
 	return false;
+}
+
+void Shader::setupLights(const std::vector<DirLight>& dirLights, const std::vector<PointLight>& pointLights) const
+{
+	use();
+	size_t i;
+	Light blank;
+	blank.ambient = blank.diffuse = blank.specular = glm::vec3(0.0f);
+	PointLight blankP;
+	blankP.light = blank;
+	DirLight blankD;
+	blankD.light = blank;
+	for (i = 0; i < MAX_DIR_LIGHTS; ++i)
+	{
+		const auto& dirLight = i < dirLights.size() ? dirLights[i] : blankD;
+		std::string id = "dirLights[";
+		id += std::to_string(i);
+		id += "].";
+		setV3(id + "ambient", dirLight.light.ambient);
+		setV3(id + "diffuse", dirLight.light.diffuse);
+		setV3(id + "specular", dirLight.light.specular);
+		setV3(id + "direction", dirLight.direction);
+	}
+	for (i = 0; i < MAX_POINT_LIGHTS; ++i)
+	{
+		const auto& pointLight = i < pointLights.size() ? pointLights[i] : blankP;
+		std::string id = "pointLights[";
+		id += std::to_string(i);
+		id += "].";
+		setV3(id + "ambient", pointLight.light.ambient);
+		setV3(id + "diffuse", pointLight.light.diffuse);
+		setV3(id + "specular", pointLight.light.specular);
+		setF32(id + "constant", pointLight.constant);
+		setF32(id + "linear", pointLight.linear);
+		setF32(id + "quadratic", pointLight.quadratic);
+	}
 }
 } // namespace le

@@ -168,7 +168,7 @@ HVerts gfx::newVertices(std::vector<Vertex> vertices, std::vector<u32> indices /
 void gfx::draw(const HVerts& hVerts, const glm::mat4& model, const glm::mat4& normalModel, const RenderState& state, const Shader& shader)
 {
 	Lock lock(context::g_glMutex);
-	shader.use();
+	shader.setupLights(state.dirLights, state.pointLights);
 	auto temp = glGetUniformLocation(shader.m_program, "model");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(model));
 	temp = glGetUniformLocation(shader.m_program, "normalModel");

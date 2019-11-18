@@ -2,6 +2,7 @@
 #include <string>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
+#include "le3d/gfx/gfx.hpp"
 #include "le3d/thirdParty.hpp"
 
 namespace le
@@ -15,6 +16,9 @@ public:
 		Unlit,
 		_COUNT
 	};
+
+	static const u8 MAX_DIR_LIGHTS;
+	static const u8 MAX_POINT_LIGHTS;
 
 public:
 	GLObj m_program = 0;
@@ -42,5 +46,7 @@ public:
 	bool setV3(std::string_view id, const glm::vec3& val) const;
 	bool setV4(std::string_view id, const glm::vec4& val) const;
 	bool setV4(std::string_view id, Colour colour) const;
+
+	void setupLights(const std::vector<DirLight>& dirLights, const std::vector<PointLight>& pointLights) const;
 };
 } // namespace le
