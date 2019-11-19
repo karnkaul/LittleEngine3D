@@ -65,7 +65,7 @@ Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> byte
 #endif
 			glChk(glBindTexture(GL_TEXTURE_2D, 0));
 			ret = {std::move(name), std::move(type), hTex};
-			LOG_I("== [%s] %s Texture created [%u]", ret.name.data(), ret.type.data(), ret.id);
+			LOG_I("== [%s] %s Texture created [%u]", ret.id.data(), ret.type.data(), ret.glID);
 		}
 		else
 		{
@@ -76,15 +76,23 @@ Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> byte
 	return ret;
 }
 
-void gfx::gl::releaseTex(Texture& out_tex)
+void gfx::gl::releaseTex(std::vector<Texture*> textures)
 {
 	if (context::exists())
 	{
+		std::vector<GLuint> texIDs;
+		texIDs.reserve(textures.size());
 		Lock lock(context::g_glMutex);
-		const GLuint glTex[] = {out_tex.id};
-		glChk(glDeleteTextures(1, glTex));
-		LOG_I("-- [%s] Texture destroyed", out_tex.name.data());
-		out_tex = Texture();
+		for (auto pTexture : textures)
+		{
+			if (pTexture->glID > 0)
+			{
+				texIDs.push_back(pTexture->glID);
+				LOG_I("-- [%s] Texture destroyed", pTexture->id.data());
+			}
+			*pTexture = Texture();
+		}
+		glChk(glDeleteTextures((GLsizei)texIDs.size(), texIDs.data()));
 	}
 }
 

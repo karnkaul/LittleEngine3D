@@ -161,7 +161,7 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 					}
 					id += number;
 					pShader->setS32(id, txID++);
-					glChk(glBindTexture(GL_TEXTURE_2D, texture.id));
+					glChk(glBindTexture(GL_TEXTURE_2D, texture.glID));
 				}
 			}
 		}

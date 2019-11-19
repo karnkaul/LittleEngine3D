@@ -24,9 +24,9 @@ struct Vertex
 
 struct Texture
 {
-	std::string name;
+	std::string id;
 	std::string type;
-	GLObj id = 0;
+	GLObj glID = 0;
 };
 
 struct LitTint
@@ -76,7 +76,7 @@ namespace gl
 HVerts genVAO(bool bEBO);
 void releaseVAO(HVerts& hVerts);
 Texture genTex(std::string name, std::string type, std::vector<u8> bytes);
-void releaseTex(Texture& out_tex);
+void releaseTex(std::vector<Texture*> textures);
 void bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u32> indices = {});
 HVerts genBuffers(std::vector<Vertex> vertices, std::vector<u32> indices = {}, const Shader* pShader = nullptr);
 } // namespace gl

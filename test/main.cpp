@@ -46,7 +46,7 @@ std::vector<u8> readBytes(std::string_view path)
 	return buf;
 }
 
-std::string getResourcePath(std::string_view id)
+std::string resourcePath(std::string_view id)
 {
 	std::string ret = resourcesPath;
 	ret += "/";
@@ -71,37 +71,31 @@ s32 run()
 	camera.m_position = {0.0f, 0.0f, 3.0f};
 	camera.m_flags.set((s32)le::FreeCam::Flag::FixedSpeed, false);
 
-	auto path = le::env::fullPath(resourcesPath + "/textures/blank_1px.bmp");
-	auto img = readBytes(path);
-	le::Texture blankTex = le::gfx::gl::genTex("blank", "diffuse", std::move(img));
-	path = (le::env::fullPath(resourcesPath + "/textures/container2.png"));
-	img = readBytes(path);
-	le::Texture t0 = le::gfx::gl::genTex("container2.png", "diffuse", std::move(img));
-	path = le::env::fullPath(resourcesPath + "/textures/container2_specular.png");
-	img = readBytes(path);
-	le::Texture t0s = le::gfx::gl::genTex("container2_specular.png", "specular", std::move(img));
-	path = le::env::fullPath(resourcesPath + "/textures/awesomeface.png");
-	img = readBytes(path);
-	le::Texture t1 = le::gfx::gl::genTex("awesomeface.png", "diffuse", std::move(img));
+	static const std::string DIFFUSE = "diffuse";
+	static const std::string SPECULAR = "specular";
 
-	le::DirLight dirLight;
-	le::PtLight pointLight;
-	pointLight.position = lightPos;
-	std::string vshFile(le::env::fullPath(resourcesPath + "/shaders/default.vsh"));
-	auto vsh = readFile(vshFile);
-	auto pUnlitTinted = le::shaders::loadShader("unlit/tinted", vsh, readFile(getResourcePath("/shaders/unlit/tinted.fsh")));
-	auto pUnlitTextured = le::shaders::loadShader("unlit/textured", vsh, readFile(getResourcePath("/shaders/unlit/textured.fsh")));
-	auto pLitTinted = le::shaders::loadShader("lit/tinted", vsh, readFile(getResourcePath("/shaders/lit/tinted.fsh")));
-	le::shaders::loadShader("lit/textured", vsh, readFile(getResourcePath("/shaders/lit/textured.fsh")));
+	le::resources::loadTexture("container2", DIFFUSE, readBytes(resourcePath("textures/container2.png")));
+	le::resources::loadTexture("container2_specular", SPECULAR, readBytes(resourcePath("textures/container2_specular.png")));
+	le::resources::loadTexture("awesomeface", DIFFUSE, readBytes(resourcePath("textures/awesomeface.png")));
+
+	auto vsh = readFile(resourcePath("shaders/default.vsh"));
+	auto pUnlitTinted = le::resources::loadShader("unlit/tinted", vsh, readFile(resourcePath("shaders/unlit/tinted.fsh")));
+	auto pUnlitTextured = le::resources::loadShader("unlit/textured", vsh, readFile(resourcePath("shaders/unlit/textured.fsh")));
+	auto pLitTinted = le::resources::loadShader("lit/tinted", vsh, readFile(resourcePath("shaders/lit/tinted.fsh")));
+	le::resources::loadShader("lit/textured", vsh, readFile(resourcePath("shaders/lit/textured.fsh")));
 	pLitTinted->m_flags.set((s32)le::Shader::Flag::Untextured, true);
 	pLitTinted->setV4("tint", le::Colour::Yellow);
 	pUnlitTinted->m_flags.set((s32)le::Shader::Flag::Unlit, true);
 	pUnlitTinted->m_flags.set((s32)le::Shader::Flag::Untextured, true);
 	pUnlitTextured->m_flags.set((s32)le::Shader::Flag::Unlit, true);
 
+	le::DirLight dirLight;
+	le::PtLight pointLight;
+	pointLight.position = lightPos;
+	
 	le::Mesh mesh = le::Mesh::debugCube();
 	le::Texture bad;
-	mesh.m_textures = {t0, t0s};
+	mesh.m_textures = {le::resources::getTexture("container2"), le::resources::getTexture("container2_specular")};
 	// mesh.m_textures = {bad};
 	// lightingShader.setS32("mix_textures", 1);
 	static bool bWireframe = false;
@@ -121,7 +115,7 @@ s32 run()
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.25f);
 	prop0.m_transform.setParent(&prop1.m_transform);
-	prop1.setShader(le::shaders::findShader("lit/tinted"));
+	prop1.setShader(le::resources::findShader("lit/tinted"));
 
 	le::HVerts light0 = le::gfx::tutorial::newLight(mesh.VAO());
 
@@ -130,7 +124,7 @@ s32 run()
 	{
 		le::Prop prop;
 		prop.addFixture(mesh);
-		prop.setShader(le::shaders::findShader("lit/tinted"));
+		prop.setShader(le::resources::findShader("lit/tinted"));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -178,14 +172,14 @@ s32 run()
 		le::RenderState state;
 		state.view = camera.view();
 		state.projection = camera.perspectiveProj(le::context::nativeAR());
-		state.pShader = le::shaders::findShader("lit/textured");
+		state.pShader = le::resources::findShader("lit/textured");
 		state.pointLights.push_back(pointLight);
 		state.dirLights.push_back(dirLight);
 		prop0.render(state);
 		prop1.render(state);
 		for (auto& prop : props)
 		{
-			prop.setShader(le::shaders::findShader("lit/textured"));
+			prop.setShader(le::resources::findShader("lit/textured"));
 			prop.render(state);
 		}
 
@@ -199,7 +193,6 @@ s32 run()
 	}
 
 	prop0.clearFixtures();
-	le::gfx::gl::releaseTex(t0);
 	le::context::glDestroy();
 	return 0;
 }

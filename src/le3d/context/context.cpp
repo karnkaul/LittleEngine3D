@@ -73,6 +73,8 @@ bool context::glCreate(u16 width, u16 height, std::string_view title)
 
 void context::glDestroy()
 {
+	le::resources::unloadShaders();
+	le::resources::unloadTextures(true);
 	Lock lock(g_glMutex);
 	if (g_pRenderWindow)
 	{
@@ -82,7 +84,6 @@ void context::glDestroy()
 			glfwPollEvents();
 		}
 	}
-	le::shaders::unloadAll();
 	glfwTerminate();
 	g_pRenderWindow = nullptr;
 	g_windowSize = glm::vec2(0.0f);
