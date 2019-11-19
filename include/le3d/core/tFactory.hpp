@@ -17,8 +17,8 @@ protected:
 
 public:
 	Factory();
-	Factory(Factory&&);
-	Factory& operator=(Factory&&);
+	Factory(Factory&&) noexcept;
+	Factory& operator=(Factory&&) noexcept;
 	virtual ~Factory();
 
 public:
@@ -41,8 +41,8 @@ protected:
 
 public:
 	UFactory();
-	UFactory(UFactory&&);
-	UFactory& operator=(UFactory&&);
+	UFactory(UFactory&&) noexcept;
+	UFactory& operator=(UFactory&&) noexcept;
 	virtual ~UFactory();
 
 public:
@@ -58,10 +58,10 @@ template <typename FType, typename FHandle>
 Factory<FType, FHandle>::Factory() = default;
 
 template <typename FType, typename FHandle>
-Factory<FType, FHandle>::Factory(Factory&&) = default;
+Factory<FType, FHandle>::Factory(Factory&&) noexcept = default;
 
 template <typename FType, typename FHandle>
-Factory<FType, FHandle>& Factory<FType, FHandle>::operator=(Factory&&) = default;
+Factory<FType, FHandle>& Factory<FType, FHandle>::operator=(Factory&&) noexcept = default;
 
 template <typename FType, typename FHandle>
 Factory<FType, FHandle>::~Factory()
@@ -114,10 +114,10 @@ template <typename FType, typename FHandle>
 UFactory<FType, FHandle>::UFactory() = default;
 
 template <typename FType, typename FHandle>
-UFactory<FType, FHandle>::UFactory(UFactory&&) = default;
+UFactory<FType, FHandle>::UFactory(UFactory&&) noexcept = default;
 
 template <typename FType, typename FHandle>
-UFactory<FType, FHandle>& UFactory<FType, FHandle>::operator=(UFactory&&) = default;
+UFactory<FType, FHandle>& UFactory<FType, FHandle>::operator=(UFactory&&) noexcept = default;
 
 template <typename FType, typename FHandle>
 UFactory<FType, FHandle>::~UFactory()

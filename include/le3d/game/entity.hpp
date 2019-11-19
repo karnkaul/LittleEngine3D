@@ -4,6 +4,7 @@
 #include <vector>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
+#include "le3d/core/object.hpp"
 #include "le3d/core/transform.hpp"
 #if defined(DEBUGGING)
 #include "le3d/gfx/gfx.hpp"
@@ -11,7 +12,7 @@
 
 namespace le
 {
-class Entity
+class Entity : public Object
 {
 public:
 	enum class Flag
@@ -23,22 +24,12 @@ public:
 
 public:
 	Transform m_transform;
-	std::string m_name;
-	std::string m_type;
 	Flags<(size_t)Flag::_COUNT> m_flags;
 #if defined(DEBUGGING)
-	HVerts m_hDebugVecs[3];
 	bool m_bDEBUG = false;
 #endif
 
 public:
-	Entity();
-	Entity(Entity&&);
-	Entity& operator=(Entity&&);
-	virtual ~Entity();
-
-public:
-	virtual void setup(std::string name);
 	virtual void render(const struct RenderState& state);
 
 public:

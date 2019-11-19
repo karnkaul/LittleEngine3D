@@ -2,6 +2,7 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/gfx/gfx.hpp"
+#include "le3d/gfx/mesh.hpp"
 #include "le3d/game/resources.hpp"
 
 namespace le
@@ -16,8 +17,11 @@ static const std::vector<u8> blank_1pxBytes = {
 	0x80, 0x00, 0xC0, 0xC0, 0xC0, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0x00, 0x00,
 	0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00};
 
-std::unordered_map<std::string, Shader> shaderMap;
-std::unordered_map<std::string, Texture> textureMap;
+std::unordered_map<std::string, Shader> g_shaderMap;
+std::unordered_map<std::string, Texture> g_textureMap;
+
+std::unique_ptr<Mesh> g_uDebugMesh;
+std::unique_ptr<Mesh> g_uDebugQuad;
 } // namespace
 
 namespace resources
@@ -27,20 +31,20 @@ Texture g_blankTex1px;
 
 Shader* resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode)
 {
-	ASSERT(shaderMap.find(id) == shaderMap.end(), "Shader ID already loaded!");
+	ASSERT(g_shaderMap.find(id) == g_shaderMap.end(), "Shader ID already loaded!");
 	Shader shader;
 	if (shader.glSetup(id, vertCode, fragCode))
 	{
-		shaderMap.emplace(id, std::move(shader));
-		return &shaderMap[id];
+		g_shaderMap.emplace(id, std::move(shader));
+		return &g_shaderMap[id];
 	}
 	return nullptr;
 }
 
 Shader* resources::findShader(const std::string& id)
 {
-	auto search = shaderMap.find(id);
-	if (search != shaderMap.end())
+	auto search = g_shaderMap.find(id);
+	if (search != g_shaderMap.end())
 	{
 		return &search->second;
 	}
@@ -50,16 +54,16 @@ Shader* resources::findShader(const std::string& id)
 
 Shader& resources::getShader(const std::string& id)
 {
-	ASSERT(shaderMap.find(id) != shaderMap.end(), "Shader not loaded!");
-	return shaderMap[id];
+	ASSERT(g_shaderMap.find(id) != g_shaderMap.end(), "Shader not loaded!");
+	return g_shaderMap[id];
 }
 
 bool resources::unload(Shader& shader)
 {
-	auto search = shaderMap.find(shader.m_id);
-	if (search != shaderMap.end())
+	auto search = g_shaderMap.find(shader.m_id);
+	if (search != g_shaderMap.end())
 	{
-		shaderMap.erase(search);
+		g_shaderMap.erase(search);
 		return true;
 	}
 	return false;
@@ -67,12 +71,12 @@ bool resources::unload(Shader& shader)
 
 void resources::unloadShaders()
 {
-	shaderMap.clear();
+	g_shaderMap.clear();
 }
 
 u32 resources::shaderCount()
 {
-	return (u32)shaderMap.size();
+	return (u32)g_shaderMap.size();
 }
 
 Texture* resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
@@ -81,20 +85,20 @@ Texture* resources::loadTexture(std::string id, std::string type, std::vector<u8
 	{
 		g_blankTex1px = gfx::gl::genTex("blankTex", "diffuse", blank_1pxBytes);
 	}
-	ASSERT(textureMap.find(id) == textureMap.end(), "Texture already loaded!");
+	ASSERT(g_textureMap.find(id) == g_textureMap.end(), "Texture already loaded!");
 	Texture texture = gfx::gl::genTex(id, type, std::move(bytes));
 	if (texture.glID > 0)
 	{
-		textureMap.emplace(id, std::move(texture));
-		return &textureMap[id];
+		g_textureMap.emplace(id, std::move(texture));
+		return &g_textureMap[id];
 	}
 	return nullptr;
 }
 
 Texture* resources::findTexture(const std::string& id)
 {
-	auto search = textureMap.find(id);
-	if (search != textureMap.end())
+	auto search = g_textureMap.find(id);
+	if (search != g_textureMap.end())
 	{
 		return &search->second;
 	}
@@ -103,17 +107,17 @@ Texture* resources::findTexture(const std::string& id)
 
 Texture& resources::getTexture(const std::string& id)
 {
-	ASSERT(textureMap.find(id) != textureMap.end(), "Texture not loaded!");
-	return textureMap[id];
+	ASSERT(g_textureMap.find(id) != g_textureMap.end(), "Texture not loaded!");
+	return g_textureMap[id];
 }
 
 bool resources::unload(Texture& texture)
 {
-	auto search = textureMap.find(texture.id);
-	if (search != textureMap.end())
+	auto search = g_textureMap.find(texture.id);
+	if (search != g_textureMap.end())
 	{
 		gfx::gl::releaseTex({&search->second});
-		textureMap.erase(search);
+		g_textureMap.erase(search);
 		return true;
 	}
 	return false;
@@ -122,8 +126,8 @@ bool resources::unload(Texture& texture)
 void resources::unloadTextures(bool bUnloadBlankTex)
 {
 	std::vector<Texture*> toDel;
-	toDel.reserve(textureMap.size());
-	for (auto& kvp : textureMap)
+	toDel.reserve(g_textureMap.size());
+	for (auto& kvp : g_textureMap)
 	{
 		toDel.push_back(&kvp.second);
 	}
@@ -132,11 +136,37 @@ void resources::unloadTextures(bool bUnloadBlankTex)
 		toDel.push_back(&g_blankTex1px);
 	}
 	gfx::gl::releaseTex(std::move(toDel));
-	textureMap.clear();
+	g_textureMap.clear();
 }
 
 u32 resources::textureCount()
 {
-	return (u32)textureMap.size();
+	return (u32)g_textureMap.size();
+}
+
+Mesh& resources::debugMesh()
+{
+	if (!g_uDebugMesh)
+	{
+		g_uDebugMesh = std::make_unique<Mesh>(Mesh::createCube(1.0f));
+	}
+	return *g_uDebugMesh;
+}
+
+Mesh& resources::debugQuad()
+{
+	if (!g_uDebugQuad)
+	{
+		g_uDebugQuad = std::make_unique<Mesh>(Mesh::createQuad(1.0f));
+	}
+	return *g_uDebugQuad;
+}
+
+void resources::unloadAll()
+{
+	unloadShaders();
+	unloadTextures(true);
+	g_uDebugMesh = nullptr;
+	g_uDebugQuad = nullptr;
 }
 } // namespace le

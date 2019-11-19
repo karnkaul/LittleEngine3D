@@ -5,16 +5,20 @@
 
 namespace le
 {
-struct HVerts
+struct HVerts final
 {
 	u16 iCount = 0;
 	u16 vCount = 0;
 	u32 vao = 0;
 	u32 vbo = 0;
 	u32 ebo = 0;
+
+	HVerts();
+	HVerts(HVerts&&);
+	HVerts& operator=(HVerts&&);
 };
 
-struct Vertex
+struct Vertex final
 {
 	glm::vec4 colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	glm::vec3 position = glm::vec3(0.0f);
@@ -22,34 +26,34 @@ struct Vertex
 	glm::vec2 texCoords = glm::vec2(0.0f, 0.0f);
 };
 
-struct Texture
+struct Texture final
 {
 	std::string id;
 	std::string type;
 	GLObj glID = 0;
 };
 
-struct LitTint
+struct LitTint final
 {
 	glm::vec3 ambient = glm::vec3(1.0f);
 	glm::vec3 diffuse = glm::vec3(1.0f);
 	glm::vec3 specular = glm::vec3(1.0f);
 };
 
-struct LightData
+struct LightData final
 {
 	glm::vec3 ambient = glm::vec3(0.2f);
 	glm::vec3 diffuse = glm::vec3(0.5f);
 	glm::vec3 specular = glm::vec3(1.0f);
 };
 
-struct DirLight
+struct DirLight final
 {
 	LightData light;
 	glm::vec3 direction = glm::vec3(-1.0f, -1.0f, 1.0f);
 };
 
-struct PtLight
+struct PtLight final
 {
 	LightData light;
 	glm::vec3 position = glm::vec3(0.0f);
@@ -58,7 +62,7 @@ struct PtLight
 	f32 quadratic = 0.032f;
 };
 
-struct RenderState
+struct RenderState final
 {
 	glm::mat4 view;
 	glm::mat4 projection;
@@ -66,8 +70,6 @@ struct RenderState
 	std::vector<DirLight> dirLights;
 	class Shader* pShader = nullptr;
 };
-
-class Shader;
 
 namespace gfx
 {
@@ -78,12 +80,12 @@ void releaseVAO(HVerts& hVerts);
 Texture genTex(std::string name, std::string type, std::vector<u8> bytes);
 void releaseTex(std::vector<Texture*> textures);
 void bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u32> indices = {});
-HVerts genBuffers(std::vector<Vertex> vertices, std::vector<u32> indices = {}, const Shader* pShader = nullptr);
+HVerts genVertices(std::vector<Vertex> vertices, std::vector<u32> indices = {}, const Shader* pShader = nullptr);
+
+void draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const Shader& s);
 } // namespace gl
 
 HVerts newVertices(std::vector<Vertex> vertices, std::vector<u32> indices = {}, const Shader* pShader = nullptr);
-
-void draw(const HVerts& hVerts, const glm::mat4& model, const glm::mat4& normalModel, const RenderState& state, const Shader& shader);
 
 namespace tutorial
 {

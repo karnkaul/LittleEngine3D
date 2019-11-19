@@ -24,5 +24,10 @@ Texture& getTexture(const std::string& id);
 bool unload(Texture& texture);
 void unloadTextures(bool bUnloadBlankTex);
 u32 textureCount();
+
+class Mesh& debugMesh();
+class Mesh& debugQuad();
+
+void unloadAll();
 } // namespace resources
 } // namespace le

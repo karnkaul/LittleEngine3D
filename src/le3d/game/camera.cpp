@@ -9,11 +9,6 @@
 
 namespace le
 {
-Camera::Camera() = default;
-Camera::Camera(Camera&&) = default;
-Camera& Camera::operator=(Camera&&) = default;
-Camera::~Camera() = default;
-
 void Camera::tick(Time /*dt*/) {}
 
 bool s_bTEST = false;

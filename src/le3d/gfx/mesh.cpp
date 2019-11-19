@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "le3d/core/assert.hpp"
+#include "le3d/core/log.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/context/contextImpl.hpp"
 #include "le3d/gfx/mesh.hpp"
@@ -9,26 +10,48 @@
 
 namespace le
 {
-Mesh Mesh::debugCube(f32 side)
+s32 Mesh::s_maxTexIdx = 0;
+
+Mesh Mesh::createQuad(f32 side)
 {
+	f32 s = side * 0.5f;
 	f32 points[] = {
-		-side, -side, -side, side,  -side, -side, side,  side,  -side,
-		side,  side,  -side, -side, side,  -side, -side, -side, -side, // front
+		-s, -s, 0.0f, s, -s, 0.0f, s, s, 0.0f, s, s, 0.0f, -s, s, 0.0f, -s, -s, 0.0f,
+	};
+	f32 norms[] = {
+		0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f,
+	};
+	ASSERT(ARR_SIZE(norms) == ARR_SIZE(points), "invalid points/normals array sizes!");
+	std::vector<le::Vertex> vertices(ARR_SIZE(points) / 3, le::Vertex());
+	ASSERT(ARR_SIZE(points) == vertices.size() * 3, "invalid points / vertices array sizes!");
+	glm::vec2 uvs[] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}};
+	for (size_t idx = 0; idx < vertices.size(); ++idx)
+	{
+		size_t stride = idx * 3;
+		vertices[idx].position = {points[stride], points[stride + 1], points[stride + 2]};
+		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
+		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
+	}
+	Mesh mesh;
+	mesh.setupDrawable("debugQuad", std::move(vertices), {});
+	return mesh;
+}
 
-		-side, -side, side,  side,  -side, side,  side,  side,  side,
-		side,  side,  side,  -side, side,  side,  -side, -side, side, // back
+Mesh Mesh::createCube(f32 side)
+{
+	f32 s = side * 0.5f;
+	f32 points[] = {
+		-s, -s, -s, s,  -s, -s, s,  s,  -s, s,  s,  -s, -s, s,  -s, -s, -s, -s, // front
 
-		-side, side,  side,  -side, side,  -side, -side, -side, -side,
-		-side, -side, -side, -side, -side, side,  -side, side,  side, // left
+		-s, -s, s,  s,  -s, s,  s,  s,  s,  s,  s,  s,  -s, s,  s,  -s, -s, s, // back
 
-		side,  side,  side,  side,  side,  -side, side,  -side, -side,
-		side,  -side, -side, side,  -side, side,  side,  side,  side, // right
+		-s, s,  s,  -s, s,  -s, -s, -s, -s, -s, -s, -s, -s, -s, s,  -s, s,  s, // left
 
-		-side, -side, -side, side,  -side, -side, side,  -side, side,
-		side,  -side, side,  -side, -side, side,  -side, -side, -side, // down
+		s,  s,  s,  s,  s,  -s, s,  -s, -s, s,  -s, -s, s,  -s, s,  s,  s,  s, // right
 
-		-side, side,  -side, side,  side,  -side, side,  side,  side,
-		side,  side,  side,  -side, side,  side,  -side, side,  -side, // up
+		-s, -s, -s, s,  -s, -s, s,  -s, s,  s,  -s, s,  -s, -s, s,  -s, -s, -s, // down
+
+		-s, s,  -s, s,  s,  -s, s,  s,  s,  s,  s,  s,  -s, s,  s,  -s, s,  -s, // up
 	};
 	f32 norms[] = {
 		0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f,
@@ -61,34 +84,8 @@ Mesh Mesh::debugCube(f32 side)
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
 	Mesh mesh;
-	mesh.setup(std::move(vertices), {});
+	mesh.setupDrawable("debugCube", std::move(vertices), {});
 	return mesh;
-}
-
-Mesh::Mesh() = default;
-
-Mesh::~Mesh()
-{
-	release();
-}
-
-Mesh::Mesh(Mesh&&) = default;
-Mesh& Mesh::operator=(Mesh&&) = default;
-
-const HVerts& Mesh::VAO() const
-{
-	return m_hVerts;
-}
-
-bool Mesh::setup(std::vector<Vertex> vertices, std::vector<u32> indices, const Shader* pShader)
-{
-	if (le::context::exists())
-	{
-		release();
-		m_hVerts = gfx::newVertices(vertices, indices, pShader);
-		return true;
-	}
-	return false;
 }
 
 void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& state, const Shader* pCustomShader)
@@ -108,16 +105,19 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 			u32 diffuse = 0;
 			u32 specular = 0;
 			glChk(glBindTexture(GL_TEXTURE_2D, 0));
-#if defined(DEBUGGING)
-			if (m_renderFlags.isSet((s32)Flag::Blank) || m_renderFlags.isSet((s32)Flag::BlankMagenta))
-			{
-				if (m_renderFlags.isSet((s32)Flag::BlankMagenta))
+			auto drawBlankTex = [&](bool bMagenta) {
+				if (bMagenta)
 				{
 					pShader->setV4("tint", Colour::Magenta);
 					bResetTint = true;
 				}
-				glChk(glActiveTexture(GL_TEXTURE0));
+				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
 				glChk(glBindTexture(GL_TEXTURE_2D, 1));
+			};
+#if defined(DEBUGGING)
+			if (m_drawFlags.isSet((s32)Flag::Blank) || m_drawFlags.isSet((s32)Flag::BlankMagenta))
+			{
+				drawBlankTex(m_drawFlags.isSet((s32)Flag::BlankMagenta));
 			}
 			else
 #endif
@@ -126,19 +126,16 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 				{
 					if (!pShader->m_flags.isSet((s32)Shader::Flag::Unlit))
 					{
-						pShader->setV3("material.ambient", m_untextuedTint.ambient);
-						pShader->setV3("material.diffuse", m_untextuedTint.diffuse);
-						pShader->setV3("material.specular", m_untextuedTint.specular);
+						pShader->setV3("material.ambient", m_untexturedTint.ambient);
+						pShader->setV3("material.diffuse", m_untexturedTint.diffuse);
+						pShader->setV3("material.specular", m_untexturedTint.specular);
 					}
 				}
 				else
 				{
 					if (m_textures.empty())
 					{
-						pShader->setV4("tint", Colour::Magenta);
-						glChk(glActiveTexture(GL_TEXTURE0));
-						glChk(glBindTexture(GL_TEXTURE_2D, 1));
-						bResetTint = true;
+						drawBlankTex(true);
 					}
 				}
 				for (const auto& texture : m_textures)
@@ -146,7 +143,10 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 					std::string id = "material.";
 					std::string number;
 					id += texture.type;
-					glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+					if (txID > s_maxTexIdx)
+					{
+						s_maxTexIdx = txID;
+					}
 					if (texture.type == "diffuse")
 					{
 						number = std::to_string(++diffuse);
@@ -157,29 +157,39 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 					}
 					else
 					{
+						if (txID == 0)
+						{
+							drawBlankTex(true);
+						}
 						continue;
 					}
 					id += number;
-					pShader->setS32(id, txID++);
-					glChk(glBindTexture(GL_TEXTURE_2D, texture.glID));
+					if (texture.glID > 0)
+					{
+						glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+						glBindTexture(GL_TEXTURE_2D, texture.glID);
+						pShader->setS32(id, txID++);
+					}
+					else
+					{
+						drawBlankTex(true);
+					}
 				}
 			}
 		}
-		gfx::draw(m_hVerts, m, nm, state, *pShader);
-		glChk(glActiveTexture(GL_TEXTURE0));
-		glChk(glBindTexture(GL_TEXTURE_2D, 0));
+		gfx::gl::draw(m_hVerts, m, nm, state, *pShader);
+		for (s32 txID = 0; txID <= s_maxTexIdx; ++txID)
+		{
+			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+			glChk(glBindTexture(GL_TEXTURE_2D, 0));
+		}
 		if (bResetTint)
 		{
 			pShader->setV4("tint", Colour::White);
 		}
 #if defined(DEBUGGING)
-		m_renderFlags.flags.reset();
+		m_drawFlags.flags.reset();
 #endif
 	}
-}
-
-void Mesh::release()
-{
-	gfx::gl::releaseVAO(m_hVerts);
 }
 } // namespace le

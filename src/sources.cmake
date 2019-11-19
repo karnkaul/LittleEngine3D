@@ -6,6 +6,7 @@ set(SUB_SOURCES
 	le3d/core/fixed.cpp
 	le3d/core/log.cpp
 	le3d/core/maths.cpp
+	le3d/core/object.cpp
 	le3d/core/time.cpp
 	le3d/core/transform.cpp
 	le3d/core/ubyte.cpp
@@ -20,6 +21,7 @@ set(SUB_SOURCES
 	le3d/input/input.cpp
 
 	le3d/gfx/colour.cpp
+	le3d/gfx/drawable.cpp
 	le3d/gfx/gfx.cpp
 	le3d/gfx/mesh.cpp
 	le3d/gfx/shader.cpp

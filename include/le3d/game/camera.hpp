@@ -2,24 +2,19 @@
 #include <bitset>
 #include <set>
 #include "le3d/core/flags.hpp"
+#include "le3d/core/object.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/core/transform.hpp"
 #include "le3d/input/input.hpp"
 
 namespace le
 {
-class Camera
+class Camera : public Object
 {
 public:
 	glm::vec3 m_position = glm::vec3(0.0f);
 	glm::quat m_orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	f32 m_fov = 45.0f;
-
-public:
-	Camera();
-	Camera(Camera&&);
-	Camera& operator=(Camera&&);
-	virtual ~Camera();
 
 public:
 	virtual void tick(Time dt);

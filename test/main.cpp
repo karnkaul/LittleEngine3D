@@ -66,6 +66,7 @@ s32 run()
 	}
 
 	le::FreeCam camera;
+	camera.setup("freecam");
 	// le::input::setCursorMode(le::CursorMode::Disabled);
 	// le::Camera camera;
 	camera.m_position = {0.0f, 0.0f, 3.0f};
@@ -92,9 +93,12 @@ s32 run()
 	le::DirLight dirLight;
 	le::PtLight pointLight;
 	pointLight.position = lightPos;
-	
-	le::Mesh mesh = le::Mesh::debugCube();
+
 	le::Texture bad;
+	auto& mesh = le::resources::debugMesh();
+	auto& quad = le::resources::debugQuad();
+	quad.m_textures = {le::resources::getTexture("awesomeface")};
+	// quad.m_textures = {bad};
 	mesh.m_textures = {le::resources::getTexture("container2"), le::resources::getTexture("container2_specular")};
 	// mesh.m_textures = {bad};
 	// lightingShader.setS32("mix_textures", 1);
@@ -111,11 +115,18 @@ s32 run()
 	prop0.m_transform.setScale(2.0f);
 
 	le::Prop prop1;
+	prop1.setup("prop1");
 	prop1.addFixture(mesh);
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.25f);
 	prop0.m_transform.setParent(&prop1.m_transform);
 	prop1.setShader(le::resources::findShader("lit/tinted"));
+
+	le::Prop quadProp;
+	quadProp.setup("quad");
+	quadProp.addFixture(quad);
+	quadProp.setShader(le::resources::findShader("unlit/textured"));
+	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
 	le::HVerts light0 = le::gfx::tutorial::newLight(mesh.VAO());
 
@@ -123,6 +134,7 @@ s32 run()
 	for (s32 i = 0; i < 5; ++i)
 	{
 		le::Prop prop;
+		prop.setup("prop_" + std::to_string(i));
 		prop.addFixture(mesh);
 		prop.setShader(le::resources::findShader("lit/tinted"));
 		props.emplace_back(std::move(prop));
@@ -163,12 +175,14 @@ s32 run()
 		dt = le::Time::now() - t;
 		t = le::Time::now();
 		camera.tick(dt);
-		le::context::glClearFlags(le::Colour(20, 50, 50));
+		le::context::glClearFlags(le::Colour(50, 40, 10));
 
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
 		prop1.m_transform.setOrientation(
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
+		quadProp.m_transform.setOrientation(
+			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 		le::RenderState state;
 		state.view = camera.view();
 		state.projection = camera.perspectiveProj(le::context::nativeAR());
@@ -177,6 +191,7 @@ s32 run()
 		state.dirLights.push_back(dirLight);
 		prop0.render(state);
 		prop1.render(state);
+		quadProp.render(state);
 		for (auto& prop : props)
 		{
 			prop.setShader(le::resources::findShader("lit/textured"));
@@ -186,7 +201,7 @@ s32 run()
 		glm::mat4 m(1.0f);
 		m = glm::translate(m, lightPos);
 		m = glm::scale(m, glm::vec3(0.1f));
-		le::gfx::draw(light0, m, m, state, *pUnlitTinted);
+		le::gfx::gl::draw(light0, m, m, state, *pUnlitTinted);
 
 		le::context::swapBuffers();
 		le::context::pollEvents();

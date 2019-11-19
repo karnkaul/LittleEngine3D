@@ -1,52 +1,25 @@
 #pragma once
 #include <vector>
-#include "le3d/stdtypes.hpp"
-#include "le3d/core/transform.hpp"
-#include "le3d/gfx/gfx.hpp"
-#if defined(DEBUGGING)
-#include "le3d/core/flags.hpp"
-#endif
+#include "drawable.hpp"
 
 namespace le
 {
-class Mesh
+class Mesh : public Drawable
 {
 public:
-	LitTint m_untextuedTint;
+	static s32 s_maxTexIdx;
+
+public:
+	LitTint m_untexturedTint;
 	std::vector<Texture> m_textures;
 	f32 m_shininess = 32.0f;
-#if defined(DEBUGGING)
-	enum class Flag
-	{
-		Blank,
-		BlankMagenta,
-		_COUNT
-	};
-
-	Flags<(s32)Flag::_COUNT> m_renderFlags;
-#endif
-
-private:
-	HVerts m_hVerts;
 
 public:
-	static Mesh debugCube(f32 side = 0.5f);
+	static Mesh createQuad(f32 side);
+	static Mesh createCube(f32 side);
 
 public:
-	Mesh();
-	virtual ~Mesh();
-	Mesh(Mesh&&);
-	Mesh& operator=(Mesh&&);
-
-public:
-	const HVerts& VAO() const;
-
-public:
-	virtual bool setup(std::vector<Vertex> vertices, std::vector<u32> indices, const class Shader* pShader = nullptr);
-	virtual void glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& state, const Shader* pCustomShader = nullptr);
-
-protected:
-	void release();
+	void glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& state, const Shader* pCustomShader = nullptr) override;
 
 #if defined(DEBUGGING) 
 	friend class Prop;

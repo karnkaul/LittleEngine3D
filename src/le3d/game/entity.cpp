@@ -9,34 +9,8 @@
 
 namespace le
 {
-Entity::Entity() = default;
-Entity::Entity(Entity&&) = default;
-Entity& Entity::operator=(Entity&&) = default;
-Entity::~Entity()
-{
-	if (!m_name.empty())
-	{
-		LOG_D("[%s] %s destroyed", m_name.data(), m_type.data());
-	}
-#if defined(DEBUGGING)
-	for (auto& vao : m_hDebugVecs)
-	{
-		gfx::gl::releaseVAO(vao);
-	}
-#endif
-}
-
 void Entity::render(const RenderState& /*state*/) {}
 
-void Entity::setup(std::string name)
-{
-	m_name = std::move(name);
-	m_type = Typename(*this);
-#if defined(DEBUGGING)
-	m_hDebugVecs[0] = gfx::gl::genVAO(false);
-#endif
-	LOG_D("[%s] %s set up", m_name.data(), m_type.data());
-}
 bool Entity::isEnabled() const
 {
 	return m_flags.isSet((s32)Flag::Enabled);
@@ -65,7 +39,7 @@ void Prop::render(const RenderState& state)
 		if (m_bDEBUG)
 		{
 			//pShader->setV4("tint", Colour::Red);
-			fixture.pMesh->m_renderFlags.set((s32)Mesh::Flag::BlankMagenta, true);
+			fixture.pMesh->m_drawFlags.set((s32)Mesh::Flag::BlankMagenta, true);
 		}
 #endif
 		glm::mat4 m = m_transform.model();

@@ -73,8 +73,7 @@ bool context::glCreate(u16 width, u16 height, std::string_view title)
 
 void context::glDestroy()
 {
-	le::resources::unloadShaders();
-	le::resources::unloadTextures(true);
+	le::resources::unloadAll();
 	Lock lock(g_glMutex);
 	if (g_pRenderWindow)
 	{
