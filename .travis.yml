@@ -1,0 +1,21 @@
+dist: bionic
+
+branches:
+  only:
+    - master
+    - dev
+    - stable
+
+language: cpp
+
+compiler:
+  - clang
+
+before_install:
+  - chmod a+x .travis/*.sh
+
+install:
+  - .travis/install.sh
+
+script:
+  - .travis/script.sh . out
