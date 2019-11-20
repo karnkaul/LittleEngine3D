@@ -44,10 +44,16 @@ protected:
 		class Mesh* pMesh = nullptr;
 		std::optional<glm::mat4> oModel;
 	};
+#if defined(DEBUGGING)
+	Fixture m_ornArrow;
+#endif
 
 protected:
 	std::vector<Fixture> m_fixtures;
 	std::optional<Shader> m_oShader;
+
+public:
+	Prop();
 
 public:
 	void render(const RenderState& state) override;

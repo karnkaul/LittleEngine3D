@@ -8,10 +8,8 @@ class Object
 {
 public:
 	std::string m_name;
-	bool m_bLogThis = true;
-
-private:
 	std::string_view m_type;
+	bool m_bLogThis = true;
 
 public:
 	Object();

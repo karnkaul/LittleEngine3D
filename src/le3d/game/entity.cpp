@@ -3,6 +3,7 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/game/entity.hpp"
+#include "le3d/game/resources.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/mesh.hpp"
 #include "le3d/gfx/shading.hpp"
@@ -19,6 +20,13 @@ bool Entity::isEnabled() const
 void Entity::setEnabled(bool bEnabled)
 {
 	m_flags.set((s32)Flag::Enabled, bEnabled);
+}
+
+Prop::Prop()
+{
+#if defined(DEBUGGING)
+	m_ornArrow.pMesh = &resources::debugMesh();
+#endif
 }
 
 void Prop::render(const RenderState& state)
@@ -55,6 +63,20 @@ void Prop::render(const RenderState& state)
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
+#if defined(DEBUGGING)
+	glm::mat4 m(1.0f);
+	m *= m_transform.model();
+	m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.25f));
+	m = glm::translate(m, glm::vec3(0.0f, 0.0f, 0.65f));
+	if (m_ornArrow.pMesh)
+	{
+		glDisable(GL_DEPTH_TEST);
+		Shader tinted = resources::findShader("unlit/tinted");
+		gfx::shading::setV4(tinted, "tint", Colour::Cyan);
+		m_ornArrow.pMesh->glDraw(m, m, state, &tinted);
+		glEnable(GL_DEPTH_TEST);
+	}
+#endif
 }
 
 void Prop::addFixture(Mesh& mesh, std::optional<glm::mat4> model /* = std::nullopt */)

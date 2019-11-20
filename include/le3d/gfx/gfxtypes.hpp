@@ -1,5 +1,8 @@
 #pragma once
-#include "le3d/core/tzero.hpp"
+#include "le3d/thirdParty.hpp"
+#include "le3d/stdtypes.hpp"
+#include "le3d/core/flags.hpp"
+#include "le3d/core/tZero.hpp"
 
 namespace le
 {

@@ -9,12 +9,14 @@ set(SUB_SOURCES
 	le3d/core/time.cpp
 	le3d/core/transform.cpp
 	le3d/core/ubyte.cpp
+	le3d/core/utils.cpp
 
 	le3d/env/env.cpp
 
 	le3d/game/camera.cpp
 	le3d/game/entity.cpp
 	le3d/game/object.cpp
+	le3d/game/scene.cpp
 	le3d/game/resources.cpp
 
 	le3d/input/inputImpl.hpp

@@ -27,7 +27,7 @@ Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> byte
 			GLObj hTex;
 			glChk(glGenTextures(1, &hTex.handle));
 			glChk(glActiveTexture(GL_TEXTURE0));
-			glChk(glBindTexture(GL_TEXTURE_2D, hTex.handle));
+			glChk(glBindTexture(GL_TEXTURE_2D, hTex));
 			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
 			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -111,16 +111,16 @@ Shader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string
 	}
 
 	Shader program;
-	program.glID.handle = glCreateProgram();
-	glAttachShader(program.glID.handle, vsh);
-	glAttachShader(program.glID.handle, fsh);
-	glLinkProgram(program.glID.handle);
-	glGetProgramiv(program.glID.handle, GL_LINK_STATUS, &success);
+	program.glID = glCreateProgram();
+	glAttachShader(program.glID, vsh);
+	glAttachShader(program.glID, fsh);
+	glLinkProgram(program.glID);
+	glGetProgramiv(program.glID, GL_LINK_STATUS, &success);
 	if (!success)
 	{
-		glGetProgramInfoLog(program.glID.handle, (GLsizei)buf.size(), nullptr, buf.data());
+		glGetProgramInfoLog(program.glID, (GLsizei)buf.size(), nullptr, buf.data());
 		LOG_E("[%s] (Shader) Failed to link shaders!\n\t%s", id.data(), buf.data());
-		glDeleteProgram(program.glID.handle);
+		glDeleteProgram(program.glID);
 		return {};
 	}
 
@@ -135,7 +135,7 @@ Shader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string
 void gfx::gl::releaseShader(Shader& shader)
 {
 	LOG_I("-- [%s] Shader destroyed", shader.id.data());
-	glChk(glDeleteProgram(shader.glID.handle));
+	glChk(glDeleteProgram(shader.glID));
 	shader = Shader();
 }
 
@@ -275,13 +275,13 @@ HVerts gfx::tutorial::newLight(const HVerts& hVBO)
 	HVerts ret;
 	if (context::exists())
 	{
-		ret.vbo.handle = hVBO.vbo.handle;
+		ret.vbo = hVBO.vbo;
 		ret.vCount = hVBO.vCount;
 		const auto stride = sizeof(Vertex);
 		Lock lock(context::g_glMutex);
 		glChk(glGenVertexArrays(1, &ret.vao.handle));
-		glChk(glBindVertexArray(ret.vao.handle));
-		glChk(glBindBuffer(GL_ARRAY_BUFFER, ret.vbo.handle));
+		glChk(glBindVertexArray(ret.vao));
+		glChk(glBindBuffer(GL_ARRAY_BUFFER, ret.vbo));
 		glChk(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position))));
 		glChk(glEnableVertexAttribArray(0));
 	}

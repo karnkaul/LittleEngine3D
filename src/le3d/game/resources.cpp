@@ -23,6 +23,9 @@ std::unordered_map<std::string, Texture> g_textureMap;
 
 std::unique_ptr<Mesh> g_uDebugMesh;
 std::unique_ptr<Mesh> g_uDebugQuad;
+
+Shader g_nullShader;
+Texture g_nullTexture;
 } // namespace
 
 namespace resources
@@ -30,7 +33,7 @@ namespace resources
 Texture g_blankTex1px;
 }
 
-Shader resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<Shader::MAX_FLAGS> flags)
+Shader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<Shader::MAX_FLAGS> flags)
 {
 	ASSERT(g_shaderMap.find(id) == g_shaderMap.end(), "Shader ID already loaded!");
 	Shader shader = gfx::gl::genShader(id, vertCode, fragCode, flags);
@@ -39,13 +42,18 @@ Shader resources::loadShader(std::string id, std::string_view vertCode, std::str
 		g_shaderMap.emplace(id, std::move(shader));
 		return g_shaderMap[id];
 	}
-	return {};
+	ASSERT(false, "Failed to load shader!");
+	return g_nullShader;
 }
 
-Shader resources::getShader(const std::string& id)
+Shader& resources::findShader(const std::string& id)
 {
-	ASSERT(g_shaderMap.find(id) != g_shaderMap.end(), "Shader not loaded!");
-	return g_shaderMap[id];
+	ASSERT(isShaderLoaded(id), "Shader not loaded!");
+	if (isShaderLoaded(id))
+	{
+		return g_shaderMap[id];
+	}
+	return g_nullShader;
 }
 
 bool resources::isShaderLoaded(const std::string& id)
@@ -78,7 +86,7 @@ u32 resources::shaderCount()
 	return (u32)g_shaderMap.size();
 }
 
-Texture resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
+Texture& resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
 {
 	if (g_blankTex1px.glID <= 0)
 	{
@@ -91,13 +99,18 @@ Texture resources::loadTexture(std::string id, std::string type, std::vector<u8>
 		g_textureMap.emplace(id, std::move(texture));
 		return g_textureMap[id];
 	}
-	return {};
+	ASSERT(false, "Failed to load texture!");
+	return g_nullTexture;
 }
 
-Texture resources::getTexture(const std::string& id)
+Texture& resources::getTexture(const std::string& id)
 {
-	ASSERT(g_textureMap.find(id) != g_textureMap.end(), "Texture not loaded!");
-	return g_textureMap[id];
+	ASSERT(isTextureLoaded(id), "Texture not loaded!");
+	if (isTextureLoaded(id))
+	{
+		return g_textureMap[id];
+	}
+	return g_nullTexture;
 }
 
 bool resources::isTextureLoaded(const std::string& id)
