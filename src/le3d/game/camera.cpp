@@ -119,7 +119,7 @@ void FreeCam::tick(Time dt)
 			}
 		}
 	}
-	
+
 	// Elevation
 	f32 elevation = input::triggerToAxis(pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER))
 					- input::triggerToAxis(pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_TRIGGER));

@@ -15,7 +15,7 @@
 #include "le3d/gfx/colour.hpp"
 #include "le3d/gfx/mesh.hpp"
 #include "le3d/gfx/gfx.hpp"
-#include "le3d/gfx/shader.hpp"
+#include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/input/input.hpp"
 #include "le3d/core/log.hpp"
@@ -79,16 +79,20 @@ s32 run()
 	le::resources::loadTexture("container2_specular", SPECULAR, readBytes(resourcePath("textures/container2_specular.png")));
 	le::resources::loadTexture("awesomeface", DIFFUSE, readBytes(resourcePath("textures/awesomeface.png")));
 
+	le::Flags<le::Shader::MAX_FLAGS> noTex;
+	noTex.set((s32)le::gfx::shading::Flag::Untextured, true);
+	le::Flags<le::Shader::MAX_FLAGS> noLit;
+	noLit.set((s32)le::gfx::shading::Flag::Unlit, true);
+	le::Flags<le::Shader::MAX_FLAGS> noTexNoLit;
+	noTexNoLit.set((s32)le::gfx::shading::Flag::Unlit, true);
+	noTexNoLit.set((s32)le::gfx::shading::Flag::Untextured, true);
+
 	auto vsh = readFile(resourcePath("shaders/default.vsh"));
-	auto pUnlitTinted = le::resources::loadShader("unlit/tinted", vsh, readFile(resourcePath("shaders/unlit/tinted.fsh")));
-	auto pUnlitTextured = le::resources::loadShader("unlit/textured", vsh, readFile(resourcePath("shaders/unlit/textured.fsh")));
-	auto pLitTinted = le::resources::loadShader("lit/tinted", vsh, readFile(resourcePath("shaders/lit/tinted.fsh")));
-	le::resources::loadShader("lit/textured", vsh, readFile(resourcePath("shaders/lit/textured.fsh")));
-	pLitTinted->m_flags.set((s32)le::Shader::Flag::Untextured, true);
-	pLitTinted->setV4("tint", le::Colour::Yellow);
-	pUnlitTinted->m_flags.set((s32)le::Shader::Flag::Unlit, true);
-	pUnlitTinted->m_flags.set((s32)le::Shader::Flag::Untextured, true);
-	pUnlitTextured->m_flags.set((s32)le::Shader::Flag::Unlit, true);
+	auto unlitTinted = le::resources::loadShader("unlit/tinted", vsh, readFile(resourcePath("shaders/unlit/tinted.fsh")), noTexNoLit);
+	auto unlitTextured = le::resources::loadShader("unlit/textured", vsh, readFile(resourcePath("shaders/unlit/textured.fsh")), noLit);
+	auto litTinted = le::resources::loadShader("lit/tinted", vsh, readFile(resourcePath("shaders/lit/tinted.fsh")), noTex);
+	le::resources::loadShader("lit/textured", vsh, readFile(resourcePath("shaders/lit/textured.fsh")), {});
+	le::gfx::shading::setV4(litTinted, "tint", le::Colour::Yellow);
 
 	le::DirLight dirLight;
 	le::PtLight pointLight;
@@ -97,6 +101,7 @@ s32 run()
 	le::Texture bad;
 	auto& mesh = le::resources::debugMesh();
 	auto& quad = le::resources::debugQuad();
+	std::vector<le::Texture> textures = {le::resources::getTexture("awesomeface")};
 	quad.m_textures = {le::resources::getTexture("awesomeface")};
 	// quad.m_textures = {bad};
 	mesh.m_textures = {le::resources::getTexture("container2"), le::resources::getTexture("container2_specular")};
@@ -120,12 +125,12 @@ s32 run()
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.25f);
 	prop0.m_transform.setParent(&prop1.m_transform);
-	prop1.setShader(le::resources::findShader("lit/tinted"));
+	prop1.setShader(le::resources::getShader("lit/tinted"));
 
 	le::Prop quadProp;
 	quadProp.setup("quad");
 	quadProp.addFixture(quad);
-	quadProp.setShader(le::resources::findShader("unlit/textured"));
+	quadProp.setShader(le::resources::getShader("unlit/textured"));
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
 	le::HVerts light0 = le::gfx::tutorial::newLight(mesh.VAO());
@@ -136,7 +141,7 @@ s32 run()
 		le::Prop prop;
 		prop.setup("prop_" + std::to_string(i));
 		prop.addFixture(mesh);
-		prop.setShader(le::resources::findShader("lit/tinted"));
+		prop.setShader(le::resources::getShader("lit/tinted"));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -186,7 +191,7 @@ s32 run()
 		le::RenderState state;
 		state.view = camera.view();
 		state.projection = camera.perspectiveProj(le::context::nativeAR());
-		state.pShader = le::resources::findShader("lit/textured");
+		state.shader = le::resources::getShader("lit/textured");
 		state.pointLights.push_back(pointLight);
 		state.dirLights.push_back(dirLight);
 		prop0.render(state);
@@ -194,14 +199,14 @@ s32 run()
 		quadProp.render(state);
 		for (auto& prop : props)
 		{
-			prop.setShader(le::resources::findShader("lit/textured"));
+			prop.setShader(le::resources::getShader("lit/textured"));
 			prop.render(state);
 		}
 
 		glm::mat4 m(1.0f);
 		m = glm::translate(m, lightPos);
 		m = glm::scale(m, glm::vec3(0.1f));
-		le::gfx::gl::draw(light0, m, m, state, *pUnlitTinted);
+		le::gfx::gl::draw(light0, m, m, state, unlitTinted);
 
 		le::context::swapBuffers();
 		le::context::pollEvents();

@@ -98,7 +98,7 @@ f32 GamepadState::getAxis(s32 axis) const
 bool GamepadState::isPressed(s32 button) const
 {
 	s32 max;
-	glfwGetJoystickButtons(id, &max); 
+	glfwGetJoystickButtons(id, &max);
 	return button >= 0 && button <= max ? glfwState.buttons[button] : false;
 }
 

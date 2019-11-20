@@ -4,11 +4,9 @@
 #include <vector>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
-#include "le3d/core/object.hpp"
+#include "le3d/game/object.hpp"
 #include "le3d/core/transform.hpp"
-#if defined(DEBUGGING)
 #include "le3d/gfx/gfx.hpp"
-#endif
 
 namespace le
 {
@@ -49,7 +47,7 @@ protected:
 
 protected:
 	std::vector<Fixture> m_fixtures;
-	class Shader* m_pShader = nullptr;
+	std::optional<Shader> m_oShader;
 
 public:
 	void render(const RenderState& state) override;
@@ -58,6 +56,7 @@ public:
 	void addFixture(Mesh& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void clearFixtures();
 
-	void setShader(Shader* pShader);
+	void setShader(Shader shader);
+	void unsetShader();
 };
 } // namespace le

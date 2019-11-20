@@ -18,8 +18,8 @@ public:
 	Object(Object&&) noexcept;
 	Object& operator=(Object&&) noexcept;
 	virtual ~Object();
-	
+
 public:
 	virtual void setup(std::string name);
 };
-}
+} // namespace le

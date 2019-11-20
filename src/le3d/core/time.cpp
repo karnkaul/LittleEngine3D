@@ -18,13 +18,13 @@ std::string Time::toStr(Time time)
 	std::string ret;
 	ret.reserve(12);
 	ret += "[";
-	s32 h = toS32(time.assecs() / 60 / 60);
+	s32 h = s32(time.assecs() / 60 / 60);
 	if (h > 0)
 	{
 		ret += std::to_string(h);
 		ret += ":";
 	}
-	s32 m = toS32((time.assecs() / 60) - (h * 60));
+	s32 m = s32((time.assecs() / 60) - (h * 60));
 	if (m > 0)
 	{
 		ret += std::to_string(m);
@@ -159,7 +159,7 @@ f32 Time::assecs() const
 
 s32 Time::asmsecs() const
 {
-	return toS32(microSeconds / 1000);
+	return s32(microSeconds / 1000);
 }
 
 s64 Time::asmusecs() const

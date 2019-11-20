@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <array>
 #include <cstddef>
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -7,58 +7,12 @@
 #include "le3d/context/context.hpp"
 #include "le3d/context/contextImpl.hpp"
 #include "le3d/gfx/gfx.hpp"
-#include "le3d/gfx/shader.hpp"
+#include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/core/log.hpp"
 
 namespace le
 {
-HVerts::HVerts() = default;
-HVerts::HVerts(HVerts&& rhs)
-{
-	*this = std::move(rhs);
-}
-
-HVerts& HVerts::operator=(HVerts&& rhs)
-{
-	iCount = rhs.iCount;
-	vCount = rhs.vCount;
-	vao = rhs.vao;
-	vbo = rhs.vbo;
-	ebo = rhs.ebo;
-	rhs.iCount = rhs.vCount = 0;
-	rhs.vao = rhs.vbo = rhs.ebo = 0;
-	return *this;
-}
-
-HVerts gfx::gl::genVAO(bool bEBO)
-{
-	HVerts hVerts;
-	if (context::exists())
-	{
-		Lock lock(context::g_glMutex);
-		glChk(glGenVertexArrays(1, &hVerts.vao));
-		glChk(glGenBuffers(1, &hVerts.vbo));
-		if (bEBO)
-		{
-			glChk(glGenBuffers(1, &hVerts.ebo));
-		}
-	}
-	return hVerts;
-}
-
-void gfx::gl::releaseVAO(HVerts& hVerts)
-{
-	if (context::exists() && hVerts.vao > 0)
-	{
-		Lock lock(context::g_glMutex);
-		glChk(glDeleteVertexArrays(1, &hVerts.vao));
-		glDeleteBuffers(1, &hVerts.vbo);
-		glChk(glDeleteBuffers(1, &hVerts.ebo));
-	}
-	hVerts = HVerts();
-}
-
 Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> bytes)
 {
 	Texture ret;
@@ -70,10 +24,10 @@ Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> byte
 		if (pData)
 		{
 			Lock lock(context::g_glMutex);
-			GLObj hTex = 0;
-			glChk(glGenTextures(1, &hTex));
+			GLObj hTex;
+			glChk(glGenTextures(1, &hTex.handle));
 			glChk(glActiveTexture(GL_TEXTURE0));
-			glChk(glBindTexture(GL_TEXTURE_2D, hTex));
+			glChk(glBindTexture(GL_TEXTURE_2D, hTex.handle));
 			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
 			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -83,8 +37,8 @@ Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> byte
 			glChk(glGenerateMipmap(GL_TEXTURE_2D));
 #endif
 			glChk(glBindTexture(GL_TEXTURE_2D, 0));
-			ret = {std::move(name), std::move(type), hTex};
-			LOG_I("== [%s] %s Texture created [%u]", ret.id.data(), ret.type.data(), ret.glID);
+			ret = {std::move(name), std::move(type), std::move(hTex)};
+			LOG_I("== [%s] (%s Texture) created [%u]", ret.id.data(), ret.type.data(), ret.glID.handle);
 		}
 		else
 		{
@@ -108,12 +62,109 @@ void gfx::gl::releaseTex(std::vector<Texture*> textures)
 			if (pTexture->glID > 0)
 			{
 				texIDs.push_back(pTexture->glID);
-				LOG_I("-- [%s] Texture destroyed", pTexture->id.data());
+				LOG_I("-- [%s] (Texture) destroyed", pTexture->id.data());
 			}
 			*pTexture = Texture();
 		}
 		glChk(glDeleteTextures((GLsizei)texIDs.size(), texIDs.data()));
 	}
+}
+
+Shader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<Shader::MAX_FLAGS> flags)
+{
+	s32 success;
+	if (vertCode.empty())
+	{
+		LOG_E("[%s] Shader: Failed to compile vertex shader: empty input string!", id.data());
+		return {};
+	}
+
+#if defined(__arm__)
+	static const std::string_view VERSION = "#version 300 es\n";
+#else
+	static const std::string_view VERSION = "#version 330 core\n";
+#endif
+	Lock lock(context::g_glMutex);
+	u32 vsh = glCreateShader(GL_VERTEX_SHADER);
+	const GLchar* files[] = {VERSION.data(), vertCode.data()};
+	glShaderSource(vsh, (GLsizei)ARR_SIZE(files), files, nullptr);
+	glCompileShader(vsh);
+	std::array<char, 512> buf;
+	glGetShaderiv(vsh, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(vsh, (GLsizei)buf.size(), nullptr, buf.data());
+		LOG_E("[%s] (Shader) Failed to compile vertex shader!\n\t%s", id.data(), buf.data());
+		return {};
+	}
+
+	u32 fsh = glCreateShader(GL_FRAGMENT_SHADER);
+	files[1] = fragCode.data();
+	glShaderSource(fsh, (GLsizei)ARR_SIZE(files), files, nullptr);
+	glCompileShader(fsh);
+	glGetShaderiv(fsh, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(fsh, (GLsizei)buf.size(), nullptr, buf.data());
+		LOG_E("[%s] (Shader) Failed to compile fragment shader!\n\t%s", id.data(), buf.data());
+		return {};
+	}
+
+	Shader program;
+	program.glID.handle = glCreateProgram();
+	glAttachShader(program.glID.handle, vsh);
+	glAttachShader(program.glID.handle, fsh);
+	glLinkProgram(program.glID.handle);
+	glGetProgramiv(program.glID.handle, GL_LINK_STATUS, &success);
+	if (!success)
+	{
+		glGetProgramInfoLog(program.glID.handle, (GLsizei)buf.size(), nullptr, buf.data());
+		LOG_E("[%s] (Shader) Failed to link shaders!\n\t%s", id.data(), buf.data());
+		glDeleteProgram(program.glID.handle);
+		return {};
+	}
+
+	glDeleteShader(vsh);
+	glDeleteShader(fsh);
+	LOG_I("== [%s] (Shader) created", id.data());
+	program.id = std::move(id);
+	program.flags = flags;
+	return program;
+}
+
+void gfx::gl::releaseShader(Shader& shader)
+{
+	LOG_I("-- [%s] Shader destroyed", shader.id.data());
+	glChk(glDeleteProgram(shader.glID.handle));
+	shader = Shader();
+}
+
+HVerts gfx::gl::genVAO(bool bEBO)
+{
+	HVerts hVerts;
+	if (context::exists())
+	{
+		Lock lock(context::g_glMutex);
+		glChk(glGenVertexArrays(1, &hVerts.vao.handle));
+		glChk(glGenBuffers(1, &hVerts.vbo.handle));
+		if (bEBO)
+		{
+			glChk(glGenBuffers(1, &hVerts.ebo.handle));
+		}
+	}
+	return hVerts;
+}
+
+void gfx::gl::releaseVAO(HVerts& hVerts)
+{
+	if (context::exists() && hVerts.vao > 0)
+	{
+		Lock lock(context::g_glMutex);
+		glChk(glDeleteVertexArrays(1, &hVerts.vao.handle));
+		glDeleteBuffers(1, &hVerts.vbo.handle);
+		glChk(glDeleteBuffers(1, &hVerts.ebo.handle));
+	}
+	hVerts = HVerts();
 }
 
 void gfx::gl::bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u32> indices)
@@ -152,36 +203,36 @@ HVerts gfx::gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indic
 		loc = 0;
 		if (pShader)
 		{
-			loc = glGetAttribLocation(pShader->m_program, "aPosition");
+			loc = glGetAttribLocation(pShader->glID.handle, "aPosition");
 		}
 		if (loc >= 0)
 		{
-			glChk(glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position))));
-			glChk(glEnableVertexAttribArray((GLObj)loc));
+			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position))));
+			glChk(glEnableVertexAttribArray((u32)loc));
 		}
 
 		// Normal
 		loc = 1;
 		if (pShader)
 		{
-			loc = glGetAttribLocation(pShader->m_program, "aNormal");
+			loc = glGetAttribLocation(pShader->glID.handle, "aNormal");
 		}
 		if (loc >= 0)
 		{
-			glChk(glVertexAttribPointer((GLObj)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, normal))));
-			glChk(glEnableVertexAttribArray((GLObj)loc));
+			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, normal))));
+			glChk(glEnableVertexAttribArray((u32)loc));
 		}
 
 		// Tex coord
 		loc = 2;
 		if (pShader)
 		{
-			loc = glGetAttribLocation(pShader->m_program, "aTexCoord");
+			loc = glGetAttribLocation(pShader->glID.handle, "aTexCoord");
 		}
 		if (loc >= 0)
 		{
-			glChk(glVertexAttribPointer((GLObj)loc, 2, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, texCoords))));
-			glChk(glEnableVertexAttribArray((GLObj)loc));
+			glChk(glVertexAttribPointer((u32)loc, 2, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, texCoords))));
+			glChk(glEnableVertexAttribArray((u32)loc));
 		}
 	}
 	return hVerts;
@@ -190,20 +241,20 @@ HVerts gfx::gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indic
 void gfx::gl::draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const Shader& s)
 {
 	Lock lock(context::g_glMutex);
-	s.setupLights(rs.dirLights, rs.pointLights);
-	auto temp = glGetUniformLocation(s.m_program, "model");
+	gfx::shading::setupLights(s, rs.dirLights, rs.pointLights);
+	auto temp = glGetUniformLocation(s.glID.handle, "model");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(m));
-	temp = glGetUniformLocation(s.m_program, "normalModel");
+	temp = glGetUniformLocation(s.glID.handle, "normalModel");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(nm));
-	temp = glGetUniformLocation(s.m_program, "view");
+	temp = glGetUniformLocation(s.glID.handle, "view");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(rs.view));
-	temp = glGetUniformLocation(s.m_program, "projection");
+	temp = glGetUniformLocation(s.glID.handle, "projection");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(rs.projection));
-	glChk(glBindVertexArray(hVerts.vao));
+	glChk(glBindVertexArray(hVerts.vao.handle));
 	glChk(glActiveTexture(GL_TEXTURE0));
-	if (hVerts.ebo > 0)
+	if (hVerts.ebo.handle > 0)
 	{
-		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo));
+		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo.handle));
 		glChk(glDrawElements(GL_TRIANGLES, hVerts.iCount, GL_UNSIGNED_INT, 0));
 	}
 	else
@@ -224,13 +275,13 @@ HVerts gfx::tutorial::newLight(const HVerts& hVBO)
 	HVerts ret;
 	if (context::exists())
 	{
-		ret.vbo = hVBO.vbo;
+		ret.vbo.handle = hVBO.vbo.handle;
 		ret.vCount = hVBO.vCount;
 		const auto stride = sizeof(Vertex);
 		Lock lock(context::g_glMutex);
-		glChk(glGenVertexArrays(1, &ret.vao));
-		glChk(glBindVertexArray(ret.vao));
-		glChk(glBindBuffer(GL_ARRAY_BUFFER, ret.vbo));
+		glChk(glGenVertexArrays(1, &ret.vao.handle));
+		glChk(glBindVertexArray(ret.vao.handle));
+		glChk(glBindBuffer(GL_ARRAY_BUFFER, ret.vbo.handle));
 		glChk(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position))));
 		glChk(glEnableVertexAttribArray(0));
 	}

@@ -6,7 +6,6 @@ set(SUB_SOURCES
 	le3d/core/fixed.cpp
 	le3d/core/log.cpp
 	le3d/core/maths.cpp
-	le3d/core/object.cpp
 	le3d/core/time.cpp
 	le3d/core/transform.cpp
 	le3d/core/ubyte.cpp
@@ -15,6 +14,7 @@ set(SUB_SOURCES
 
 	le3d/game/camera.cpp
 	le3d/game/entity.cpp
+	le3d/game/object.cpp
 	le3d/game/resources.cpp
 
 	le3d/input/inputImpl.hpp
@@ -24,7 +24,7 @@ set(SUB_SOURCES
 	le3d/gfx/drawable.cpp
 	le3d/gfx/gfx.cpp
 	le3d/gfx/mesh.cpp
-	le3d/gfx/shader.cpp
+	le3d/gfx/shading.cpp
 	le3d/gfx/utils.cpp
 
 	le3d/threads/threads.cpp

@@ -5,7 +5,7 @@
 #include "le3d/context/context.hpp"
 #include "le3d/context/contextImpl.hpp"
 #include "le3d/gfx/drawable.hpp"
-#include "le3d/gfx/shader.hpp"
+#include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
 
 namespace le

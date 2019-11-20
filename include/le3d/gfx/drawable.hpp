@@ -38,10 +38,10 @@ public:
 	const HVerts& VAO() const;
 
 public:
-	virtual bool setupDrawable(std::string name, std::vector<Vertex> vertices, std::vector<u32> indices, const class Shader* pShader = nullptr);
+	virtual bool setupDrawable(std::string name, std::vector<Vertex> vertices, std::vector<u32> indices, const Shader* pShader = nullptr);
 	virtual void glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& state, const Shader* pCustomShader = nullptr) = 0;
 
 protected:
 	void release();
 };
-}
+} // namespace le

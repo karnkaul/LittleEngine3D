@@ -5,7 +5,7 @@
 #include "le3d/game/entity.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/mesh.hpp"
-#include "le3d/gfx/shader.hpp"
+#include "le3d/gfx/shading.hpp"
 
 namespace le
 {
@@ -27,10 +27,10 @@ void Prop::render(const RenderState& state)
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-	Shader* pShader = m_pShader ? m_pShader : state.pShader;
+	const Shader& shader = m_oShader ? *m_oShader : state.shader;
 	for (auto& fixture : m_fixtures)
 	{
-		ASSERT(pShader, "null shader!");
+		ASSERT(shader.glID.handle > 0, "null shader!");
 #if defined(__arm__)
 		// Compensate for lack of uniform initialisation in GLES
 		pShader->setV4("tint", Colour::White);
@@ -38,7 +38,7 @@ void Prop::render(const RenderState& state)
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{
-			//pShader->setV4("tint", Colour::Red);
+			// pShader->setV4("tint", Colour::Red);
 			fixture.pMesh->m_drawFlags.set((s32)Mesh::Flag::BlankMagenta, true);
 		}
 #endif
@@ -49,7 +49,7 @@ void Prop::render(const RenderState& state)
 			m *= *fixture.oModel;
 			nm *= *fixture.oModel;
 		}
-		fixture.pMesh->glDraw(m, nm, state, pShader);
+		fixture.pMesh->glDraw(m, nm, state, &shader);
 	}
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
@@ -67,8 +67,13 @@ void Prop::clearFixtures()
 	m_fixtures.clear();
 }
 
-void Prop::setShader(Shader* pShader)
+void Prop::setShader(Shader shader)
 {
-	m_pShader = pShader;
+	m_oShader.emplace(std::move(shader));
+}
+
+void Prop::unsetShader()
+{
+	m_oShader.reset();
 }
 } // namespace le

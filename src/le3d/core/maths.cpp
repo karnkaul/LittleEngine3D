@@ -32,15 +32,15 @@ s32 Random::range(s32 min, s32 max)
 
 size_t Random::range(size_t min, size_t max)
 {
-	return static_cast<size_t>(range(toS32(min), toS32(max)));
+	return static_cast<size_t>(range((s32)min, (s32)max));
 }
 
 Fixed Random::range(Fixed min, Fixed max, u32 precision)
 {
-	s32 sMin = toS32(min.toF32() * precision);
-	s32 sMax = toS32(max.toF32() * precision);
+	s32 sMin = s32(min.toF32() * precision);
+	s32 sMax = s32(max.toF32() * precision);
 	s32 random = range(sMin, sMax);
-	return Fixed(random, toS32(precision));
+	return Fixed(random, s32(precision));
 }
 
 s32 Random::nextDet()

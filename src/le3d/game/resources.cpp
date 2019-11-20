@@ -30,38 +30,32 @@ namespace resources
 Texture g_blankTex1px;
 }
 
-Shader* resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode)
+Shader resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<Shader::MAX_FLAGS> flags)
 {
 	ASSERT(g_shaderMap.find(id) == g_shaderMap.end(), "Shader ID already loaded!");
-	Shader shader;
-	if (shader.glSetup(id, vertCode, fragCode))
+	Shader shader = gfx::gl::genShader(id, vertCode, fragCode, flags);
+	if (shader.glID.handle > 0)
 	{
 		g_shaderMap.emplace(id, std::move(shader));
-		return &g_shaderMap[id];
+		return g_shaderMap[id];
 	}
-	return nullptr;
+	return {};
 }
 
-Shader* resources::findShader(const std::string& id)
-{
-	auto search = g_shaderMap.find(id);
-	if (search != g_shaderMap.end())
-	{
-		return &search->second;
-	}
-	LOG_W("[shaders] %s Shader not found!", id.data());
-	return nullptr;
-}
-
-Shader& resources::getShader(const std::string& id)
+Shader resources::getShader(const std::string& id)
 {
 	ASSERT(g_shaderMap.find(id) != g_shaderMap.end(), "Shader not loaded!");
 	return g_shaderMap[id];
 }
 
+bool resources::isShaderLoaded(const std::string& id)
+{
+	return g_shaderMap.find(id) != g_shaderMap.end();
+}
+
 bool resources::unload(Shader& shader)
 {
-	auto search = g_shaderMap.find(shader.m_id);
+	auto search = g_shaderMap.find(shader.id);
 	if (search != g_shaderMap.end())
 	{
 		g_shaderMap.erase(search);
@@ -72,6 +66,10 @@ bool resources::unload(Shader& shader)
 
 void resources::unloadShaders()
 {
+	for (auto& kvp : g_shaderMap)
+	{
+		gfx::gl::releaseShader(kvp.second);
+	}
 	g_shaderMap.clear();
 }
 
@@ -80,7 +78,7 @@ u32 resources::shaderCount()
 	return (u32)g_shaderMap.size();
 }
 
-Texture* resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
+Texture resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
 {
 	if (g_blankTex1px.glID <= 0)
 	{
@@ -91,25 +89,20 @@ Texture* resources::loadTexture(std::string id, std::string type, std::vector<u8
 	if (texture.glID > 0)
 	{
 		g_textureMap.emplace(id, std::move(texture));
-		return &g_textureMap[id];
+		return g_textureMap[id];
 	}
-	return nullptr;
+	return {};
 }
 
-Texture* resources::findTexture(const std::string& id)
-{
-	auto search = g_textureMap.find(id);
-	if (search != g_textureMap.end())
-	{
-		return &search->second;
-	}
-	return nullptr;
-}
-
-Texture& resources::getTexture(const std::string& id)
+Texture resources::getTexture(const std::string& id)
 {
 	ASSERT(g_textureMap.find(id) != g_textureMap.end(), "Texture not loaded!");
 	return g_textureMap[id];
+}
+
+bool resources::isTextureLoaded(const std::string& id)
+{
+	return g_textureMap.find(id) != g_textureMap.end();
 }
 
 bool resources::unload(Texture& texture)

@@ -2,7 +2,7 @@
 #include <bitset>
 #include <set>
 #include "le3d/core/flags.hpp"
-#include "le3d/core/object.hpp"
+#include "le3d/game/object.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/core/transform.hpp"
 #include "le3d/input/input.hpp"

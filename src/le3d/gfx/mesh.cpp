@@ -5,7 +5,7 @@
 #include "le3d/context/context.hpp"
 #include "le3d/context/contextImpl.hpp"
 #include "le3d/gfx/mesh.hpp"
-#include "le3d/gfx/shader.hpp"
+#include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
 
 namespace le
@@ -41,36 +41,36 @@ Mesh Mesh::createCube(f32 side)
 {
 	f32 s = side * 0.5f;
 	f32 points[] = {
-		-s, -s, -s, s,  -s, -s, s,  s,  -s, s,  s,  -s, -s, s,  -s, -s, -s, -s, // front
+		-s, -s, -s, s,	-s, -s, s,	s,	-s, s,	s,	-s, -s, s,	-s, -s, -s, -s, // front
 
-		-s, -s, s,  s,  -s, s,  s,  s,  s,  s,  s,  s,  -s, s,  s,  -s, -s, s, // back
+		-s, -s, s,	s,	-s, s,	s,	s,	s,	s,	s,	s,	-s, s,	s,	-s, -s, s, // back
 
-		-s, s,  s,  -s, s,  -s, -s, -s, -s, -s, -s, -s, -s, -s, s,  -s, s,  s, // left
+		-s, s,	s,	-s, s,	-s, -s, -s, -s, -s, -s, -s, -s, -s, s,	-s, s,	s, // left
 
-		s,  s,  s,  s,  s,  -s, s,  -s, -s, s,  -s, -s, s,  -s, s,  s,  s,  s, // right
+		s,	s,	s,	s,	s,	-s, s,	-s, -s, s,	-s, -s, s,	-s, s,	s,	s,	s, // right
 
-		-s, -s, -s, s,  -s, -s, s,  -s, s,  s,  -s, s,  -s, -s, s,  -s, -s, -s, // down
+		-s, -s, -s, s,	-s, -s, s,	-s, s,	s,	-s, s,	-s, -s, s,	-s, -s, -s, // down
 
-		-s, s,  -s, s,  s,  -s, s,  s,  s,  s,  s,  s,  -s, s,  s,  -s, s,  -s, // up
+		-s, s,	-s, s,	s,	-s, s,	s,	s,	s,	s,	s,	-s, s,	s,	-s, s,	-s, // up
 	};
 	f32 norms[] = {
-		0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f,
-		0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, // front
+		0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f,
+		0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, // front
 
-		0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-		0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f, // back
+		0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,
+		0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f,	1.0f, // back
 
-		-1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,
-		-1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f, // left
+		-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,
+		-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,	0.0f, // left
 
-		1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-		1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f, // right
+		1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,
+		1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f,	0.0f, // right
 
-		0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,
-		0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f, // down
+		0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,
+		0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f, // down
 
-		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f, // up
+		0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,
+		0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f,	0.0f, // up
 	};
 	ASSERT(ARR_SIZE(norms) == ARR_SIZE(points), "invalid points/normals array sizes!");
 	std::vector<le::Vertex> vertices(ARR_SIZE(points) / 3, le::Vertex());
@@ -92,15 +92,15 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 {
 	if (le::context::exists() && m_hVerts.vao > 0)
 	{
-		auto* pShader = pCustomShader ? pCustomShader : state.pShader;
+		auto& shader = pCustomShader ? *pCustomShader : state.shader;
 		bool bResetTint = false;
-		ASSERT(pShader, "shader is null!");
+		ASSERT(shader.glID.handle > 0, "shader is null!");
 		{
 			Lock lock(context::g_glMutex);
-			pShader->use();
-			pShader->setF32("material.shininess", m_shininess);
+			gfx::shading::use(shader);
+			gfx::shading::setF32(shader, "material.shininess", m_shininess);
 			const auto& v = state.view;
-			pShader->setV3("viewPos", glm::vec3(-v[3][0], -v[3][1], -v[3][2]));
+			gfx::shading::setV3(shader, "viewPos", glm::vec3(-v[3][0], -v[3][1], -v[3][2]));
 			s32 txID = 0;
 			u32 diffuse = 0;
 			u32 specular = 0;
@@ -108,7 +108,7 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 			auto drawBlankTex = [&](bool bMagenta) {
 				if (bMagenta)
 				{
-					pShader->setV4("tint", Colour::Magenta);
+					gfx::shading::setV4(shader, "tint", Colour::Magenta);
 					bResetTint = true;
 				}
 				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
@@ -122,13 +122,13 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 			else
 #endif
 			{
-				if (pShader->m_flags.isSet((s32)Shader::Flag::Untextured))
+				if (shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
 				{
-					if (!pShader->m_flags.isSet((s32)Shader::Flag::Unlit))
+					if (!shader.flags.isSet((s32)gfx::shading::Flag::Unlit))
 					{
-						pShader->setV3("material.ambient", m_untexturedTint.ambient);
-						pShader->setV3("material.diffuse", m_untexturedTint.diffuse);
-						pShader->setV3("material.specular", m_untexturedTint.specular);
+						gfx::shading::setV3(shader, "material.ambient", m_untexturedTint.ambient);
+						gfx::shading::setV3(shader, "material.diffuse", m_untexturedTint.diffuse);
+						gfx::shading::setV3(shader, "material.specular", m_untexturedTint.specular);
 					}
 				}
 				else
@@ -164,11 +164,11 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 						continue;
 					}
 					id += number;
-					if (texture.glID > 0)
+					if (texture.glID.handle > 0)
 					{
 						glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-						glBindTexture(GL_TEXTURE_2D, texture.glID);
-						pShader->setS32(id, txID++);
+						glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
+						gfx::shading::setS32(shader, id, txID++);
 					}
 					else
 					{
@@ -177,7 +177,7 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 				}
 			}
 		}
-		gfx::gl::draw(m_hVerts, m, nm, state, *pShader);
+		gfx::gl::draw(m_hVerts, m, nm, state, shader);
 		for (s32 txID = 0; txID <= s_maxTexIdx; ++txID)
 		{
 			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
@@ -185,7 +185,7 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 		}
 		if (bResetTint)
 		{
-			pShader->setV4("tint", Colour::White);
+			gfx::shading::setV4(shader, "tint", Colour::White);
 		}
 #if defined(DEBUGGING)
 		m_drawFlags.flags.reset();

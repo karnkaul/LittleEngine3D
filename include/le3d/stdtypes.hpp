@@ -30,30 +30,11 @@ using f32 = float;
 using f64 = double;
 using size_t = std::size_t;
 using Task = std::function<void()>;
-using GLObj = u32;
 
 template <typename Base, typename Derived>
 constexpr bool isDerived()
 {
 	return std::is_base_of<Base, Derived>::value;
-}
-
-template <typename T>
-constexpr size_t toIdx(T t)
-{
-	return static_cast<size_t>(t);
-}
-
-template <typename T>
-constexpr s32 toS32(T t)
-{
-	return static_cast<s32>(t);
-}
-
-template <typename T>
-constexpr GLObj toGLObj(T t)
-{
-	return static_cast<GLObj>(t);
 }
 
 template <typename T>

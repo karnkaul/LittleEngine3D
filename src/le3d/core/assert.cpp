@@ -63,7 +63,6 @@ bool IsDebuggerAttached()
 }
 } // namespace
 
-
 void debugBreak()
 {
 #if _MSC_VER
@@ -101,4 +100,4 @@ void assertMsg(bool expr, const char* message, const char* fileName, long lineNu
 #endif
 	}
 }
-} // namespace LE
+} // namespace le
