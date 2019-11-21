@@ -45,7 +45,8 @@ protected:
 		std::optional<glm::mat4> oModel;
 	};
 #if defined(DEBUGGING)
-	Fixture m_ornArrow;
+	Mesh* m_pCube;
+	Mesh* m_pTetra;
 #endif
 
 protected:

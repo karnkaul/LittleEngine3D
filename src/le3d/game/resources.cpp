@@ -23,6 +23,8 @@ std::unordered_map<std::string, Texture> g_textureMap;
 
 std::unique_ptr<Mesh> g_uDebugMesh;
 std::unique_ptr<Mesh> g_uDebugQuad;
+std::unique_ptr<Mesh> g_uDebugPyramid;
+std::unique_ptr<Mesh> g_uDebugTetrahedron;
 
 Shader g_nullShader;
 Texture g_nullTexture;
@@ -138,7 +140,7 @@ void resources::unloadTextures(bool bUnloadBlankTex)
 	{
 		toDel.push_back(&kvp.second);
 	}
-	if (bUnloadBlankTex && g_blankTex1px.glID >= 0)
+	if (bUnloadBlankTex && g_blankTex1px.glID > 0)
 	{
 		toDel.push_back(&g_blankTex1px);
 	}
@@ -169,11 +171,31 @@ Mesh& resources::debugQuad()
 	return *g_uDebugQuad;
 }
 
+Mesh& resources::debugPyramid()
+{
+	if (!g_uDebugPyramid)
+	{
+		g_uDebugPyramid = std::make_unique<Mesh>(Mesh::create4Pyramid(1.0f));
+	}
+	return *g_uDebugPyramid;
+}
+
+Mesh& resources::debugTetrahedron()
+{
+	if (!g_uDebugTetrahedron)
+	{
+		g_uDebugTetrahedron = std::make_unique<Mesh>(Mesh::createTetrahedron(1.0f));
+	}
+	return *g_uDebugTetrahedron;
+}
+
 void resources::unloadAll()
 {
 	unloadShaders();
 	unloadTextures(true);
 	g_uDebugMesh = nullptr;
 	g_uDebugQuad = nullptr;
+	g_uDebugPyramid = nullptr;
+	g_uDebugTetrahedron = nullptr;
 }
 } // namespace le

@@ -29,6 +29,8 @@ u32 textureCount();
 
 Mesh& debugMesh();
 Mesh& debugQuad();
+Mesh& debugPyramid();
+Mesh& debugTetrahedron();
 
 void unloadAll();
 } // namespace resources

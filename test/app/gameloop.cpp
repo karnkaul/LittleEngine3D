@@ -157,6 +157,7 @@ void runTest()
 	Time::reset();
 	Time dt;
 	Time t = Time::now();
+
 	while (!context::isClosing())
 	{
 		dt = Time::now() - t;

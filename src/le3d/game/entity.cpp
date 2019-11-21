@@ -7,6 +7,7 @@
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/mesh.hpp"
 #include "le3d/gfx/shading.hpp"
+#include "le3d/gfx/utils.hpp"
 
 namespace le
 {
@@ -25,7 +26,8 @@ void Entity::setEnabled(bool bEnabled)
 Prop::Prop()
 {
 #if defined(DEBUGGING)
-	m_ornArrow.pMesh = &resources::debugMesh();
+	m_pCube = &resources::debugMesh();
+	m_pTetra = &resources::debugTetrahedron();
 #endif
 }
 
@@ -64,16 +66,39 @@ void Prop::render(const RenderState& state)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 #if defined(DEBUGGING)
-	glm::mat4 m(1.0f);
-	m *= m_transform.model();
-	m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.25f));
-	m = glm::translate(m, glm::vec3(0.0f, 0.0f, 0.65f));
-	if (m_ornArrow.pMesh)
+	if (m_pCube && m_pTetra)
 	{
-		glDisable(GL_DEPTH_TEST);
+		glm::mat4 m1(1.0f);
+		glm::mat4 pm(1.0f);
+		const glm::vec3 arrowPointScale = glm::vec3(0.08f, 0.15f, 0.08f);
+		m1 *= m_transform.model();
 		Shader tinted = resources::findShader("unlit/tinted");
-		gfx::shading::setV4(tinted, "tint", Colour::Cyan);
-		m_ornArrow.pMesh->glDraw(m, m, state, &tinted);
+		glDisable(GL_DEPTH_TEST);
+		gfx::shading::setV4(tinted, "tint", Colour::Blue);
+		glm::mat4 m = glm::scale(m1, glm::vec3(0.02f, 0.02f, 0.5f));
+		m = glm::translate(m, g_nFront * 0.5f);
+		m_pCube->glDraw(m, m, state, &tinted);
+		pm = glm::translate(m1, g_nFront * 0.5f);
+		pm = glm::rotate(pm, glm::radians(90.0f), g_nRight);
+		pm = glm::scale(pm, glm::vec3(0.08f, 0.15f, 0.08f));
+		m_pTetra->glDraw(pm, pm, state, &tinted);
+		
+		gfx::shading::setV4(tinted, "tint", Colour::Red);
+		m = glm::scale(m1, glm::vec3(0.5f, 0.02f, 0.02f));
+		m = glm::translate(m, g_nRight * 0.5f);
+		m_pCube->glDraw(m, m, state, &tinted);
+		pm = glm::translate(m1, g_nRight * 0.5f);
+		pm = glm::rotate(pm, glm::radians(90.0f), -g_nFront);
+		pm = glm::scale(pm, arrowPointScale);
+		m_pTetra->glDraw(pm, pm, state, &tinted);
+		
+		gfx::shading::setV4(tinted, "tint", Colour::Green);
+		glm::mat4 mY = glm::scale(m1, glm::vec3(0.02f, 0.5f, 0.02f));
+		mY = glm::translate(mY, g_nUp * 0.5f);
+		m_pCube->glDraw(mY, mY, state, &tinted);
+		pm = glm::translate(m1, g_nUp * 0.5f);
+		pm = glm::scale(pm, arrowPointScale);
+		m_pTetra->glDraw(pm, pm, state, &tinted);
 		glEnable(GL_DEPTH_TEST);
 	}
 #endif
