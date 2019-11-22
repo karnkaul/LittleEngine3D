@@ -1,12 +1,13 @@
-project(stb-image)
+project(glad-d)
 
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/glad/glad.h")
-	unzip_archive(stb.zip "${CMAKE_CURRENT_SOURCE_DIR}")
+	unzip_archive(glad_debug.zip "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 
 set(SOURCES
-	include/stb/stb_image.h
-	src/stb_image.c
+	include/glad/glad.h
+	include/KHR/khrplatform.h
+	src/glad.c
 )
 list(TRANSFORM SOURCES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})

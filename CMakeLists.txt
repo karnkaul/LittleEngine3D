@@ -58,6 +58,7 @@ set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
 add_subdirectory(lib/glm)
 
 # GLAD
+add_subdirectory(lib/glad_debug)
 add_subdirectory(lib/glad)
 
 # stb_image
@@ -88,13 +89,14 @@ add_target_compile_definitions(${PROJECT_NAME})
 set_target_compile_options(${PROJECT_NAME})
 add_dependencies(${PROJECT_NAME} 
 	glfw
+	glad-d
 	glad
 	glm
 	stb-image
 )
 target_link_libraries(${PROJECT_NAME} 
 	glfw
-	glad
+	glad$<$<CONFIG:Debug>:-d>
 	glm
 	stb-image
 )

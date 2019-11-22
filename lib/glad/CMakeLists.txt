@@ -1,5 +1,9 @@
 project(glad)
 
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/glad/glad.h")
+	unzip_archive(glad.zip "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
 set(SOURCES
 	include/glad/glad.h
 	include/KHR/khrplatform.h
