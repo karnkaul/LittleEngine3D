@@ -2,12 +2,6 @@ os: linux
 
 dist: bionic
 
-branches:
-  only:
-    - master
-    - dev
-    - stable
-
 language: cpp
 
 compiler:
