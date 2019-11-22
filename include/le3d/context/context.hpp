@@ -8,6 +8,10 @@ namespace le
 {
 namespace context
 {
+#if defined(DEBUGGING)
+extern bool g_bVSYNC;
+#endif
+
 bool glCreate(u16 width, u16 height, std::string_view title);
 void glDestroy();
 

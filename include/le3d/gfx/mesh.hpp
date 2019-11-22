@@ -21,7 +21,7 @@ public:
 	static Mesh createTetrahedron(f32 side);
 
 public:
-	void glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& state, const Shader* pCustomShader = nullptr) override;
+	void draw(const Shader& shader) override;
 
 #if defined(DEBUGGING)
 	friend class Prop;

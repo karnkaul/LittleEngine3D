@@ -22,6 +22,7 @@ void bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u32> 
 HVerts genVertices(std::vector<Vertex> vertices, std::vector<u32> indices = {}, const Shader* pShader = nullptr);
 
 void draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const Shader& s);
+void draw(const HVerts& hVerts);
 } // namespace gl
 
 HVerts newVertices(std::vector<Vertex> vertices, std::vector<u32> indices = {}, const Shader* pShader = nullptr);

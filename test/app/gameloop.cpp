@@ -100,6 +100,7 @@ void runTest()
 	prop0.addFixture(mesh, offset);
 	prop0.m_transform.setPosition({2.0f, 2.5f, -2.0f});
 	prop0.m_transform.setScale(2.0f);
+	prop0.setShader(resources::findShader("lit/textured"));
 
 	Prop prop1;
 	prop1.setup("prop1");
@@ -124,6 +125,7 @@ void runTest()
 		Prop prop;
 		prop.setup("prop_" + std::to_string(i));
 		prop.addFixture(mesh);
+		prop.setShader(resources::findShader("lit/textured"));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -172,6 +174,8 @@ void runTest()
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
 		quadProp.m_transform.setOrientation(
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
+
+		resources::shadeLights({dirLight}, scene.lighting.pointLights);
 		RenderState state = scene.perspective(context::nativeAR());
 		prop0.render(state);
 		prop1.render(state);
@@ -198,6 +202,9 @@ s32 gameloop::run(s32 argc, char** argv)
 	constexpr u16 WIDTH = 1280;
 	constexpr u16 HEIGHT = 720;
 
+#if defined(DEBUGGING)
+	context::g_bVSYNC = false;
+#endif
 	if (!context::glCreate(WIDTH, HEIGHT, "Test"))
 	{
 		return 1;

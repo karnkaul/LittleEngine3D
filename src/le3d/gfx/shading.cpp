@@ -1,5 +1,6 @@
 #include <array>
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
 #include "le3d/context/context.hpp"
 #include "le3d/context/contextImpl.hpp"
 #include "le3d/core/assert.hpp"
@@ -12,13 +13,13 @@ namespace le::gfx
 const u8 shading::MAX_DIR_LIGHTS = 4;
 const u8 shading::MAX_POINT_LIGHTS = 4;
 
-void shading::use(Shader shader)
+void shading::use(const Shader& shader)
 {
 	ASSERT(shader.glID.handle > 0, "Invalid shader program!");
 	glChk(glUseProgram(shader.glID.handle));
 }
 
-bool shading::setBool(Shader shader, std::string_view id, bool bVal)
+bool shading::setBool(const Shader& shader, std::string_view id, bool bVal)
 {
 	if (!id.empty())
 	{
@@ -33,7 +34,7 @@ bool shading::setBool(Shader shader, std::string_view id, bool bVal)
 	return false;
 }
 
-bool shading::setS32(Shader shader, std::string_view id, s32 val)
+bool shading::setS32(const Shader& shader, std::string_view id, s32 val)
 {
 	if (!id.empty())
 	{
@@ -48,7 +49,7 @@ bool shading::setS32(Shader shader, std::string_view id, s32 val)
 	return false;
 }
 
-bool shading::setF32(Shader shader, std::string_view id, f32 val)
+bool shading::setF32(const Shader& shader, std::string_view id, f32 val)
 {
 	if (!id.empty())
 	{
@@ -63,7 +64,7 @@ bool shading::setF32(Shader shader, std::string_view id, f32 val)
 	return false;
 }
 
-bool shading::setV2(Shader shader, std::string_view id, const glm::vec2& val)
+bool shading::setV2(const Shader& shader, std::string_view id, const glm::vec2& val)
 {
 	if (!id.empty())
 	{
@@ -78,7 +79,7 @@ bool shading::setV2(Shader shader, std::string_view id, const glm::vec2& val)
 	return false;
 }
 
-bool shading::setV3(Shader shader, std::string_view id, const glm::vec3& val)
+bool shading::setV3(const Shader& shader, std::string_view id, const glm::vec3& val)
 {
 	if (!id.empty())
 	{
@@ -93,12 +94,12 @@ bool shading::setV3(Shader shader, std::string_view id, const glm::vec3& val)
 	return false;
 }
 
-bool shading::setV4(Shader shader, std::string_view id, Colour colour)
+bool shading::setV4(const Shader& shader, std::string_view id, Colour colour)
 {
 	return setV4(shader, id, glm::vec4(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
 }
 
-bool shading::setV4(Shader shader, std::string_view id, const glm::vec4& val)
+bool shading::setV4(const Shader& shader, std::string_view id, const glm::vec4& val)
 {
 	if (!id.empty())
 	{
@@ -113,7 +114,22 @@ bool shading::setV4(Shader shader, std::string_view id, const glm::vec4& val)
 	return false;
 }
 
-void shading::setupLights(Shader shader, const std::vector<DirLight>& dirLights, const std::vector<PtLight>& pointLights)
+void shading::setMats(const Shader& shader, const glm::mat4& model, const glm::mat4& normals, const glm::mat4& view, const glm::mat4& proj)
+{
+	use(shader);
+	auto temp = glGetUniformLocation(shader.glID.handle, "model");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(model));
+	temp = glGetUniformLocation(shader.glID.handle, "normalModel");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(normals));
+	temp = glGetUniformLocation(shader.glID.handle, "view");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(view));
+	temp = glGetUniformLocation(shader.glID.handle, "projection");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(proj));
+	temp = glGetUniformLocation(shader.glID.handle, "viewPos");
+	glChk(glUniform3f(temp, -view[3][0], -view[3][1], -view[3][2]));
+}
+
+void shading::setupLights(const Shader& shader, const std::vector<DirLight>& dirLights, const std::vector<PtLight>& pointLights)
 {
 	use(shader);
 	size_t i;
@@ -123,30 +139,77 @@ void shading::setupLights(Shader shader, const std::vector<DirLight>& dirLights,
 	blankP.light = blank;
 	DirLight blankD;
 	blankD.light = blank;
+	char buf[64];
 	for (i = 0; i < MAX_DIR_LIGHTS; ++i)
 	{
 		const auto& dirLight = i < dirLights.size() ? dirLights[i] : blankD;
-		std::string id = "dirLights[";
-		id += std::to_string(i);
-		id += "].";
-		setV3(shader, id + "ambient", dirLight.light.ambient);
-		setV3(shader, id + "diffuse", dirLight.light.diffuse);
-		setV3(shader, id + "specular", dirLight.light.specular);
-		setV3(shader, id + "direction", dirLight.direction);
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "dirLights[%d].ambient", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			const auto& v = dirLight.light.ambient;
+			glChk(glUniform3f(temp, v.x, v.y, v.z));
+		}
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "dirLights[%d].diffuse", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			const auto& v = dirLight.light.diffuse;
+			glChk(glUniform3f(temp, v.x, v.y, v.z));
+		}
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "dirLights[%d].specular", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			const auto& v = dirLight.light.specular;
+			glChk(glUniform3f(temp, v.x, v.y, v.z));
+		}
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "dirLights[%d].direction", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			const auto& v = dirLight.direction;
+			glChk(glUniform3f(temp, v.x, v.y, v.z));
+		}
 	}
 	for (i = 0; i < MAX_POINT_LIGHTS; ++i)
 	{
 		const auto& pointLight = i < pointLights.size() ? pointLights[i] : blankP;
-		std::string id = "pointLights[";
-		id += std::to_string(i);
-		id += "].";
-		setV3(shader, id + "ambient", pointLight.light.ambient);
-		setV3(shader, id + "diffuse", pointLight.light.diffuse);
-		setV3(shader, id + "specular", pointLight.light.specular);
-		setF32(shader, id + "constant", pointLight.constant);
-		setF32(shader, id + "linear", pointLight.linear);
-		setF32(shader, id + "quadratic", pointLight.quadratic);
-		setV3(shader, id + "position", pointLight.position);
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].ambient", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			const auto& v = pointLight.light.ambient;
+			glChk(glUniform3f(temp, v.x, v.y, v.z));
+		}
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].diffuse", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			const auto& v = pointLight.light.diffuse;
+			glChk(glUniform3f(temp, v.x, v.y, v.z));
+		}
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].specular", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			const auto& v = pointLight.light.specular;
+			glChk(glUniform3f(temp, v.x, v.y, v.z));
+		}
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].position", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			const auto& v = pointLight.position;
+			glChk(glUniform3f(temp, v.x, v.y, v.z));
+		}
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].constant", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			glChk(glUniform1f(temp, pointLight.constant));
+		}
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].linear", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			glChk(glUniform1f(temp, pointLight.linear));
+		}
+		{
+			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].quadratic", (s32)i);
+			auto temp = glGetUniformLocation(shader.glID.handle, buf);
+			glChk(glUniform1f(temp, pointLight.quadratic));
+		}
 	}
 }
 } // namespace le::gfx

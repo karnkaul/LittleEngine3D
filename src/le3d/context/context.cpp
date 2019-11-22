@@ -13,6 +13,10 @@ namespace context
 {
 std::thread::id g_contextThreadID;
 std::mutex g_glMutex;
+
+#if defined(DEBUGGING)
+bool g_bVSYNC = true;
+#endif
 } // namespace context
 
 namespace
@@ -56,6 +60,12 @@ bool context::glCreate(u16 width, u16 height, std::string_view title)
 	{
 		Lock lock(g_glMutex);
 		glfwMakeContextCurrent(g_pRenderWindow);
+#if defined(DEBUGGING)
+		if (!g_bVSYNC)
+		{
+			glfwSwapInterval(0);
+		}
+#endif
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		{
 			LOG_E("Failed to initialise GLAD!");

@@ -16,6 +16,7 @@ bool isShaderLoaded(const std::string& id);
 bool unload(Shader& shader);
 void unloadShaders();
 u32 shaderCount();
+void shadeLights(const std::vector<DirLight>& dirLights, const std::vector<PtLight>& ptLights);
 
 extern Texture g_blankTex1px;
 

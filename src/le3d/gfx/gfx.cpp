@@ -11,9 +11,9 @@
 #include "le3d/gfx/utils.hpp"
 #include "le3d/core/log.hpp"
 
-namespace le
+namespace le::gfx
 {
-Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> bytes)
+Texture gl::genTex(std::string name, std::string type, std::vector<u8> bytes)
 {
 	Texture ret;
 	if (context::exists())
@@ -49,7 +49,7 @@ Texture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> byte
 	return ret;
 }
 
-void gfx::gl::releaseTex(std::vector<Texture*> textures)
+void gl::releaseTex(std::vector<Texture*> textures)
 {
 	if (context::exists())
 	{
@@ -70,7 +70,7 @@ void gfx::gl::releaseTex(std::vector<Texture*> textures)
 	}
 }
 
-Shader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<Shader::MAX_FLAGS> flags)
+Shader gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<Shader::MAX_FLAGS> flags)
 {
 	s32 success;
 	if (vertCode.empty())
@@ -132,14 +132,14 @@ Shader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string
 	return program;
 }
 
-void gfx::gl::releaseShader(Shader& shader)
+void gl::releaseShader(Shader& shader)
 {
 	LOG_I("-- [%s] Shader destroyed", shader.id.data());
 	glChk(glDeleteProgram(shader.glID));
 	shader = Shader();
 }
 
-HVerts gfx::gl::genVAO(bool bEBO)
+HVerts gl::genVAO(bool bEBO)
 {
 	HVerts hVerts;
 	if (context::exists())
@@ -155,7 +155,7 @@ HVerts gfx::gl::genVAO(bool bEBO)
 	return hVerts;
 }
 
-void gfx::gl::releaseVAO(HVerts& hVerts)
+void gl::releaseVAO(HVerts& hVerts)
 {
 	if (context::exists() && hVerts.vao > 0)
 	{
@@ -167,7 +167,7 @@ void gfx::gl::releaseVAO(HVerts& hVerts)
 	hVerts = HVerts();
 }
 
-void gfx::gl::bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u32> indices)
+void gl::bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u32> indices)
 {
 	if (context::exists())
 	{
@@ -186,7 +186,7 @@ void gfx::gl::bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vec
 	}
 }
 
-HVerts gfx::gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* = */, const Shader* pShader /* = nullptr */)
+HVerts gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* = */, const Shader* pShader /* = nullptr */)
 {
 	HVerts hVerts;
 	if (context::exists())
@@ -238,10 +238,10 @@ HVerts gfx::gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indic
 	return hVerts;
 }
 
-void gfx::gl::draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const Shader& s)
+void gl::draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const Shader& s)
 {
 	Lock lock(context::g_glMutex);
-	gfx::shading::setupLights(s, rs.dirLights, rs.pointLights);
+	shading::setupLights(s, rs.dirLights, rs.pointLights);
 	auto temp = glGetUniformLocation(s.glID.handle, "model");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(m));
 	temp = glGetUniformLocation(s.glID.handle, "normalModel");
@@ -251,7 +251,6 @@ void gfx::gl::draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm
 	temp = glGetUniformLocation(s.glID.handle, "projection");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(rs.projection));
 	glChk(glBindVertexArray(hVerts.vao.handle));
-	glChk(glActiveTexture(GL_TEXTURE0));
 	if (hVerts.ebo.handle > 0)
 	{
 		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo.handle));
@@ -264,13 +263,29 @@ void gfx::gl::draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm
 	glBindVertexArray(0);
 }
 
-HVerts gfx::newVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* =  */, const Shader* pShader /* = nullptr */)
+void gl::draw(const HVerts& hVerts)
+{
+	Lock lock(context::g_glMutex);
+	glChk(glBindVertexArray(hVerts.vao.handle));
+	if (hVerts.ebo.handle > 0)
+	{
+		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo.handle));
+		glChk(glDrawElements(GL_TRIANGLES, hVerts.iCount, GL_UNSIGNED_INT, 0));
+	}
+	else
+	{
+		glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)hVerts.vCount));
+	}
+	glBindVertexArray(0);
+}
+
+HVerts newVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* =  */, const Shader* pShader /* = nullptr */)
 {
 	HVerts ret = gl::genVertices(std::move(vertices), std::move(indices), pShader);
 	return ret;
 }
 
-HVerts gfx::tutorial::newLight(const HVerts& hVBO)
+HVerts tutorial::newLight(const HVerts& hVBO)
 {
 	HVerts ret;
 	if (context::exists())

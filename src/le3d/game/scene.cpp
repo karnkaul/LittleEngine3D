@@ -29,7 +29,6 @@ RenderState Scene::initState() const
 	RenderState state;
 	state.dirLights.push_back(lighting.dirLight);
 	std::copy(lighting.pointLights.begin(), lighting.pointLights.end(), std::back_inserter(state.pointLights));
-	state.shader = mainShader;
 	return state;
 }
 } // namespace le

@@ -75,6 +75,5 @@ struct RenderState final
 	glm::mat4 projection;
 	std::vector<PtLight> pointLights;
 	std::vector<DirLight> dirLights;
-	Shader shader;
 };
 } // namespace le

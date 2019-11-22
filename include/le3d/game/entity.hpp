@@ -51,7 +51,7 @@ protected:
 
 protected:
 	std::vector<Fixture> m_fixtures;
-	std::optional<Shader> m_oShader;
+	Shader m_shader;
 
 public:
 	Prop();
@@ -64,6 +64,5 @@ public:
 	void clearFixtures();
 
 	void setShader(Shader shader);
-	void unsetShader();
 };
 } // namespace le

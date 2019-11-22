@@ -1,6 +1,6 @@
 #pragma once
-#include <list>
 #include <memory>
+#include <vector>
 #include "le3d/thirdParty.hpp"
 #include "le3d/game/object.hpp"
 
@@ -8,7 +8,7 @@ namespace le
 {
 struct Lighting final
 {
-	std::list<PtLight> pointLights;
+	std::vector<PtLight> pointLights;
 	DirLight dirLight;
 };
 

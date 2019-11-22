@@ -37,10 +37,9 @@ void Prop::render(const RenderState& state)
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-	const Shader& shader = m_oShader ? *m_oShader : state.shader;
 	for (auto& fixture : m_fixtures)
 	{
-		ASSERT(shader.glID.handle > 0, "null shader!");
+		ASSERT(m_shader.glID.handle > 0, "null shader!");
 #if defined(__arm__)
 		// Compensate for lack of uniform initialisation in GLES
 		pShader->setV4("tint", Colour::White);
@@ -59,7 +58,9 @@ void Prop::render(const RenderState& state)
 			m *= *fixture.oModel;
 			nm *= *fixture.oModel;
 		}
-		fixture.pMesh->glDraw(m, nm, state, &shader);
+		gfx::shading::setMats(m_shader, m, nm, state.view, state.projection);
+		fixture.pMesh->draw(m_shader);
+		//fixture.pMesh->glDraw(m, nm, state, &shader);
 	}
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
@@ -77,28 +78,36 @@ void Prop::render(const RenderState& state)
 		gfx::shading::setV4(tinted, "tint", Colour::Blue);
 		glm::mat4 m = glm::scale(m1, glm::vec3(0.02f, 0.02f, 0.5f));
 		m = glm::translate(m, g_nFront * 0.5f);
-		m_pCube->glDraw(m, m, state, &tinted);
+		gfx::shading::setMats(tinted, m, m, state.view, state.projection);
+		m_pCube->draw(tinted);
 		pm = glm::translate(m1, g_nFront * 0.5f);
 		pm = glm::rotate(pm, glm::radians(90.0f), g_nRight);
 		pm = glm::scale(pm, glm::vec3(0.08f, 0.15f, 0.08f));
-		m_pTetra->glDraw(pm, pm, state, &tinted);
+		gfx::shading::setMats(tinted, pm, pm, state.view, state.projection);
+		m_pTetra->draw(tinted);
 		
 		gfx::shading::setV4(tinted, "tint", Colour::Red);
 		m = glm::scale(m1, glm::vec3(0.5f, 0.02f, 0.02f));
 		m = glm::translate(m, g_nRight * 0.5f);
-		m_pCube->glDraw(m, m, state, &tinted);
+		gfx::shading::setMats(tinted, m, m, state.view, state.projection);
+		m_pCube->draw(tinted);
 		pm = glm::translate(m1, g_nRight * 0.5f);
 		pm = glm::rotate(pm, glm::radians(90.0f), -g_nFront);
+		pm = glm::rotate(pm, glm::radians(90.0f), g_nUp);
 		pm = glm::scale(pm, arrowPointScale);
-		m_pTetra->glDraw(pm, pm, state, &tinted);
+		gfx::shading::setMats(tinted, pm, pm, state.view, state.projection);
+		m_pTetra->draw(tinted);
 		
 		gfx::shading::setV4(tinted, "tint", Colour::Green);
-		glm::mat4 mY = glm::scale(m1, glm::vec3(0.02f, 0.5f, 0.02f));
-		mY = glm::translate(mY, g_nUp * 0.5f);
-		m_pCube->glDraw(mY, mY, state, &tinted);
+		m = glm::scale(m1, glm::vec3(0.02f, 0.5f, 0.02f));
+		m = glm::translate(m, g_nUp * 0.5f);
+		gfx::shading::setMats(tinted, m, m, state.view, state.projection);
+		m_pCube->draw(tinted);
 		pm = glm::translate(m1, g_nUp * 0.5f);
 		pm = glm::scale(pm, arrowPointScale);
-		m_pTetra->glDraw(pm, pm, state, &tinted);
+		pm = glm::rotate(pm, glm::radians(180.0f), g_nUp);
+		gfx::shading::setMats(tinted, pm, pm, state.view, state.projection);
+		m_pTetra->draw(tinted);
 		glEnable(GL_DEPTH_TEST);
 	}
 #endif
@@ -116,11 +125,6 @@ void Prop::clearFixtures()
 
 void Prop::setShader(Shader shader)
 {
-	m_oShader.emplace(std::move(shader));
-}
-
-void Prop::unsetShader()
-{
-	m_oShader.reset();
+	m_shader = std::move(shader);
 }
 } // namespace le

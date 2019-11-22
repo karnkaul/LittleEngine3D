@@ -140,9 +140,9 @@ Mesh Mesh::createTetrahedron(f32 side)
 	const f32 s = side * 0.5f;
 	const f32 t30 = glm::tan(glm::radians(30.0f));
 	const f32 r6i = 1.0f / (f32)glm::sqrt(6);
-	const glm::vec3 p00(-s, s * -r6i, s * -t30);
-	const glm::vec3 p01(s, s * -r6i, s * -t30);
-	const glm::vec3 p02(0.0f, s * -r6i, s * 2.0f * t30);
+	const glm::vec3 p00(-s, s * -r6i, s * t30);
+	const glm::vec3 p01(s, s * -r6i, s * t30);
+	const glm::vec3 p02(0.0f, s * -r6i, s * 2.0f * -t30);
 	const glm::vec3 p10(0.0f, s * 3 * r6i, 0.0f);
 	const glm::vec3 nF = glm::normalize(glm::cross(p01 - p00, p10 - p00));
 	const glm::vec3 nL = glm::normalize(glm::cross(p10 - p00, p02 - p00));
@@ -182,19 +182,16 @@ Mesh Mesh::createTetrahedron(f32 side)
 	return mesh;
 }
 
-void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& state, const Shader* pCustomShader)
+void Mesh::draw(const Shader& shader)
 {
 	if (le::context::exists() && m_hVerts.vao > 0)
 	{
-		auto& shader = pCustomShader ? *pCustomShader : state.shader;
 		bool bResetTint = false;
 		ASSERT(shader.glID.handle > 0, "shader is null!");
 		{
 			Lock lock(context::g_glMutex);
 			gfx::shading::use(shader);
 			gfx::shading::setF32(shader, "material.shininess", m_shininess);
-			const auto& v = state.view;
-			gfx::shading::setV3(shader, "viewPos", glm::vec3(-v[3][0], -v[3][1], -v[3][2]));
 			s32 txID = 0;
 			u32 diffuse = 0;
 			u32 specular = 0;
@@ -271,7 +268,7 @@ void Mesh::glDraw(const glm::mat4& m, const glm::mat4& nm, const RenderState& st
 				}
 			}
 		}
-		gfx::gl::draw(m_hVerts, m, nm, state, shader);
+		gfx::gl::draw(m_hVerts);
 		for (s32 txID = 0; txID <= s_maxTexIdx; ++txID)
 		{
 			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));

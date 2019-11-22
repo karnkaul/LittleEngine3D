@@ -88,6 +88,14 @@ u32 resources::shaderCount()
 	return (u32)g_shaderMap.size();
 }
 
+void resources::shadeLights(const std::vector<DirLight>& dirLights, const std::vector<PtLight>& ptLights)
+{
+	for (const auto& kvp : g_shaderMap)
+	{
+		gfx::shading::setupLights(kvp.second, dirLights, ptLights);
+	}
+}
+
 Texture& resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
 {
 	if (g_blankTex1px.glID <= 0)
