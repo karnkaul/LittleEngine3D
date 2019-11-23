@@ -12,6 +12,16 @@ namespace le
 {
 s32 Mesh::s_maxTexIdx = 0;
 
+Mesh::Mesh() = default;
+Mesh::Mesh(Mesh&&) = default;
+Mesh& Mesh::operator=(Mesh&&) = default;
+
+Mesh::~Mesh()
+{
+	LOGIF_I(m_hVerts.vao > 0, "-- [%s] %s destroyed", m_name.data(), m_type.data());
+	release();
+}
+
 Mesh Mesh::createQuad(f32 side)
 {
 	const f32 s = side * 0.5f;
@@ -33,7 +43,7 @@ Mesh Mesh::createQuad(f32 side)
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
 	Mesh mesh;
-	mesh.setupDrawable("debugQuad", std::move(vertices), {});
+	mesh.setupMesh("dQuad", std::move(vertices), {});
 	return mesh;
 }
 
@@ -41,36 +51,36 @@ Mesh Mesh::createCube(f32 side)
 {
 	const f32 s = side * 0.5f;
 	const f32 points[] = {
-		-s, -s, -s, s,  -s, -s, s,  s,  -s, s,  s,  -s, -s, s,  -s, -s, -s, -s, // front
+		-s, -s, -s, s,	-s, -s, s,	s,	-s, s,	s,	-s, -s, s,	-s, -s, -s, -s, // front
 
-		-s, -s, s,  s,  -s, s,  s,  s,  s,  s,  s,  s,  -s, s,  s,  -s, -s, s, // back
+		-s, -s, s,	s,	-s, s,	s,	s,	s,	s,	s,	s,	-s, s,	s,	-s, -s, s, // back
 
-		-s, s,  s,  -s, s,  -s, -s, -s, -s, -s, -s, -s, -s, -s, s,  -s, s,  s, // left
+		-s, s,	s,	-s, s,	-s, -s, -s, -s, -s, -s, -s, -s, -s, s,	-s, s,	s, // left
 
-		s,  s,  s,  s,  s,  -s, s,  -s, -s, s,  -s, -s, s,  -s, s,  s,  s,  s, // right
+		s,	s,	s,	s,	s,	-s, s,	-s, -s, s,	-s, -s, s,	-s, s,	s,	s,	s, // right
 
-		-s, -s, -s, s,  -s, -s, s,  -s, s,  s,  -s, s,  -s, -s, s,  -s, -s, -s, // down
+		-s, -s, -s, s,	-s, -s, s,	-s, s,	s,	-s, s,	-s, -s, s,	-s, -s, -s, // down
 
-		-s, s,  -s, s,  s,  -s, s,  s,  s,  s,  s,  s,  -s, s,  s,  -s, s,  -s, // up
+		-s, s,	-s, s,	s,	-s, s,	s,	s,	s,	s,	s,	-s, s,	s,	-s, s,	-s, // up
 	};
 	const f32 norms[] = {
-		0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f,
-		0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, // front
+		0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f,
+		0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, // front
 
-		0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-		0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f, // back
+		0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,
+		0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f,	1.0f, // back
 
-		-1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,
-		-1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f, // left
+		-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,
+		-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,	0.0f, // left
 
-		1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-		1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f, // right
+		1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,
+		1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f,	0.0f, // right
 
-		0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,
-		0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f, // down
+		0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,
+		0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f, // down
 
-		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f, // up
+		0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,
+		0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f,	0.0f, // up
 	};
 	ASSERT(ARR_SIZE(norms) == ARR_SIZE(points), "invalid points/normals array sizes!");
 	std::vector<le::Vertex> vertices(ARR_SIZE(points) / 3, le::Vertex());
@@ -84,7 +94,7 @@ Mesh Mesh::createCube(f32 side)
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
 	Mesh mesh;
-	mesh.setupDrawable("debugCube", std::move(vertices), {});
+	mesh.setupMesh("dCube", std::move(vertices), {});
 	return mesh;
 }
 
@@ -97,27 +107,26 @@ Mesh Mesh::create4Pyramid(f32 side)
 	const glm::vec3 nR = glm::normalize(glm::cross(glm::vec3(s, -s, -s), glm::vec3(s, -s, s)));
 	const glm::vec3 nD = -g_nUp;
 	f32 points[] = {
-		-s, -s, -s, s,  -s, -s, 0.0f,  s,  0.0f, // front
+		-s, -s, -s, s,	-s, -s, 0.0f, s,  0.0f, // front
 
-		-s, -s, s,  s,  -s, s,  0.0f,  s,  0.0f, // back
+		-s, -s, s,	s,	-s, s,	0.0f, s,  0.0f, // back
 
-		-s, -s, -s, -s, -s, s, 0.0f, s, 0.0f, // left
+		-s, -s, -s, -s, -s, s,	0.0f, s,  0.0f, // left
 
-		s,  -s,  -s, s, -s, s, 0.0f, s, 0.0f, // right
+		s,	-s, -s, s,	-s, s,	0.0f, s,  0.0f, // right
 
-		-s, -s, -s, s,  -s, -s, s,  -s, s,  s,  -s, s,  -s, -s, s,  -s, -s, -s, // down
+		-s, -s, -s, s,	-s, -s, s,	  -s, s,	s, -s, s, -s, -s, s, -s, -s, -s, // down
 	};
 	f32 norms[] = {
 		nF.x, nF.y, nF.z, nF.x, nF.y, nF.z, nF.x, nF.y, nF.z, // front
 
-		nB.x,  nB.y,  nB.z,  nB.x,  nB.y,  nB.z,  nB.x,  nB.y,  nB.z, // back
+		nB.x, nB.y, nB.z, nB.x, nB.y, nB.z, nB.x, nB.y, nB.z, // back
 
-		nL.x,  nL.y,  nL.z,  nL.x,  nL.y,  nL.z,  nL.x,  nL.y,  nL.z, // left
+		nL.x, nL.y, nL.z, nL.x, nL.y, nL.z, nL.x, nL.y, nL.z, // left
 
 		nR.x, nR.y, nR.z, nR.x, nR.y, nR.z, nR.x, nR.y, nR.z, // right
 
-		nD.x,  nD.y,  nD.z,  nD.x,  nD.y,  nD.z,  nD.x,  nD.y,  nD.z,
-		nD.x,  nD.y,  nD.z,  nD.x,  nD.y,  nD.z,  nD.x,  nD.y,  nD.z, // down
+		nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, // down
 	};
 	ASSERT(ARR_SIZE(norms) == ARR_SIZE(points), "invalid points/normals array sizes!");
 	std::vector<le::Vertex> vertices(ARR_SIZE(points) / 3, le::Vertex());
@@ -131,7 +140,7 @@ Mesh Mesh::create4Pyramid(f32 side)
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
 	Mesh mesh;
-	mesh.setupDrawable("debugCube", std::move(vertices), {});
+	mesh.setupMesh("dPyramid", std::move(vertices), {});
 	return mesh;
 }
 
@@ -178,13 +187,27 @@ Mesh Mesh::createTetrahedron(f32 side)
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
 	Mesh mesh;
-	mesh.setupDrawable("debugCube", std::move(vertices), {});
+	mesh.setupMesh("dTetrahedron", std::move(vertices), {});
 	return mesh;
 }
 
-void Mesh::draw(const Shader& shader)
+bool Mesh::setupMesh(std::string name, std::vector<Vertex> vertices, std::vector<u32> indices, const Shader* pShader)
 {
-	if (le::context::exists() && m_hVerts.vao > 0)
+	m_name = std::move(name);
+	m_type = Typename(*this);
+	if (le::context::exists())
+	{
+		release();
+		m_hVerts = gfx::newVertices(vertices, indices, pShader);
+		LOGIF_I(!m_name.empty(), "== [%s] %s set up", m_name.data(), m_type.data());
+		return true;
+	}
+	return false;
+}
+
+void Mesh::draw(const Shader& shader) const
+{
+	if (le::context::exists() && m_hVerts.vao.handle > 0)
 	{
 		bool bResetTint = false;
 		ASSERT(shader.glID.handle > 0, "shader is null!");
@@ -213,16 +236,7 @@ void Mesh::draw(const Shader& shader)
 			else
 #endif
 			{
-				if (shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
-				{
-					if (!shader.flags.isSet((s32)gfx::shading::Flag::Unlit))
-					{
-						gfx::shading::setV3(shader, "material.ambient", m_untexturedTint.ambient);
-						gfx::shading::setV3(shader, "material.diffuse", m_untexturedTint.diffuse);
-						gfx::shading::setV3(shader, "material.specular", m_untexturedTint.specular);
-					}
-				}
-				else
+				if (!shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
 				{
 					if (m_textures.empty())
 					{
@@ -282,5 +296,15 @@ void Mesh::draw(const Shader& shader)
 		m_drawFlags.flags.reset();
 #endif
 	}
+}
+
+const HVerts& Mesh::VAO() const
+{
+	return m_hVerts;
+}
+
+void Mesh::release()
+{
+	gfx::gl::releaseVAO(m_hVerts);
 }
 } // namespace le

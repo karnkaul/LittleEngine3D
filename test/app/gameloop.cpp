@@ -6,7 +6,8 @@
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/scene.hpp"
-#include "le3d/gfx/mesh.hpp"
+#include "le3d/gfx/model.hpp"
+#include "le3d/gfx/utils.hpp"
 #include "le3d/input/input.hpp"
 
 #include "gameloop.hpp"
@@ -83,10 +84,22 @@ void runTest()
 	Texture bad;
 	auto& mesh = resources::debugMesh();
 	auto& quad = resources::debugQuad();
-	std::vector<Texture> textures = {resources::getTexture("awesomeface")};
 	quad.m_textures = {resources::getTexture("awesomeface")};
 	// quad.m_textures = {bad};
 	mesh.m_textures = {resources::getTexture("container2"), resources::getTexture("container2_specular")};
+	Model mCube;
+	Model mCubeStack;
+	mCube.setupModel("cube");
+	mCubeStack.setupModel("cubeStack");
+	mCube.addFixture(mesh);
+	mCubeStack.addFixture(mesh);
+	glm::mat4 offset(1.0f);
+	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
+	mCubeStack.addFixture(mesh, offset);
+	Model mQuad;
+	mQuad.setupModel("quad");
+	mQuad.addFixture(quad);
+
 	// mesh.m_textures = {bad};
 	// lightingShader.setS32("mix_textures", 1);
 	static bool bWireframe = false;
@@ -94,17 +107,14 @@ void runTest()
 
 	Prop prop0;
 	prop0.setup("awesome-container");
-	prop0.addFixture(mesh);
-	glm::mat4 offset(1.0f);
-	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
-	prop0.addFixture(mesh, offset);
+	prop0.addModel(mCubeStack);
 	prop0.m_transform.setPosition({2.0f, 2.5f, -2.0f});
 	prop0.m_transform.setScale(2.0f);
 	prop0.setShader(resources::findShader("lit/textured"));
 
 	Prop prop1;
 	prop1.setup("prop1");
-	prop1.addFixture(mesh);
+	prop1.addModel(mCube);
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.25f);
 	prop0.m_transform.setParent(&prop1.m_transform);
@@ -112,7 +122,7 @@ void runTest()
 
 	Prop quadProp;
 	quadProp.setup("quad");
-	quadProp.addFixture(quad);
+	quadProp.addModel(mQuad);
 	quadProp.setShader(resources::findShader("unlit/textured"));
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
@@ -124,7 +134,7 @@ void runTest()
 	{
 		Prop prop;
 		prop.setup("prop_" + std::to_string(i));
-		prop.addFixture(mesh);
+		prop.addModel(mCube);
 		prop.setShader(resources::findShader("lit/textured"));
 		props.emplace_back(std::move(prop));
 	}
@@ -191,7 +201,7 @@ void runTest()
 		context::pollEvents();
 	}
 
-	prop0.clearFixtures();
+	prop0.clearModels();
 }
 } // namespace
 

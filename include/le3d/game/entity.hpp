@@ -4,9 +4,10 @@
 #include <vector>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
-#include "le3d/game/object.hpp"
 #include "le3d/core/transform.hpp"
+#include "le3d/game/object.hpp"
 #include "le3d/gfx/gfx.hpp"
+#include "le3d/gfx/model.hpp"
 
 namespace le
 {
@@ -39,19 +40,16 @@ public:
 class Prop : public Entity
 {
 protected:
-	struct Fixture
-	{
-		class Mesh* pMesh = nullptr;
-		std::optional<glm::mat4> oModel;
-	};
 #if defined(DEBUGGING)
+	Model m_arrow;
 	Mesh* m_pCube;
 	Mesh* m_pTetra;
 #endif
 
 protected:
-	std::vector<Fixture> m_fixtures;
+	std::vector<Model*> m_models;
 	Shader m_shader;
+	LitTint m_untexturedTint;
 
 public:
 	Prop();
@@ -60,8 +58,8 @@ public:
 	void render(const RenderState& state) override;
 
 public:
-	void addFixture(Mesh& mesh, std::optional<glm::mat4> model = std::nullopt);
-	void clearFixtures();
+	void addModel(Model& model);
+	void clearModels();
 
 	void setShader(Shader shader);
 };

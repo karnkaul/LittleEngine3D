@@ -114,19 +114,39 @@ bool shading::setV4(const Shader& shader, std::string_view id, const glm::vec4& 
 	return false;
 }
 
-void shading::setMats(const Shader& shader, const glm::mat4& model, const glm::mat4& normals, const glm::mat4& view, const glm::mat4& proj)
+void shading::setModelMats(const Shader& shader, const glm::mat4& model, const glm::mat4& normals)
 {
 	use(shader);
 	auto temp = glGetUniformLocation(shader.glID.handle, "model");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(model));
 	temp = glGetUniformLocation(shader.glID.handle, "normalModel");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(normals));
-	temp = glGetUniformLocation(shader.glID.handle, "view");
+}
+
+void shading::setViewMats(const Shader& shader, const glm::mat4& view, const glm::mat4& proj)
+{
+	use(shader);
+	auto temp = glGetUniformLocation(shader.glID.handle, "view");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(view));
 	temp = glGetUniformLocation(shader.glID.handle, "projection");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(proj));
 	temp = glGetUniformLocation(shader.glID.handle, "viewPos");
 	glChk(glUniform3f(temp, -view[3][0], -view[3][1], -view[3][2]));
+}
+
+void shading::setAllMats(const Shader& shader, const glm::mat4& m, const glm::mat4& n, const glm::mat4& v, const glm::mat4& p)
+{
+	use(shader);
+	auto temp = glGetUniformLocation(shader.glID.handle, "model");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(m));
+	temp = glGetUniformLocation(shader.glID.handle, "normalModel");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(n));
+	temp = glGetUniformLocation(shader.glID.handle, "view");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(v));
+	temp = glGetUniformLocation(shader.glID.handle, "projection");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(p));
+	temp = glGetUniformLocation(shader.glID.handle, "viewPos");
+	glChk(glUniform3f(temp, -v[3][0], -v[3][1], -v[3][2]));
 }
 
 void shading::setupLights(const Shader& shader, const std::vector<DirLight>& dirLights, const std::vector<PtLight>& pointLights)

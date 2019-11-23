@@ -302,4 +302,4 @@ HVerts tutorial::newLight(const HVerts& hVBO)
 	}
 	return ret;
 }
-} // namespace le
+} // namespace le::gfx
