@@ -21,7 +21,7 @@ struct Scene
 {
 	Lighting lighting;
 	Cameras cameras;
-	Shader mainShader;
+	HShader mainShader;
 
 	RenderState initState() const;
 	RenderState perspective(f32 aspect) const;

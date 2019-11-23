@@ -2,36 +2,36 @@
 #include <string>
 #include "le3d/stdtypes.hpp"
 #include "le3d/gfx/shading.hpp"
+#include "le3d/gfx/model.hpp"
 
 namespace le
 {
-class Mesh;
-
 namespace resources
 {
-Shader& loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<Shader::MAX_FLAGS> flags);
-Shader& findShader(const std::string& id);
+HShader& loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
+HShader& findShader(const std::string& id);
 
 bool isShaderLoaded(const std::string& id);
-bool unload(Shader& shader);
+bool unload(HShader& shader);
 void unloadShaders();
 u32 shaderCount();
 void shadeLights(const std::vector<DirLight>& dirLights, const std::vector<PtLight>& ptLights);
 
-extern Texture g_blankTex1px;
+extern HTexture g_blankTex1px;
 
-Texture& loadTexture(std::string id, std::string type, std::vector<u8> bytes);
-Texture& getTexture(const std::string& id);
+HTexture& loadTexture(std::string id, std::string type, std::vector<u8> bytes);
+HTexture& getTexture(const std::string& id);
 
 bool isTextureLoaded(const std::string& id);
-bool unload(Texture& texture);
+bool unload(HTexture& texture);
 void unloadTextures(bool bUnloadBlankTex);
 u32 textureCount();
 
-Mesh& debugMesh();
-Mesh& debugQuad();
-Mesh& debugPyramid();
-Mesh& debugTetrahedron();
+HMesh& debugMesh();
+HMesh& debugQuad();
+HMesh& debugPyramid();
+HMesh& debugTetrahedron();
+Model& debugArrow(const glm::quat& orientation);
 
 void unloadAll();
 } // namespace resources

@@ -47,11 +47,11 @@ void runTest()
 	resources::loadTexture("container2_specular", SPECULAR, readBytes(resourcePath("textures/container2_specular.png")));
 	resources::loadTexture("awesomeface", DIFFUSE, readBytes(resourcePath("textures/awesomeface.png")));
 
-	Flags<Shader::MAX_FLAGS> noTex;
+	Flags<HShader::MAX_FLAGS> noTex;
 	noTex.set((s32)gfx::shading::Flag::Untextured, true);
-	Flags<Shader::MAX_FLAGS> noLit;
+	Flags<HShader::MAX_FLAGS> noLit;
 	noLit.set((s32)gfx::shading::Flag::Unlit, true);
-	Flags<Shader::MAX_FLAGS> noTexNoLit;
+	Flags<HShader::MAX_FLAGS> noTexNoLit;
 	noTexNoLit.set((s32)gfx::shading::Flag::Unlit, true);
 	noTexNoLit.set((s32)gfx::shading::Flag::Untextured, true);
 
@@ -81,24 +81,29 @@ void runTest()
 		gfx::gl::draw(light, m, m, state, tinted);
 	};
 
-	Texture bad;
-	auto& mesh = resources::debugMesh();
-	auto& quad = resources::debugQuad();
-	quad.m_textures = {resources::getTexture("awesomeface")};
+	HTexture bad;
+	auto& cubeMesh = resources::debugMesh();
+	auto& quadMesh = resources::debugQuad();
+	quadMesh.textures = {resources::getTexture("awesomeface")};
 	// quad.m_textures = {bad};
-	mesh.m_textures = {resources::getTexture("container2"), resources::getTexture("container2_specular")};
-	Model mCube;
-	Model mCubeStack;
-	mCube.setupModel("cube");
-	mCubeStack.setupModel("cubeStack");
-	mCube.addFixture(mesh);
-	mCubeStack.addFixture(mesh);
+	cubeMesh.textures = {resources::getTexture("container2"), resources::getTexture("container2_specular")};
+	HMesh blankCubeMesh = cubeMesh;
+	blankCubeMesh.textures.clear();
+	Model cube;
+	Model blankCube;
+	Model cubeStack;
+	cube.setupModel("cube");
+	cubeStack.setupModel("cubeStack");
+	blankCube.setupModel("blankCube");
+	cube.addFixture(cubeMesh);
+	cubeStack.addFixture(cubeMesh);
+	blankCube.addFixture(blankCubeMesh);
 	glm::mat4 offset(1.0f);
 	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
-	mCubeStack.addFixture(mesh, offset);
+	cubeStack.addFixture(cubeMesh, offset);
 	Model mQuad;
 	mQuad.setupModel("quad");
-	mQuad.addFixture(quad);
+	mQuad.addFixture(quadMesh);
 
 	// mesh.m_textures = {bad};
 	// lightingShader.setS32("mix_textures", 1);
@@ -107,18 +112,19 @@ void runTest()
 
 	Prop prop0;
 	prop0.setup("awesome-container");
-	prop0.addModel(mCubeStack);
+	prop0.addModel(cubeStack);
 	prop0.m_transform.setPosition({2.0f, 2.5f, -2.0f});
 	prop0.m_transform.setScale(2.0f);
 	prop0.setShader(resources::findShader("lit/textured"));
 
 	Prop prop1;
 	prop1.setup("prop1");
-	prop1.addModel(mCube);
+	prop1.addModel(cube);
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.25f);
 	prop0.m_transform.setParent(&prop1.m_transform);
 	prop1.setShader(resources::findShader("lit/tinted"));
+	prop1.m_oTintOverride = Colour::Yellow;
 
 	Prop quadProp;
 	quadProp.setup("quad");
@@ -126,16 +132,18 @@ void runTest()
 	quadProp.setShader(resources::findShader("unlit/textured"));
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
-	HVerts light0 = gfx::tutorial::newLight(mesh.VAO());
-	HVerts light1 = gfx::tutorial::newLight(mesh.VAO());
+	HVerts light0 = gfx::tutorial::newLight(cubeMesh.hVerts);
+	HVerts light1 = gfx::tutorial::newLight(cubeMesh.hVerts);
 
 	std::vector<Prop> props;
 	for (s32 i = 0; i < 5; ++i)
 	{
 		Prop prop;
 		prop.setup("prop_" + std::to_string(i));
-		prop.addModel(mCube);
-		prop.setShader(resources::findShader("lit/textured"));
+		Model& m = i < 3 ? cube : blankCube;
+		prop.addModel(m);
+		std::string s = i < 3 ? "lit/textured" : "lit/tinted";
+		prop.setShader(resources::findShader(s));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});

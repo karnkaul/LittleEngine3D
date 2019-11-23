@@ -13,13 +13,13 @@ namespace le::gfx
 const u8 shading::MAX_DIR_LIGHTS = 4;
 const u8 shading::MAX_POINT_LIGHTS = 4;
 
-void shading::use(const Shader& shader)
+void shading::use(const HShader& shader)
 {
 	ASSERT(shader.glID.handle > 0, "Invalid shader program!");
 	glChk(glUseProgram(shader.glID.handle));
 }
 
-bool shading::setBool(const Shader& shader, std::string_view id, bool bVal)
+bool shading::setBool(const HShader& shader, std::string_view id, bool bVal)
 {
 	if (!id.empty())
 	{
@@ -34,7 +34,7 @@ bool shading::setBool(const Shader& shader, std::string_view id, bool bVal)
 	return false;
 }
 
-bool shading::setS32(const Shader& shader, std::string_view id, s32 val)
+bool shading::setS32(const HShader& shader, std::string_view id, s32 val)
 {
 	if (!id.empty())
 	{
@@ -49,7 +49,7 @@ bool shading::setS32(const Shader& shader, std::string_view id, s32 val)
 	return false;
 }
 
-bool shading::setF32(const Shader& shader, std::string_view id, f32 val)
+bool shading::setF32(const HShader& shader, std::string_view id, f32 val)
 {
 	if (!id.empty())
 	{
@@ -64,7 +64,7 @@ bool shading::setF32(const Shader& shader, std::string_view id, f32 val)
 	return false;
 }
 
-bool shading::setV2(const Shader& shader, std::string_view id, const glm::vec2& val)
+bool shading::setV2(const HShader& shader, std::string_view id, const glm::vec2& val)
 {
 	if (!id.empty())
 	{
@@ -79,7 +79,7 @@ bool shading::setV2(const Shader& shader, std::string_view id, const glm::vec2& 
 	return false;
 }
 
-bool shading::setV3(const Shader& shader, std::string_view id, const glm::vec3& val)
+bool shading::setV3(const HShader& shader, std::string_view id, const glm::vec3& val)
 {
 	if (!id.empty())
 	{
@@ -94,12 +94,12 @@ bool shading::setV3(const Shader& shader, std::string_view id, const glm::vec3& 
 	return false;
 }
 
-bool shading::setV4(const Shader& shader, std::string_view id, Colour colour)
+bool shading::setV4(const HShader& shader, std::string_view id, Colour colour)
 {
 	return setV4(shader, id, glm::vec4(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
 }
 
-bool shading::setV4(const Shader& shader, std::string_view id, const glm::vec4& val)
+bool shading::setV4(const HShader& shader, std::string_view id, const glm::vec4& val)
 {
 	if (!id.empty())
 	{
@@ -114,7 +114,7 @@ bool shading::setV4(const Shader& shader, std::string_view id, const glm::vec4& 
 	return false;
 }
 
-void shading::setModelMats(const Shader& shader, const glm::mat4& model, const glm::mat4& normals)
+void shading::setModelMats(const HShader& shader, const glm::mat4& model, const glm::mat4& normals)
 {
 	use(shader);
 	auto temp = glGetUniformLocation(shader.glID.handle, "model");
@@ -123,7 +123,7 @@ void shading::setModelMats(const Shader& shader, const glm::mat4& model, const g
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(normals));
 }
 
-void shading::setViewMats(const Shader& shader, const glm::mat4& view, const glm::mat4& proj)
+void shading::setViewMats(const HShader& shader, const glm::mat4& view, const glm::mat4& proj)
 {
 	use(shader);
 	auto temp = glGetUniformLocation(shader.glID.handle, "view");
@@ -134,7 +134,7 @@ void shading::setViewMats(const Shader& shader, const glm::mat4& view, const glm
 	glChk(glUniform3f(temp, -view[3][0], -view[3][1], -view[3][2]));
 }
 
-void shading::setAllMats(const Shader& shader, const glm::mat4& m, const glm::mat4& n, const glm::mat4& v, const glm::mat4& p)
+void shading::setAllMats(const HShader& shader, const glm::mat4& m, const glm::mat4& n, const glm::mat4& v, const glm::mat4& p)
 {
 	use(shader);
 	auto temp = glGetUniformLocation(shader.glID.handle, "model");
@@ -149,7 +149,7 @@ void shading::setAllMats(const Shader& shader, const glm::mat4& m, const glm::ma
 	glChk(glUniform3f(temp, -v[3][0], -v[3][1], -v[3][2]));
 }
 
-void shading::setupLights(const Shader& shader, const std::vector<DirLight>& dirLights, const std::vector<PtLight>& pointLights)
+void shading::setupLights(const HShader& shader, const std::vector<DirLight>& dirLights, const std::vector<PtLight>& pointLights)
 {
 	use(shader);
 	size_t i;

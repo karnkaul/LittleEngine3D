@@ -2,12 +2,13 @@
 #include <glad/glad.h>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
-#include "le3d/game/entity.hpp"
-#include "le3d/game/resources.hpp"
 #include "le3d/gfx/gfx.hpp"
-#include "le3d/gfx/mesh.hpp"
 #include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
+#include "le3d/game/entity.hpp"
+#if defined(DEBUGGING)
+#include "le3d/game/resources.hpp"
+#endif
 
 namespace le
 {
@@ -26,9 +27,7 @@ void Entity::setEnabled(bool bEnabled)
 Prop::Prop()
 {
 #if defined(DEBUGGING)
-	m_pCube = &resources::debugMesh();
-	m_pTetra = &resources::debugTetrahedron();
-	m_arrow = Model::debugArrow(g_qIdentity);
+	m_pArrow = &resources::debugArrow(g_qIdentity);
 #endif
 }
 
@@ -44,13 +43,13 @@ void Prop::render(const RenderState& state)
 		ASSERT(m_shader.glID.handle > 0, "null shader!");
 #if defined(__arm__)
 		// Compensate for lack of uniform initialisation in GLES
-		pShader->setV4("tint", Colour::White);
+		gfx::shading::setV4(m_shader, "tint", Colour::White);
 #endif
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{
 			// pShader->setV4("tint", Colour::Red);
-			pModel->m_renderFlags.set((s32)Mesh::Flag::BlankMagenta, true);
+			pModel->m_renderFlags.set((s32)DrawFlag::BlankMagenta, true);
 		}
 #endif
 		if (!m_shader.flags.isSet((s32)gfx::shading::Flag::Unlit))
@@ -59,26 +58,36 @@ void Prop::render(const RenderState& state)
 			gfx::shading::setV3(m_shader, "material.diffuse", m_untexturedTint.diffuse);
 			gfx::shading::setV3(m_shader, "material.specular", m_untexturedTint.specular);
 		}
+		Colour tint;
+		if (m_oTintOverride)
+		{
+			tint = pModel->m_tint;
+			pModel->m_tint = *m_oTintOverride;
+		}
 		pModel->render(m_shader, m_transform.model(), m_transform.normalModel());
+		if (m_oTintOverride)
+		{
+			pModel->m_tint = tint;
+		}
 	}
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 #if defined(DEBUGGING)
-	if (m_pCube && m_pTetra)
+	if (m_pArrow)
 	{
 		glDisable(GL_DEPTH_TEST);
-		Shader tinted = resources::findShader("unlit/tinted");
+		HShader tinted = resources::findShader("unlit/tinted");
 		glm::mat4 mZ = m_transform.model();
 		glm::mat4 mX = glm::rotate(mZ, glm::radians(90.0f), g_nUp);
 		glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);
-		gfx::shading::setV4(tinted, "tint", Colour::Red);
-		m_arrow.render(tinted, mX);
-		gfx::shading::setV4(tinted, "tint", Colour::Green);
-		m_arrow.render(tinted, mY);
-		gfx::shading::setV4(tinted, "tint", Colour::Blue);
-		m_arrow.render(tinted, mZ);
+		m_pArrow->m_tint = Colour::Red;
+		m_pArrow->render(tinted, mX);
+		m_pArrow->m_tint = Colour::Green;
+		m_pArrow->render(tinted, mY);
+		m_pArrow->m_tint = Colour::Blue;
+		m_pArrow->render(tinted, mZ);
 		glEnable(GL_DEPTH_TEST);
 	}
 #endif
@@ -94,7 +103,7 @@ void Prop::clearModels()
 	m_models.clear();
 }
 
-void Prop::setShader(Shader shader)
+void Prop::setShader(HShader shader)
 {
 	m_shader = std::move(shader);
 }

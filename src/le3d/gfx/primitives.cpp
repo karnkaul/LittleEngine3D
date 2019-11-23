@@ -1,28 +1,11 @@
-#include <glad/glad.h>
-#include <glm/gtc/type_ptr.hpp>
 #include "le3d/core/assert.hpp"
-#include "le3d/core/log.hpp"
-#include "le3d/context/context.hpp"
-#include "le3d/context/contextImpl.hpp"
-#include "le3d/gfx/mesh.hpp"
-#include "le3d/gfx/shading.hpp"
+#include "le3d/gfx/primitives.hpp"
+#include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/utils.hpp"
 
 namespace le
 {
-s32 Mesh::s_maxTexIdx = 0;
-
-Mesh::Mesh() = default;
-Mesh::Mesh(Mesh&&) = default;
-Mesh& Mesh::operator=(Mesh&&) = default;
-
-Mesh::~Mesh()
-{
-	LOGIF_I(m_hVerts.vao > 0, "-- [%s] %s destroyed", m_name.data(), m_type.data());
-	release();
-}
-
-Mesh Mesh::createQuad(f32 side)
+HMesh gfx::createQuad(f32 side)
 {
 	const f32 s = side * 0.5f;
 	const f32 points[] = {
@@ -42,12 +25,10 @@ Mesh Mesh::createQuad(f32 side)
 		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
-	Mesh mesh;
-	mesh.setupMesh("dQuad", std::move(vertices), {});
-	return mesh;
+	return newMesh("dQuad", std::move(vertices), {});
 }
 
-Mesh Mesh::createCube(f32 side)
+HMesh gfx::createCube(f32 side)
 {
 	const f32 s = side * 0.5f;
 	const f32 points[] = {
@@ -93,12 +74,10 @@ Mesh Mesh::createCube(f32 side)
 		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
-	Mesh mesh;
-	mesh.setupMesh("dCube", std::move(vertices), {});
-	return mesh;
+	return newMesh("dCube", std::move(vertices), {});
 }
 
-Mesh Mesh::create4Pyramid(f32 side)
+HMesh gfx::create4Pyramid(f32 side)
 {
 	const f32 s = side * 0.5f;
 	const glm::vec3 nF = glm::normalize(glm::cross(glm::vec3(-s, -s, -s), glm::vec3(s, -s, -s)));
@@ -139,12 +118,10 @@ Mesh Mesh::create4Pyramid(f32 side)
 		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
-	Mesh mesh;
-	mesh.setupMesh("dPyramid", std::move(vertices), {});
-	return mesh;
+	return newMesh("dPyramid", std::move(vertices), {});
 }
 
-Mesh Mesh::createTetrahedron(f32 side)
+HMesh gfx::createTetrahedron(f32 side)
 {
 	const f32 s = side * 0.5f;
 	const f32 t30 = glm::tan(glm::radians(30.0f));
@@ -186,125 +163,6 @@ Mesh Mesh::createTetrahedron(f32 side)
 		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
-	Mesh mesh;
-	mesh.setupMesh("dTetrahedron", std::move(vertices), {});
-	return mesh;
-}
-
-bool Mesh::setupMesh(std::string name, std::vector<Vertex> vertices, std::vector<u32> indices, const Shader* pShader)
-{
-	m_name = std::move(name);
-	m_type = Typename(*this);
-	if (le::context::exists())
-	{
-		release();
-		m_hVerts = gfx::newVertices(vertices, indices, pShader);
-		LOGIF_I(!m_name.empty(), "== [%s] %s set up", m_name.data(), m_type.data());
-		return true;
-	}
-	return false;
-}
-
-void Mesh::draw(const Shader& shader) const
-{
-	if (le::context::exists() && m_hVerts.vao.handle > 0)
-	{
-		bool bResetTint = false;
-		ASSERT(shader.glID.handle > 0, "shader is null!");
-		{
-			Lock lock(context::g_glMutex);
-			gfx::shading::use(shader);
-			gfx::shading::setF32(shader, "material.shininess", m_shininess);
-			s32 txID = 0;
-			u32 diffuse = 0;
-			u32 specular = 0;
-			glChk(glBindTexture(GL_TEXTURE_2D, 0));
-			auto drawBlankTex = [&](bool bMagenta) {
-				if (bMagenta)
-				{
-					gfx::shading::setV4(shader, "tint", Colour::Magenta);
-					bResetTint = true;
-				}
-				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-				glChk(glBindTexture(GL_TEXTURE_2D, 1));
-			};
-#if defined(DEBUGGING)
-			if (m_drawFlags.isSet((s32)Flag::Blank) || m_drawFlags.isSet((s32)Flag::BlankMagenta))
-			{
-				drawBlankTex(m_drawFlags.isSet((s32)Flag::BlankMagenta));
-			}
-			else
-#endif
-			{
-				if (!shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
-				{
-					if (m_textures.empty())
-					{
-						drawBlankTex(true);
-					}
-				}
-				for (const auto& texture : m_textures)
-				{
-					std::string id = "material.";
-					std::string number;
-					id += texture.type;
-					if (txID > s_maxTexIdx)
-					{
-						s_maxTexIdx = txID;
-					}
-					if (texture.type == "diffuse")
-					{
-						number = std::to_string(++diffuse);
-					}
-					else if (texture.type == "specular")
-					{
-						number = std::to_string(++specular);
-					}
-					else
-					{
-						if (txID == 0)
-						{
-							drawBlankTex(true);
-						}
-						continue;
-					}
-					id += number;
-					if (texture.glID.handle > 0)
-					{
-						glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-						glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
-						gfx::shading::setS32(shader, id, txID++);
-					}
-					else
-					{
-						drawBlankTex(true);
-					}
-				}
-			}
-		}
-		gfx::gl::draw(m_hVerts);
-		for (s32 txID = 0; txID <= s_maxTexIdx; ++txID)
-		{
-			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-			glChk(glBindTexture(GL_TEXTURE_2D, 0));
-		}
-		if (bResetTint)
-		{
-			gfx::shading::setV4(shader, "tint", Colour::White);
-		}
-#if defined(DEBUGGING)
-		m_drawFlags.flags.reset();
-#endif
-	}
-}
-
-const HVerts& Mesh::VAO() const
-{
-	return m_hVerts;
-}
-
-void Mesh::release()
-{
-	gfx::gl::releaseVAO(m_hVerts);
+	return newMesh("dTetrahedron", std::move(vertices), {});
 }
 } // namespace le

@@ -8,6 +8,29 @@ namespace le
 {
 using GLObj = TZero<u32>;
 
+enum class DrawFlag
+{
+	Blank,
+	BlankMagenta,
+	_COUNT
+};
+
+#pragma region Handles
+struct HTexture final
+{
+	std::string id;
+	std::string type;
+	GLObj glID;
+};
+
+struct HShader final
+{
+	static const size_t MAX_FLAGS = 8;
+	std::string id;
+	Flags<MAX_FLAGS> flags;
+	GLObj glID;
+};
+
 struct HVerts final
 {
 	GLObj vao;
@@ -17,27 +40,24 @@ struct HVerts final
 	u16 vCount = 0;
 };
 
+struct HMesh final
+{
+	std::string name;
+	std::vector<HTexture> textures;
+	f32 shininess = 32.0f;
+	HVerts hVerts;
+#if defined(DEBUGGING)
+	mutable Flags<(s32)DrawFlag::_COUNT> drawFlags;
+#endif
+};
+#pragma endregion
+
+#pragma region Data
 struct Vertex final
 {
-	glm::vec4 colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	glm::vec3 position = glm::vec3(0.0f);
 	glm::vec3 normal = glm::vec3(0.0f, 0.0f, 1.0f);
 	glm::vec2 texCoords = glm::vec2(0.0f, 0.0f);
-};
-
-struct Texture final
-{
-	std::string id;
-	std::string type;
-	GLObj glID;
-};
-
-struct Shader final
-{
-	static const size_t MAX_FLAGS = 8;
-	std::string id;
-	Flags<MAX_FLAGS> flags;
-	GLObj glID;
 };
 
 struct LitTint final
@@ -76,4 +96,5 @@ struct RenderState final
 	std::vector<PtLight> pointLights;
 	std::vector<DirLight> dirLights;
 };
+#pragma endregion
 } // namespace le

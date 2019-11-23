@@ -39,17 +39,18 @@ public:
 
 class Prop : public Entity
 {
+public:
+	LitTint m_untexturedTint;
+	std::optional<Colour> m_oTintOverride;
+
 protected:
 #if defined(DEBUGGING)
-	Model m_arrow;
-	Mesh* m_pCube;
-	Mesh* m_pTetra;
+	Model* m_pArrow = nullptr;
 #endif
 
 protected:
 	std::vector<Model*> m_models;
-	Shader m_shader;
-	LitTint m_untexturedTint;
+	HShader m_shader;
 
 public:
 	Prop();
@@ -61,6 +62,6 @@ public:
 	void addModel(Model& model);
 	void clearModels();
 
-	void setShader(Shader shader);
+	void setShader(HShader shader);
 };
 } // namespace le
