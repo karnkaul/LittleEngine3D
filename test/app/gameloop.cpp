@@ -6,7 +6,9 @@
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/scene.hpp"
-#include "le3d/gfx/mesh.hpp"
+#include "le3d/gfx/model.hpp"
+#include "le3d/gfx/primitives.hpp"
+#include "le3d/gfx/utils.hpp"
 #include "le3d/input/input.hpp"
 
 #include "gameloop.hpp"
@@ -46,11 +48,11 @@ void runTest()
 	resources::loadTexture("container2_specular", SPECULAR, readBytes(resourcePath("textures/container2_specular.png")));
 	resources::loadTexture("awesomeface", DIFFUSE, readBytes(resourcePath("textures/awesomeface.png")));
 
-	Flags<Shader::MAX_FLAGS> noTex;
+	Flags<HShader::MAX_FLAGS> noTex;
 	noTex.set((s32)gfx::shading::Flag::Untextured, true);
-	Flags<Shader::MAX_FLAGS> noLit;
+	Flags<HShader::MAX_FLAGS> noLit;
 	noLit.set((s32)gfx::shading::Flag::Unlit, true);
-	Flags<Shader::MAX_FLAGS> noTexNoLit;
+	Flags<HShader::MAX_FLAGS> noTexNoLit;
 	noTexNoLit.set((s32)gfx::shading::Flag::Unlit, true);
 	noTexNoLit.set((s32)gfx::shading::Flag::Untextured, true);
 
@@ -80,13 +82,30 @@ void runTest()
 		gfx::gl::draw(light, m, m, state, tinted);
 	};
 
-	Texture bad;
-	auto& mesh = resources::debugMesh();
-	auto& quad = resources::debugQuad();
-	std::vector<Texture> textures = {resources::getTexture("awesomeface")};
-	quad.m_textures = {resources::getTexture("awesomeface")};
+	HTexture bad;
+	auto& cubeMesh = resources::debugCube();
+	auto& quadMesh = resources::debugQuad();
+	quadMesh.textures = {resources::getTexture("awesomeface")};
 	// quad.m_textures = {bad};
-	mesh.m_textures = {resources::getTexture("container2"), resources::getTexture("container2_specular")};
+	cubeMesh.textures = {resources::getTexture("container2"), resources::getTexture("container2_specular")};
+	HMesh blankCubeMesh = cubeMesh;
+	blankCubeMesh.textures.clear();
+	Model cube;
+	Model blankCube;
+	Model cubeStack;
+	cube.setupModel("cube");
+	cubeStack.setupModel("cubeStack");
+	blankCube.setupModel("blankCube");
+	cube.addFixture(cubeMesh);
+	cubeStack.addFixture(cubeMesh);
+	blankCube.addFixture(blankCubeMesh);
+	glm::mat4 offset(1.0f);
+	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
+	cubeStack.addFixture(cubeMesh, offset);
+	Model quad;
+	quad.setupModel("quad");
+	quad.addFixture(quadMesh);
+
 	// mesh.m_textures = {bad};
 	// lightingShader.setS32("mix_textures", 1);
 	static bool bWireframe = false;
@@ -94,38 +113,38 @@ void runTest()
 
 	Prop prop0;
 	prop0.setup("awesome-container");
-	prop0.addFixture(mesh);
-	glm::mat4 offset(1.0f);
-	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
-	prop0.addFixture(mesh, offset);
+	prop0.addModel(cubeStack);
 	prop0.m_transform.setPosition({2.0f, 2.5f, -2.0f});
 	prop0.m_transform.setScale(2.0f);
 	prop0.setShader(resources::findShader("lit/textured"));
 
 	Prop prop1;
 	prop1.setup("prop1");
-	prop1.addFixture(mesh);
+	prop1.addModel(cube);
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.25f);
 	prop0.m_transform.setParent(&prop1.m_transform);
 	prop1.setShader(resources::findShader("lit/tinted"));
+	prop1.m_oTintOverride = Colour::Yellow;
 
 	Prop quadProp;
 	quadProp.setup("quad");
-	quadProp.addFixture(quad);
+	quadProp.addModel(quad);
 	quadProp.setShader(resources::findShader("unlit/textured"));
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
-	HVerts light0 = gfx::tutorial::newLight(mesh.VAO());
-	HVerts light1 = gfx::tutorial::newLight(mesh.VAO());
+	HVerts light0 = gfx::tutorial::newLight(cubeMesh.hVerts);
+	HVerts light1 = gfx::tutorial::newLight(cubeMesh.hVerts);
 
 	std::vector<Prop> props;
 	for (s32 i = 0; i < 5; ++i)
 	{
 		Prop prop;
 		prop.setup("prop_" + std::to_string(i));
-		prop.addFixture(mesh);
-		prop.setShader(resources::findShader("lit/textured"));
+		Model& m = i < 3 ? cube : blankCube;
+		prop.addModel(m);
+		std::string s = i < 3 ? "lit/textured" : "lit/tinted";
+		prop.setShader(resources::findShader(s));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -176,6 +195,7 @@ void runTest()
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 
 		resources::shadeLights({dirLight}, scene.lighting.pointLights);
+		//resources::shadeLights({}, {pl0});
 		RenderState state = scene.perspective(context::nativeAR());
 		prop0.render(state);
 		prop1.render(state);
@@ -185,13 +205,14 @@ void runTest()
 			// prop.setShader(resources::getShader("lit/textured"));
 			prop.render(state);
 		}
+		
 		drawLight(light0Pos, light0, state);
 		drawLight(light1Pos, light1, state);
 		context::swapBuffers();
 		context::pollEvents();
 	}
 
-	prop0.clearFixtures();
+	prop0.clearModels();
 }
 } // namespace
 

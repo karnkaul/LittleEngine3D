@@ -3,7 +3,7 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/gfx/gfx.hpp"
-#include "le3d/gfx/mesh.hpp"
+#include "le3d/gfx/primitives.hpp"
 #include "le3d/game/resources.hpp"
 
 namespace le
@@ -18,27 +18,30 @@ static const std::vector<u8> blank_1pxBytes = {
 	0x80, 0x00, 0xC0, 0xC0, 0xC0, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0x00, 0x00,
 	0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00};
 
-std::unordered_map<std::string, Shader> g_shaderMap;
-std::unordered_map<std::string, Texture> g_textureMap;
+std::unordered_map<std::string, HShader> g_shaderMap;
+std::unordered_map<std::string, HTexture> g_textureMap;
 
-std::unique_ptr<Mesh> g_uDebugMesh;
-std::unique_ptr<Mesh> g_uDebugQuad;
-std::unique_ptr<Mesh> g_uDebugPyramid;
-std::unique_ptr<Mesh> g_uDebugTetrahedron;
+HMesh g_debugMesh;
+HMesh g_debugQuad;
+HMesh g_debugPyramid;
+HMesh g_debugTetrahedron;
+HMesh g_debugCone;
+HMesh g_debugCylinder;
+Model g_debugArrow;
 
-Shader g_nullShader;
-Texture g_nullTexture;
+HShader g_nullShader;
+HTexture g_nullTexture;
 } // namespace
 
 namespace resources
 {
-Texture g_blankTex1px;
+HTexture g_blankTex1px;
 }
 
-Shader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<Shader::MAX_FLAGS> flags)
+HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
 {
 	ASSERT(g_shaderMap.find(id) == g_shaderMap.end(), "Shader ID already loaded!");
-	Shader shader = gfx::gl::genShader(id, vertCode, fragCode, flags);
+	HShader shader = gfx::gl::genShader(id, vertCode, fragCode, flags);
 	if (shader.glID.handle > 0)
 	{
 		g_shaderMap.emplace(id, std::move(shader));
@@ -48,7 +51,7 @@ Shader& resources::loadShader(std::string id, std::string_view vertCode, std::st
 	return g_nullShader;
 }
 
-Shader& resources::findShader(const std::string& id)
+HShader& resources::findShader(const std::string& id)
 {
 	ASSERT(isShaderLoaded(id), "Shader not loaded!");
 	if (isShaderLoaded(id))
@@ -63,7 +66,7 @@ bool resources::isShaderLoaded(const std::string& id)
 	return g_shaderMap.find(id) != g_shaderMap.end();
 }
 
-bool resources::unload(Shader& shader)
+bool resources::unload(HShader& shader)
 {
 	auto search = g_shaderMap.find(shader.id);
 	if (search != g_shaderMap.end())
@@ -96,14 +99,14 @@ void resources::shadeLights(const std::vector<DirLight>& dirLights, const std::v
 	}
 }
 
-Texture& resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
+HTexture& resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
 {
 	if (g_blankTex1px.glID <= 0)
 	{
 		g_blankTex1px = gfx::gl::genTex("blankTex", "diffuse", blank_1pxBytes);
 	}
 	ASSERT(g_textureMap.find(id) == g_textureMap.end(), "Texture already loaded!");
-	Texture texture = gfx::gl::genTex(id, type, std::move(bytes));
+	HTexture texture = gfx::gl::genTex(id, type, std::move(bytes));
 	if (texture.glID > 0)
 	{
 		g_textureMap.emplace(id, std::move(texture));
@@ -113,7 +116,7 @@ Texture& resources::loadTexture(std::string id, std::string type, std::vector<u8
 	return g_nullTexture;
 }
 
-Texture& resources::getTexture(const std::string& id)
+HTexture& resources::getTexture(const std::string& id)
 {
 	ASSERT(isTextureLoaded(id), "Texture not loaded!");
 	if (isTextureLoaded(id))
@@ -128,7 +131,7 @@ bool resources::isTextureLoaded(const std::string& id)
 	return g_textureMap.find(id) != g_textureMap.end();
 }
 
-bool resources::unload(Texture& texture)
+bool resources::unload(HTexture& texture)
 {
 	auto search = g_textureMap.find(texture.id);
 	if (search != g_textureMap.end())
@@ -142,7 +145,7 @@ bool resources::unload(Texture& texture)
 
 void resources::unloadTextures(bool bUnloadBlankTex)
 {
-	std::vector<Texture*> toDel;
+	std::vector<HTexture*> toDel;
 	toDel.reserve(g_textureMap.size());
 	for (auto& kvp : g_textureMap)
 	{
@@ -161,49 +164,87 @@ u32 resources::textureCount()
 	return (u32)g_textureMap.size();
 }
 
-Mesh& resources::debugMesh()
+HMesh& resources::debugCube()
 {
-	if (!g_uDebugMesh)
+	if (g_debugMesh.hVerts.vao <= 0)
 	{
-		g_uDebugMesh = std::make_unique<Mesh>(Mesh::createCube(1.0f));
+		g_debugMesh = gfx::createCube(1.0f);
 	}
-	return *g_uDebugMesh;
+	return g_debugMesh;
 }
 
-Mesh& resources::debugQuad()
+HMesh& resources::debugQuad()
 {
-	if (!g_uDebugQuad)
+	if (g_debugQuad.hVerts.vao <= 0)
 	{
-		g_uDebugQuad = std::make_unique<Mesh>(Mesh::createQuad(1.0f));
+		g_debugQuad = gfx::createQuad(1.0f);
 	}
-	return *g_uDebugQuad;
+	return g_debugQuad;
 }
 
-Mesh& resources::debugPyramid()
+HMesh& resources::debugPyramid()
 {
-	if (!g_uDebugPyramid)
+	if (g_debugPyramid.hVerts.vao <= 0)
 	{
-		g_uDebugPyramid = std::make_unique<Mesh>(Mesh::create4Pyramid(1.0f));
+		g_debugPyramid = gfx::create4Pyramid(1.0f);
 	}
-	return *g_uDebugPyramid;
+	return g_debugPyramid;
 }
 
-Mesh& resources::debugTetrahedron()
+HMesh& resources::debugTetrahedron()
 {
-	if (!g_uDebugTetrahedron)
+	if (g_debugTetrahedron.hVerts.vao <= 0)
 	{
-		g_uDebugTetrahedron = std::make_unique<Mesh>(Mesh::createTetrahedron(1.0f));
+		g_debugTetrahedron = gfx::createTetrahedron(1.0f);
 	}
-	return *g_uDebugTetrahedron;
+	return g_debugTetrahedron;
+}
+
+HMesh& resources::debugCone()
+{
+	if (g_debugCone.hVerts.vao <= 0)
+	{
+		g_debugCone = gfx::createCone(1.0f, 1.0f, 16);
+	}
+	return g_debugCone;
+}
+
+HMesh& resources::debugCylinder()
+{
+	if (g_debugCylinder.hVerts.vao <= 0)
+	{
+		g_debugCylinder = gfx::createCylinder(1.0f, 1.0f, 16);
+	}
+	return g_debugCylinder;
+}
+
+Model& resources::debugArrow(const glm::quat& orientation)
+{
+	if (g_debugArrow.meshCount() == 0)
+	{
+		g_debugArrow.setupModel("dArrow");
+		glm::mat4 m = glm::toMat4(orientation);
+		m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.5f));
+		m = glm::rotate(m, glm::radians(90.0f), g_nRight);
+		m = glm::translate(m, g_nUp * 0.5f);
+		g_debugArrow.addFixture(debugCylinder(), m);
+		m = glm::toMat4(orientation);
+		m = glm::translate(m, g_nFront * 0.5f);
+		m = glm::rotate(m, glm::radians(90.0f), g_nRight);
+		m = glm::scale(m, glm::vec3(0.08f, 0.15f, 0.08f));
+		g_debugArrow.addFixture(debugCone(), m);
+	}
+	return g_debugArrow;
 }
 
 void resources::unloadAll()
 {
+	g_debugArrow.release();
+	gfx::releaseMesh(g_debugMesh);
+	gfx::releaseMesh(g_debugQuad);
+	gfx::releaseMesh(g_debugPyramid);
+	gfx::releaseMesh(g_debugTetrahedron);
 	unloadShaders();
 	unloadTextures(true);
-	g_uDebugMesh = nullptr;
-	g_uDebugQuad = nullptr;
-	g_uDebugPyramid = nullptr;
-	g_uDebugTetrahedron = nullptr;
 }
 } // namespace le

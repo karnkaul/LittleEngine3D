@@ -2,12 +2,13 @@
 #include <glad/glad.h>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
-#include "le3d/game/entity.hpp"
-#include "le3d/game/resources.hpp"
 #include "le3d/gfx/gfx.hpp"
-#include "le3d/gfx/mesh.hpp"
 #include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
+#include "le3d/game/entity.hpp"
+#if defined(DEBUGGING)
+#include "le3d/game/resources.hpp"
+#endif
 
 namespace le
 {
@@ -26,8 +27,7 @@ void Entity::setEnabled(bool bEnabled)
 Prop::Prop()
 {
 #if defined(DEBUGGING)
-	m_pCube = &resources::debugMesh();
-	m_pTetra = &resources::debugTetrahedron();
+	m_pArrow = &resources::debugArrow(g_qIdentity);
 #endif
 }
 
@@ -37,93 +37,73 @@ void Prop::render(const RenderState& state)
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-	for (auto& fixture : m_fixtures)
+	gfx::shading::setViewMats(m_shader, state.view, state.projection);
+	for (auto pModel : m_models)
 	{
 		ASSERT(m_shader.glID.handle > 0, "null shader!");
 #if defined(__arm__)
 		// Compensate for lack of uniform initialisation in GLES
-		pShader->setV4("tint", Colour::White);
+		gfx::shading::setV4(m_shader, "tint", Colour::White);
 #endif
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{
 			// pShader->setV4("tint", Colour::Red);
-			fixture.pMesh->m_drawFlags.set((s32)Mesh::Flag::BlankMagenta, true);
+			pModel->m_renderFlags.set((s32)DrawFlag::BlankMagenta, true);
 		}
 #endif
-		glm::mat4 m = m_transform.model();
-		glm::mat4 nm = m_transform.normalModel();
-		if (fixture.oModel)
+		if (!m_shader.flags.isSet((s32)gfx::shading::Flag::Unlit))
 		{
-			m *= *fixture.oModel;
-			nm *= *fixture.oModel;
+			gfx::shading::setV3(m_shader, "material.ambient", m_untexturedTint.ambient);
+			gfx::shading::setV3(m_shader, "material.diffuse", m_untexturedTint.diffuse);
+			gfx::shading::setV3(m_shader, "material.specular", m_untexturedTint.specular);
 		}
-		gfx::shading::setMats(m_shader, m, nm, state.view, state.projection);
-		fixture.pMesh->draw(m_shader);
-		//fixture.pMesh->glDraw(m, nm, state, &shader);
+		Colour tint;
+		if (m_oTintOverride)
+		{
+			tint = pModel->m_tint;
+			pModel->m_tint = *m_oTintOverride;
+		}
+		pModel->render(m_shader, m_transform.model(), m_transform.normalModel());
+		if (m_oTintOverride)
+		{
+			pModel->m_tint = tint;
+		}
 	}
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 #if defined(DEBUGGING)
-	if (m_pCube && m_pTetra)
+	if (m_pArrow)
 	{
-		glm::mat4 m1(1.0f);
-		glm::mat4 pm(1.0f);
-		const glm::vec3 arrowPointScale = glm::vec3(0.08f, 0.15f, 0.08f);
-		m1 *= m_transform.model();
-		Shader tinted = resources::findShader("unlit/tinted");
 		glDisable(GL_DEPTH_TEST);
-		gfx::shading::setV4(tinted, "tint", Colour::Blue);
-		glm::mat4 m = glm::scale(m1, glm::vec3(0.02f, 0.02f, 0.5f));
-		m = glm::translate(m, g_nFront * 0.5f);
-		gfx::shading::setMats(tinted, m, m, state.view, state.projection);
-		m_pCube->draw(tinted);
-		pm = glm::translate(m1, g_nFront * 0.5f);
-		pm = glm::rotate(pm, glm::radians(90.0f), g_nRight);
-		pm = glm::scale(pm, glm::vec3(0.08f, 0.15f, 0.08f));
-		gfx::shading::setMats(tinted, pm, pm, state.view, state.projection);
-		m_pTetra->draw(tinted);
-		
-		gfx::shading::setV4(tinted, "tint", Colour::Red);
-		m = glm::scale(m1, glm::vec3(0.5f, 0.02f, 0.02f));
-		m = glm::translate(m, g_nRight * 0.5f);
-		gfx::shading::setMats(tinted, m, m, state.view, state.projection);
-		m_pCube->draw(tinted);
-		pm = glm::translate(m1, g_nRight * 0.5f);
-		pm = glm::rotate(pm, glm::radians(90.0f), -g_nFront);
-		pm = glm::rotate(pm, glm::radians(90.0f), g_nUp);
-		pm = glm::scale(pm, arrowPointScale);
-		gfx::shading::setMats(tinted, pm, pm, state.view, state.projection);
-		m_pTetra->draw(tinted);
-		
-		gfx::shading::setV4(tinted, "tint", Colour::Green);
-		m = glm::scale(m1, glm::vec3(0.02f, 0.5f, 0.02f));
-		m = glm::translate(m, g_nUp * 0.5f);
-		gfx::shading::setMats(tinted, m, m, state.view, state.projection);
-		m_pCube->draw(tinted);
-		pm = glm::translate(m1, g_nUp * 0.5f);
-		pm = glm::scale(pm, arrowPointScale);
-		pm = glm::rotate(pm, glm::radians(180.0f), g_nUp);
-		gfx::shading::setMats(tinted, pm, pm, state.view, state.projection);
-		m_pTetra->draw(tinted);
+		HShader tinted = resources::findShader("unlit/tinted");
+		glm::mat4 mZ = m_transform.model();
+		glm::mat4 mX = glm::rotate(mZ, glm::radians(90.0f), g_nUp);
+		glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);
+		m_pArrow->m_tint = Colour::Red;
+		m_pArrow->render(tinted, mX);
+		m_pArrow->m_tint = Colour::Green;
+		m_pArrow->render(tinted, mY);
+		m_pArrow->m_tint = Colour::Blue;
+		m_pArrow->render(tinted, mZ);
 		glEnable(GL_DEPTH_TEST);
 	}
 #endif
 }
 
-void Prop::addFixture(Mesh& mesh, std::optional<glm::mat4> model /* = std::nullopt */)
+void Prop::addModel(Model& model)
 {
-	m_fixtures.emplace_back(Fixture{&mesh, model});
+	m_models.emplace_back(&model);
 }
 
-void Prop::clearFixtures()
+void Prop::clearModels()
 {
-	m_fixtures.clear();
+	m_models.clear();
 }
 
-void Prop::setShader(Shader shader)
+void Prop::setShader(HShader shader)
 {
 	m_shader = std::move(shader);
 }

@@ -11,11 +11,16 @@
 #include "le3d/gfx/utils.hpp"
 #include "le3d/core/log.hpp"
 
-namespace le::gfx
+namespace le
 {
-Texture gl::genTex(std::string name, std::string type, std::vector<u8> bytes)
+namespace
 {
-	Texture ret;
+s32 g_maxTexIdx = 0;
+}
+
+HTexture gfx::gl::genTex(std::string name, std::string type, std::vector<u8> bytes)
+{
+	HTexture ret;
 	if (context::exists())
 	{
 		s32 w, h, ch;
@@ -49,7 +54,7 @@ Texture gl::genTex(std::string name, std::string type, std::vector<u8> bytes)
 	return ret;
 }
 
-void gl::releaseTex(std::vector<Texture*> textures)
+void gfx::gl::releaseTex(std::vector<HTexture*> textures)
 {
 	if (context::exists())
 	{
@@ -64,13 +69,13 @@ void gl::releaseTex(std::vector<Texture*> textures)
 				texIDs.push_back(pTexture->glID);
 				LOG_I("-- [%s] (Texture) destroyed", pTexture->id.data());
 			}
-			*pTexture = Texture();
+			*pTexture = HTexture();
 		}
 		glChk(glDeleteTextures((GLsizei)texIDs.size(), texIDs.data()));
 	}
 }
 
-Shader gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<Shader::MAX_FLAGS> flags)
+HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
 {
 	s32 success;
 	if (vertCode.empty())
@@ -110,7 +115,7 @@ Shader gl::genShader(std::string id, std::string_view vertCode, std::string_view
 		return {};
 	}
 
-	Shader program;
+	HShader program;
 	program.glID = glCreateProgram();
 	glAttachShader(program.glID, vsh);
 	glAttachShader(program.glID, fsh);
@@ -132,14 +137,14 @@ Shader gl::genShader(std::string id, std::string_view vertCode, std::string_view
 	return program;
 }
 
-void gl::releaseShader(Shader& shader)
+void gfx::gl::releaseShader(HShader& shader)
 {
 	LOG_I("-- [%s] Shader destroyed", shader.id.data());
 	glChk(glDeleteProgram(shader.glID));
-	shader = Shader();
+	shader = HShader();
 }
 
-HVerts gl::genVAO(bool bEBO)
+HVerts gfx::gl::genVAO(bool bEBO)
 {
 	HVerts hVerts;
 	if (context::exists())
@@ -155,7 +160,7 @@ HVerts gl::genVAO(bool bEBO)
 	return hVerts;
 }
 
-void gl::releaseVAO(HVerts& hVerts)
+void gfx::gl::releaseVAO(HVerts& hVerts)
 {
 	if (context::exists() && hVerts.vao > 0)
 	{
@@ -167,7 +172,7 @@ void gl::releaseVAO(HVerts& hVerts)
 	hVerts = HVerts();
 }
 
-void gl::bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u32> indices)
+void gfx::gl::bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u32> indices)
 {
 	if (context::exists())
 	{
@@ -186,7 +191,7 @@ void gl::bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u
 	}
 }
 
-HVerts gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* = */, const Shader* pShader /* = nullptr */)
+HVerts gfx::gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* = */, const HShader* pShader /* = nullptr */)
 {
 	HVerts hVerts;
 	if (context::exists())
@@ -238,7 +243,7 @@ HVerts gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indices /*
 	return hVerts;
 }
 
-void gl::draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const Shader& s)
+void gfx::gl::draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const HShader& s)
 {
 	Lock lock(context::g_glMutex);
 	shading::setupLights(s, rs.dirLights, rs.pointLights);
@@ -263,7 +268,7 @@ void gl::draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, con
 	glBindVertexArray(0);
 }
 
-void gl::draw(const HVerts& hVerts)
+void gfx::gl::draw(const HVerts& hVerts)
 {
 	Lock lock(context::g_glMutex);
 	glChk(glBindVertexArray(hVerts.vao.handle));
@@ -279,13 +284,119 @@ void gl::draw(const HVerts& hVerts)
 	glBindVertexArray(0);
 }
 
-HVerts newVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* =  */, const Shader* pShader /* = nullptr */)
+HMesh gfx::newMesh(std::string name, std::vector<Vertex> vertices, std::vector<u32> indices, const HShader* pShader /* = nullptr */)
 {
-	HVerts ret = gl::genVertices(std::move(vertices), std::move(indices), pShader);
-	return ret;
+	HMesh mesh;
+	mesh.name = std::move(name);
+	if (le::context::exists())
+	{
+		mesh.hVerts = gl::genVertices(std::move(vertices), std::move(indices), pShader);
+		LOGIF_I(!mesh.name.empty(), "== [%s] Mesh set up", mesh.name.data());
+	}
+	return mesh;
 }
 
-HVerts tutorial::newLight(const HVerts& hVBO)
+void gfx::releaseMesh(HMesh& mesh)
+{
+	LOGIF_I(mesh.hVerts.vao > 0, "-- [%s] Mesh destroyed", mesh.name.data());
+	gl::releaseVAO(mesh.hVerts);
+	mesh.name.clear();
+}
+
+void gfx::drawMesh(const HMesh& mesh, const HShader& shader)
+{
+	if (le::context::exists() && mesh.hVerts.vao.handle > 0)
+	{
+		bool bResetTint = false;
+		ASSERT(shader.glID.handle > 0, "shader is null!");
+		{
+			Lock lock(context::g_glMutex);
+			gfx::shading::use(shader);
+			gfx::shading::setF32(shader, "material.shininess", mesh.shininess);
+			s32 txID = 0;
+			u32 diffuse = 0;
+			u32 specular = 0;
+			glChk(glBindTexture(GL_TEXTURE_2D, 0));
+			auto drawBlankTex = [&](bool bMagenta) {
+				if (bMagenta)
+				{
+					gfx::shading::setV4(shader, "tint", Colour::Magenta);
+					bResetTint = true;
+				}
+				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+				glChk(glBindTexture(GL_TEXTURE_2D, 1));
+			};
+#if defined(DEBUGGING)
+			if (mesh.drawFlags.isSet((s32)DrawFlag::Blank) || mesh.drawFlags.isSet((s32)DrawFlag::BlankMagenta))
+			{
+				drawBlankTex(mesh.drawFlags.isSet((s32)DrawFlag::BlankMagenta));
+			}
+			else
+#endif
+			{
+				if (!shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
+				{
+					if (mesh.textures.empty())
+					{
+						drawBlankTex(true);
+					}
+				}
+				for (const auto& texture : mesh.textures)
+				{
+					std::string id = "material.";
+					std::string number;
+					id += texture.type;
+					if (txID > g_maxTexIdx)
+					{
+						g_maxTexIdx = txID;
+					}
+					if (texture.type == "diffuse")
+					{
+						number = std::to_string(++diffuse);
+					}
+					else if (texture.type == "specular")
+					{
+						number = std::to_string(++specular);
+					}
+					else
+					{
+						if (txID == 0)
+						{
+							drawBlankTex(true);
+						}
+						continue;
+					}
+					id += number;
+					if (texture.glID.handle > 0)
+					{
+						glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+						glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
+						gfx::shading::setS32(shader, id, txID++);
+					}
+					else
+					{
+						drawBlankTex(true);
+					}
+				}
+			}
+		}
+		gl::draw(mesh.hVerts);
+		for (s32 txID = 0; txID <= g_maxTexIdx; ++txID)
+		{
+			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+			glChk(glBindTexture(GL_TEXTURE_2D, 0));
+		}
+		if (bResetTint)
+		{
+			gfx::shading::setV4(shader, "tint", Colour::White);
+		}
+#if defined(DEBUGGING)
+		mesh.drawFlags.flags.reset();
+#endif
+	}
+}
+
+HVerts gfx::tutorial::newLight(const HVerts& hVBO)
 {
 	HVerts ret;
 	if (context::exists())
