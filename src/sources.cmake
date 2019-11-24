@@ -12,6 +12,7 @@ set(SUB_SOURCES
 	le3d/core/utils.cpp
 
 	le3d/env/env.cpp
+	le3d/env/threads.cpp
 
 	le3d/game/camera.cpp
 	le3d/game/entity.cpp
@@ -28,8 +29,6 @@ set(SUB_SOURCES
 	le3d/gfx/primitives.cpp
 	le3d/gfx/shading.cpp
 	le3d/gfx/utils.cpp
-
-	le3d/threads/threads.cpp
 )
 
 list(TRANSFORM SUB_SOURCES PREPEND "${CMAKE_CURRENT_LIST_DIR}/")

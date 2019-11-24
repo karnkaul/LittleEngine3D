@@ -1,5 +1,11 @@
 #include <algorithm>
+#if defined(__linux__)
+#include <X11/Xlib.h>
+#include <X11/extensions/Xrandr.h>
+#endif
+#include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
+#include "le3d/env/threads.hpp"
 
 namespace le
 {
@@ -10,8 +16,21 @@ std::string_view g_pwd;
 std::vector<std::string_view> g_args;
 } // namespace
 
+namespace threads
+{
+extern u32 g_maxThreads;
+}
+
 void env::init(s32 argc, char** argv)
 {
+#if defined(__linux__)
+	s32 threadStatus = XInitThreads();
+	if (threadStatus == 0)
+	{
+		LOG_E("[OS] ERROR calling XInitThreads()! UB follows.");
+		threads::g_maxThreads = 1;
+	}
+#endif
 	if (argc > 0)
 	{
 		g_exePath = argv[0];

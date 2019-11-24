@@ -2,6 +2,7 @@
 #include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
 #include "le3d/env/env.hpp"
+#include "le3d/env/threads.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
@@ -219,6 +220,7 @@ void runTest()
 s32 gameloop::run(s32 argc, char** argv)
 {
 	le::env::init(argc, argv);
+	FileLogger fileLogger(env::fullPath("debug.log"));
 
 	constexpr u16 WIDTH = 1280;
 	constexpr u16 HEIGHT = 720;
