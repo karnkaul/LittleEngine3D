@@ -25,7 +25,7 @@ HMesh gfx::createQuad(f32 side)
 		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
-	return newMesh("dQuad", std::move(vertices), {});
+	return newMesh("dQuad", std::move(vertices));
 }
 
 HMesh gfx::createCube(f32 side)
@@ -74,7 +74,7 @@ HMesh gfx::createCube(f32 side)
 		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
-	return newMesh("dCube", std::move(vertices), {});
+	return newMesh("dCube", std::move(vertices));
 }
 
 HMesh gfx::create4Pyramid(f32 side)
@@ -118,7 +118,7 @@ HMesh gfx::create4Pyramid(f32 side)
 		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
-	return newMesh("dPyramid", std::move(vertices), {});
+	return newMesh("dPyramid", std::move(vertices));
 }
 
 HMesh gfx::createTetrahedron(f32 side)
@@ -163,6 +163,95 @@ HMesh gfx::createTetrahedron(f32 side)
 		vertices[idx].normal = {norms[stride], norms[stride + 1], norms[stride + 2]};
 		vertices[idx].texCoords = uvs[idx % ARR_SIZE(uvs)];
 	}
-	return newMesh("dTetrahedron", std::move(vertices), {});
+	return newMesh("dTetrahedron", std::move(vertices));
+}
+
+HMesh gfx::createCircle(f32 diam, s32 points)
+{
+	const f32 r = diam * 0.5f;
+	std::vector<le::Vertex> vertices;
+	f32 angle = 360.0f / points;
+	glm::vec3 norm(0.0f, 0.0f, 1.0f);
+	for (s32 i = 0; i < points; ++i)
+	{
+		f32 x0 = r * glm::cos(glm::radians(angle * i));
+		f32 y0 = r * glm::sin(glm::radians(angle * i));
+		f32 x1 = r * glm::cos(glm::radians(angle * (i + 1)));
+		f32 y1 = r * glm::sin(glm::radians(angle * (i + 1)));
+		glm::vec3 v0(x0, y0, 0.0f);
+		glm::vec3 v1(x1, y1, 0.0f);
+		
+		vertices.emplace_back(Vertex{glm::vec3(0.0f), norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v0, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v1, norm, glm::vec2(0.0f)});
+	}
+	return newMesh("dCircle", std::move(vertices));
+}
+
+HMesh gfx::createCone(f32 diam, f32 height, s32 points)
+{
+	const f32 r = diam * 0.5f;
+	std::vector<le::Vertex> vertices;
+	f32 angle = 360.0f / points;
+	for (s32 i = 0; i < points; ++i)
+	{
+		f32 x0 = r * glm::cos(glm::radians(angle * i));
+		f32 z0 = r * glm::sin(glm::radians(angle * i));
+		f32 x1 = r * glm::cos(glm::radians(angle * (i + 1)));
+		f32 z1 = r * glm::sin(glm::radians(angle * (i + 1)));
+		glm::vec3 v0(x0, 0.0f, z0);
+		glm::vec3 v1(x1, 0.0f, z1);
+		glm::vec3 norm(0.0f, -1.0f, 0.0f);
+
+		vertices.emplace_back(Vertex{glm::vec3(0.0f), norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v0, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v1, norm, glm::vec2(0.0f)});
+
+		glm::vec3 v2(0.0f, height, 0.0f);
+		norm = glm::normalize(glm::cross(v2 - v0, v1 - v0));
+		vertices.emplace_back(Vertex{v0, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v2, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v1, norm, glm::vec2(0.0f)});
+	}
+	return newMesh("dCone", std::move(vertices));
+}
+
+HMesh gfx::createCylinder(f32 diam, f32 height, s32 points)
+{
+	const f32 r = diam * 0.5f;
+	const glm::vec3 c0(0.0f, 0.0f, 0.0f);
+	const glm::vec3 c1(0.0f, height, 0.0f);
+	std::vector<le::Vertex> vertices;
+	f32 angle = 360.0f / points;
+	for (s32 i = 0; i < points; ++i)
+	{
+		f32 x0 = r * glm::cos(glm::radians(angle * i));
+		f32 z0 = r * glm::sin(glm::radians(angle * i));
+		f32 x1 = r * glm::cos(glm::radians(angle * (i + 1)));
+		f32 z1 = r * glm::sin(glm::radians(angle * (i + 1)));
+		glm::vec3 v00(x0, 0.0f, z0);
+		glm::vec3 v01(x1, 0.0f, z1);
+		glm::vec3 norm(0.0f, -1.0f, 0.0f);
+
+		vertices.emplace_back(Vertex{c0, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v00, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v01, norm, glm::vec2(0.0f)});
+
+		glm::vec3 v10(x0, height, z0);
+		glm::vec3 v11(x1, height, z1);
+		norm = glm::vec3(0.0f, 1.0f, 0.0f);
+		vertices.emplace_back(Vertex{c1, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v10, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v11, norm, glm::vec2(0.0f)});
+
+		norm = glm::normalize(glm::cross(v10 - v00, v01 - v00));
+		vertices.emplace_back(Vertex{v01, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v00, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v10, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v01, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v10, norm, glm::vec2(0.0f)});
+		vertices.emplace_back(Vertex{v11, norm, glm::vec2(0.0f)});
+	}
+	return newMesh("dCone", std::move(vertices));
 }
 } // namespace le

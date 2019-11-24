@@ -25,6 +25,8 @@ HMesh g_debugMesh;
 HMesh g_debugQuad;
 HMesh g_debugPyramid;
 HMesh g_debugTetrahedron;
+HMesh g_debugCone;
+HMesh g_debugCylinder;
 Model g_debugArrow;
 
 HShader g_nullShader;
@@ -162,7 +164,7 @@ u32 resources::textureCount()
 	return (u32)g_textureMap.size();
 }
 
-HMesh& resources::debugMesh()
+HMesh& resources::debugCube()
 {
 	if (g_debugMesh.hVerts.vao <= 0)
 	{
@@ -198,6 +200,24 @@ HMesh& resources::debugTetrahedron()
 	return g_debugTetrahedron;
 }
 
+HMesh& resources::debugCone()
+{
+	if (g_debugCone.hVerts.vao <= 0)
+	{
+		g_debugCone = gfx::createCone(1.0f, 1.0f, 16);
+	}
+	return g_debugCone;
+}
+
+HMesh& resources::debugCylinder()
+{
+	if (g_debugCylinder.hVerts.vao <= 0)
+	{
+		g_debugCylinder = gfx::createCylinder(1.0f, 1.0f, 16);
+	}
+	return g_debugCylinder;
+}
+
 Model& resources::debugArrow(const glm::quat& orientation)
 {
 	if (g_debugArrow.meshCount() == 0)
@@ -205,13 +225,14 @@ Model& resources::debugArrow(const glm::quat& orientation)
 		g_debugArrow.setupModel("dArrow");
 		glm::mat4 m = glm::toMat4(orientation);
 		m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.5f));
+		m = glm::rotate(m, glm::radians(90.0f), g_nRight);
 		m = glm::translate(m, g_nFront * 0.5f);
-		g_debugArrow.addFixture(resources::debugMesh(), m);
+		g_debugArrow.addFixture(debugCylinder(), m);
 		m = glm::toMat4(orientation);
 		m = glm::translate(m, g_nFront * 0.5f);
 		m = glm::rotate(m, glm::radians(90.0f), g_nRight);
 		m = glm::scale(m, glm::vec3(0.08f, 0.15f, 0.08f));
-		g_debugArrow.addFixture(resources::debugTetrahedron(), m);
+		g_debugArrow.addFixture(debugCone(), m);
 	}
 	return g_debugArrow;
 }

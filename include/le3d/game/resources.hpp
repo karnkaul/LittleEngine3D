@@ -27,10 +27,14 @@ bool unload(HTexture& texture);
 void unloadTextures(bool bUnloadBlankTex);
 u32 textureCount();
 
-HMesh& debugMesh();
+HMesh& debugCube();
 HMesh& debugQuad();
 HMesh& debugPyramid();
 HMesh& debugTetrahedron();
+
+HMesh& debugCone();
+HMesh& debugCylinder();
+
 Model& debugArrow(const glm::quat& orientation);
 
 void unloadAll();

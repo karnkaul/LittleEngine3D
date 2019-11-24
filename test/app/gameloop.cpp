@@ -7,6 +7,7 @@
 #include "le3d/game/resources.hpp"
 #include "le3d/game/scene.hpp"
 #include "le3d/gfx/model.hpp"
+#include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/input/input.hpp"
 
@@ -82,7 +83,7 @@ void runTest()
 	};
 
 	HTexture bad;
-	auto& cubeMesh = resources::debugMesh();
+	auto& cubeMesh = resources::debugCube();
 	auto& quadMesh = resources::debugQuad();
 	quadMesh.textures = {resources::getTexture("awesomeface")};
 	// quad.m_textures = {bad};
@@ -101,9 +102,9 @@ void runTest()
 	glm::mat4 offset(1.0f);
 	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
 	cubeStack.addFixture(cubeMesh, offset);
-	Model mQuad;
-	mQuad.setupModel("quad");
-	mQuad.addFixture(quadMesh);
+	Model quad;
+	quad.setupModel("quad");
+	quad.addFixture(quadMesh);
 
 	// mesh.m_textures = {bad};
 	// lightingShader.setS32("mix_textures", 1);
@@ -128,7 +129,7 @@ void runTest()
 
 	Prop quadProp;
 	quadProp.setup("quad");
-	quadProp.addModel(mQuad);
+	quadProp.addModel(quad);
 	quadProp.setShader(resources::findShader("unlit/textured"));
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
@@ -194,6 +195,7 @@ void runTest()
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 
 		resources::shadeLights({dirLight}, scene.lighting.pointLights);
+		//resources::shadeLights({}, {pl0});
 		RenderState state = scene.perspective(context::nativeAR());
 		prop0.render(state);
 		prop1.render(state);
@@ -203,6 +205,7 @@ void runTest()
 			// prop.setShader(resources::getShader("lit/textured"));
 			prop.render(state);
 		}
+		
 		drawLight(light0Pos, light0, state);
 		drawLight(light1Pos, light1, state);
 		context::swapBuffers();
