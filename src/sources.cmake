@@ -16,6 +16,7 @@ set(SUB_SOURCES
 
 	le3d/game/camera.cpp
 	le3d/game/entity.cpp
+	le3d/game/fileLogger.cpp
 	le3d/game/object.cpp
 	le3d/game/scene.cpp
 	le3d/game/resources.cpp

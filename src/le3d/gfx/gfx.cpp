@@ -296,11 +296,14 @@ HMesh gfx::newMesh(std::string name, std::vector<Vertex> vertices, std::vector<u
 	return mesh;
 }
 
-void gfx::releaseMesh(HMesh& mesh)
+void gfx::releaseMeshes(std::vector<HMesh*> meshes)
 {
-	LOGIF_I(mesh.hVerts.vao > 0, "-- [%s] Mesh destroyed", mesh.name.data());
-	gl::releaseVAO(mesh.hVerts);
-	mesh.name.clear();
+	for (auto pMesh : meshes)
+	{
+		LOGIF_I(pMesh->hVerts.vao > 0, "-- [%s] Mesh destroyed", pMesh->name.data());
+		gl::releaseVAO(pMesh->hVerts);
+		pMesh->name.clear();
+	}
 }
 
 void gfx::drawMesh(const HMesh& mesh, const HShader& shader)

@@ -5,6 +5,7 @@
 #include "le3d/env/threads.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
+#include "le3d/game/fileLogger.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/scene.hpp"
 #include "le3d/gfx/model.hpp"
@@ -186,7 +187,7 @@ void runTest()
 		t = Time::now();
 		camera.tick(dt);
 		// context::glClearFlags(Colour(50, 40, 10));
-		context::glClearFlags();
+		context::clearFlags();
 
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
@@ -196,7 +197,7 @@ void runTest()
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 
 		resources::shadeLights({dirLight}, scene.lighting.pointLights);
-		//resources::shadeLights({}, {pl0});
+		// resources::shadeLights({}, {pl0});
 		RenderState state = scene.perspective(context::nativeAR());
 		prop0.render(state);
 		prop1.render(state);
@@ -206,7 +207,7 @@ void runTest()
 			// prop.setShader(resources::getShader("lit/textured"));
 			prop.render(state);
 		}
-		
+
 		drawLight(light0Pos, light0, state);
 		drawLight(light1Pos, light1, state);
 		context::swapBuffers();
@@ -228,12 +229,12 @@ s32 gameloop::run(s32 argc, char** argv)
 #if defined(DEBUGGING)
 	context::g_bVSYNC = false;
 #endif
-	if (!context::glCreate(WIDTH, HEIGHT, "Test"))
+	if (!context::create(WIDTH, HEIGHT, "Test"))
 	{
 		return 1;
 	}
 	runTest();
-	context::glDestroy();
+	context::destroy();
 	return 0;
 }
 } // namespace letest

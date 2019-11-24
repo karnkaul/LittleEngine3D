@@ -180,7 +180,7 @@ HMesh gfx::createCircle(f32 diam, s32 points)
 		f32 y1 = r * glm::sin(glm::radians(angle * (i + 1)));
 		glm::vec3 v0(x0, y0, 0.0f);
 		glm::vec3 v1(x1, y1, 0.0f);
-		
+
 		vertices.emplace_back(Vertex{glm::vec3(0.0f), norm, glm::vec2(0.0f)});
 		vertices.emplace_back(Vertex{v0, norm, glm::vec2(0.0f)});
 		vertices.emplace_back(Vertex{v1, norm, glm::vec2(0.0f)});
@@ -252,6 +252,6 @@ HMesh gfx::createCylinder(f32 diam, f32 height, s32 points)
 		vertices.emplace_back(Vertex{v10, norm, glm::vec2(0.0f)});
 		vertices.emplace_back(Vertex{v11, norm, glm::vec2(0.0f)});
 	}
-	return newMesh("dCone", std::move(vertices));
+	return newMesh("dCylinder", std::move(vertices));
 }
 } // namespace le

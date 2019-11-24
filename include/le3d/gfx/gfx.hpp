@@ -26,7 +26,7 @@ void draw(const HVerts& hVerts);
 } // namespace gl
 
 HMesh newMesh(std::string name, std::vector<Vertex> vertices, std::vector<u32> indices = {}, const HShader* pShader = nullptr);
-void releaseMesh(HMesh& mesh);
+void releaseMeshes(std::vector<HMesh*> mesh);
 void drawMesh(const HMesh& mesh, const HShader& shader);
 
 namespace tutorial

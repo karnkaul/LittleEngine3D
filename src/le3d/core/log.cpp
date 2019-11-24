@@ -44,9 +44,10 @@ void logInternal(const char* szText, LogLevel level, va_list args)
 	auto pTM = TM(now);
 	snprintf(cacheStr.data(), cacheStr.size(), " [%02d:%02d:%02d]", pTM->tm_hour, pTM->tm_min, pTM->tm_sec);
 	cache += std::string(cacheStr.data());
-	std::cout << cache << std::endl;
-
 	cache += "\n";
+
+	std::cout << cache;
+
 #if _MSC_VER
 	OutputDebugStringA(cache.data());
 #endif
