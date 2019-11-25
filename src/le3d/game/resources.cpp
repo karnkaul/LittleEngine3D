@@ -1,5 +1,6 @@
 #include <memory>
 #include <unordered_map>
+#include "le3d/context/context.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/gfx/gfx.hpp"

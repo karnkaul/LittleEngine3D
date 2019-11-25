@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/maths.hpp"
 #include "le3d/context/context.hpp"
@@ -28,14 +29,18 @@ glm::mat4 Camera::view() const
 	}
 }
 
-glm::mat4 Camera::perspectiveProj(f32 aspect, f32 near, f32 far) const
+glm::mat4 Camera::perspectiveProj(f32 near, f32 far) const
 {
-	return glm::perspective(glm::radians(m_fov), aspect, near, far);
+	return glm::perspective(glm::radians(m_fov), context::nativeAR(), near, far);
 }
 
-glm::mat4 Camera::orthographicProj(glm::vec4 lrbt, f32 near, f32 far) const
+glm::mat4 Camera::orthographicProj(f32 zoom, f32 near, f32 far) const
 {
-	return glm::ortho(lrbt.x, lrbt.y, lrbt.z, lrbt.w, near, far);
+	ASSERT(zoom > 0.0f, "Invalid zoom!");
+	f32 ar = context::nativeAR();
+	f32 w = ar > 1.0f ? 1.0f : 1.0f * ar;
+	f32 h = ar > 1.0f ? 1.0f / ar : 1.0f;
+	return glm::ortho(-w / zoom, w / zoom, -h / zoom, h / zoom, near, far);
 }
 
 FreeCam::FreeCam()

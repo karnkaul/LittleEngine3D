@@ -27,6 +27,7 @@ bool setV4(const HShader& shader, std::string_view id, Colour colour);
 
 void setModelMats(const HShader& shader, const glm::mat4& model, const glm::mat4& normals);
 void setViewMats(const HShader& shader, const glm::mat4& view, const glm::mat4& proj);
+void setProjMat(const HShader& shader, const glm::mat4& proj);
 void setAllMats(const HShader& shader, const glm::mat4& m, const glm::mat4& nm, const glm::mat4& v, const glm::mat4& p);
 void setupLights(const HShader& shader, const std::vector<DirLight>& dirLights, const std::vector<PtLight>& pointLights);
 } // namespace le::gfx::shading

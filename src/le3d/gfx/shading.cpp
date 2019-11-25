@@ -134,6 +134,13 @@ void shading::setViewMats(const HShader& shader, const glm::mat4& view, const gl
 	glChk(glUniform3f(temp, -view[3][0], -view[3][1], -view[3][2]));
 }
 
+void shading::setProjMat(const HShader& shader, const glm::mat4& proj)
+{
+	use(shader);
+	auto temp = glGetUniformLocation(shader.glID.handle, "projection");
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(proj));
+}
+
 void shading::setAllMats(const HShader& shader, const glm::mat4& m, const glm::mat4& n, const glm::mat4& v, const glm::mat4& p)
 {
 	use(shader);

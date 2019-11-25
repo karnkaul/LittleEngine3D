@@ -20,6 +20,7 @@ set(SUB_SOURCES
 	le3d/game/object.cpp
 	le3d/game/scene.cpp
 	le3d/game/resources.cpp
+	le3d/game/utils.cpp
 
 	le3d/input/inputImpl.hpp
 	le3d/input/input.cpp

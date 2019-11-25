@@ -8,6 +8,7 @@
 #include "le3d/game/fileLogger.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/scene.hpp"
+#include "le3d/game/utils.hpp"
 #include "le3d/gfx/model.hpp"
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/utils.hpp"
@@ -58,11 +59,14 @@ void runTest()
 	noTexNoLit.set((s32)gfx::shading::Flag::Unlit, true);
 	noTexNoLit.set((s32)gfx::shading::Flag::Untextured, true);
 
-	auto vsh = readFile(resourcePath("shaders/default.vsh"));
-	auto unlitTinted = resources::loadShader("unlit/tinted", vsh, readFile(resourcePath("shaders/unlit/tinted.fsh")), noTexNoLit);
-	auto unlitTextured = resources::loadShader("unlit/textured", vsh, readFile(resourcePath("shaders/unlit/textured.fsh")), noLit);
-	auto litTinted = resources::loadShader("lit/tinted", vsh, readFile(resourcePath("shaders/lit/tinted.fsh")), noTex);
-	scene.mainShader = resources::loadShader("lit/textured", vsh, readFile(resourcePath("shaders/lit/textured.fsh")), {});
+	auto def = readFile(resourcePath("shaders/default.vsh"));
+	auto ui = readFile(resourcePath("shaders/ui.vsh"));
+	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")), noTexNoLit);
+	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")), noLit);
+	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")), noTex);
+	scene.mainShader = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")), {});
+	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")), noTexNoLit);
+	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")), noLit);
 	gfx::shading::setV4(litTinted, "tint", Colour::Yellow);
 
 	DirLight dirLight;
@@ -198,7 +202,7 @@ void runTest()
 
 		resources::shadeLights({dirLight}, scene.lighting.pointLights);
 		// resources::shadeLights({}, {pl0});
-		RenderState state = scene.perspective(context::nativeAR());
+		RenderState state = scene.perspective();
 		prop0.render(state);
 		prop1.render(state);
 		quadProp.render(state);
@@ -207,6 +211,18 @@ void runTest()
 			// prop.setShader(resources::getShader("lit/textured"));
 			prop.render(state);
 		}
+
+		Quad2D tl, tr, bl, br;
+		// glm::vec2 uiSpace = {1920.0f, 1080.0f};
+		glm::vec2 uiSpace = {1280.0f, 720.0f};
+		tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::getTexture("awesomeface");
+		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
+		tl.space = tr.space = bl.space = br.space = uiSpace;
+		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
+		tl.pos = {-tr.pos.x, tr.pos.y};
+		bl.pos = {-tr.pos.x, -tr.pos.y};
+		br.pos = {tr.pos.x, -tr.pos.y};
+		draw2DQuads({tl, tr, bl, br});
 
 		drawLight(light0Pos, light0, state);
 		drawLight(light1Pos, light1, state);
