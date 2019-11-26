@@ -24,7 +24,7 @@ struct Scene
 	HShader mainShader;
 
 	RenderState initState() const;
-	RenderState perspective(f32 aspect) const;
-	RenderState orthographic(glm::vec4 lrbt) const;
+	RenderState perspective() const;
+	RenderState orthographic(f32 zoom) const;
 };
 } // namespace le

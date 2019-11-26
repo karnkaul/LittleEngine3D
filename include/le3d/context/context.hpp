@@ -12,12 +12,12 @@ namespace context
 extern bool g_bVSYNC;
 #endif
 
-bool glCreate(u16 width, u16 height, std::string_view title);
-void glDestroy();
+bool create(u16 width, u16 height, std::string_view title);
+void destroy();
 
 bool exists();
 bool isClosing();
-void glClearFlags(Colour colour = Colour::Black, u32 flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void clearFlags(Colour colour = Colour::Black, u32 flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 void pollEvents();
 void swapBuffers();
 

@@ -21,8 +21,8 @@ public:
 
 public:
 	glm::mat4 view() const;
-	glm::mat4 perspectiveProj(f32 aspect, f32 near = 0.1f, f32 far = 100.0f) const;
-	glm::mat4 orthographicProj(glm::vec4 lrbt, f32 near = 0.1f, f32 far = 100.0f) const;
+	glm::mat4 perspectiveProj(f32 near = 0.1f, f32 far = 100.0f) const;
+	glm::mat4 orthographicProj(f32 zoom = 1.0f, f32 near = 0.1f, f32 far = 100.0f) const;
 };
 
 class FreeCam : public Camera

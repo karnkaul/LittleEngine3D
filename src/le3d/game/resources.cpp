@@ -1,5 +1,6 @@
 #include <memory>
 #include <unordered_map>
+#include "le3d/context/context.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/gfx/gfx.hpp"
@@ -240,11 +241,8 @@ Model& resources::debugArrow(const glm::quat& orientation)
 void resources::unloadAll()
 {
 	g_debugArrow.release();
-	gfx::releaseMesh(g_debugMesh);
-	gfx::releaseMesh(g_debugQuad);
-	gfx::releaseMesh(g_debugPyramid);
-	gfx::releaseMesh(g_debugTetrahedron);
-	unloadShaders();
+	gfx::releaseMeshes({&g_debugMesh, &g_debugQuad, &g_debugPyramid, &g_debugTetrahedron, &g_debugCone, &g_debugCylinder});
 	unloadTextures(true);
+	unloadShaders();
 }
 } // namespace le

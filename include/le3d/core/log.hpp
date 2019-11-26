@@ -1,4 +1,6 @@
 #pragma once
+#include <functional>
+#include <string>
 
 namespace le
 {
@@ -39,6 +41,8 @@ enum class LogLevel
 	Warning,
 	Error
 };
+
+extern std::function<void(std::string)> g_onLogStr;
 
 void log(LogLevel level, const char* szText, ...);
 } // namespace le

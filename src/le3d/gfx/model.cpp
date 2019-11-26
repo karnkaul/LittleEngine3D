@@ -59,10 +59,13 @@ u32 Model::meshCount() const
 
 void Model::release()
 {
+	std::vector<HMesh*> toRelease;
+	toRelease.reserve(m_loadedMeshes.size());
 	for (auto& mesh : m_loadedMeshes)
 	{
-		gfx::releaseMesh(mesh);
+		toRelease.push_back(&mesh);
 	}
+	gfx::releaseMeshes(toRelease);
 	m_loadedMeshes.clear();
 	LOGIF_D(!m_fixtures.empty(), "[%s] %s destroyed", m_name.data(), m_type.data());
 	m_fixtures.clear();

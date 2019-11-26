@@ -18,7 +18,6 @@ namespace
 {
 std::mutex logMutex;
 std::string cache;
-std::string buffer;
 std::unordered_map<LogLevel, const char*> prefixes = {
 	{LogLevel::Debug, "[D] "}, {LogLevel::Info, "[I] "}, {LogLevel::Warning, "[W] "}, {LogLevel::Error, "[E] "}};
 
@@ -45,15 +44,21 @@ void logInternal(const char* szText, LogLevel level, va_list args)
 	auto pTM = TM(now);
 	snprintf(cacheStr.data(), cacheStr.size(), " [%02d:%02d:%02d]", pTM->tm_hour, pTM->tm_min, pTM->tm_sec);
 	cache += std::string(cacheStr.data());
-	std::cout << cache << std::endl;
-
 	cache += "\n";
+
+	std::cout << cache;
+
 #if _MSC_VER
 	OutputDebugStringA(cache.data());
 #endif
-	buffer += cache;
+	if (g_onLogStr)
+	{
+		g_onLogStr(std::move(cache));
+	}
 }
 } // namespace
+
+std::function<void(std::string)> g_onLogStr;
 
 void log(LogLevel level, const char* szText, ...)
 {

@@ -6,20 +6,20 @@
 
 namespace le
 {
-RenderState Scene::perspective(f32 aspect) const
+RenderState Scene::perspective() const
 {
 	ASSERT(cameras.uMain.get(), "No main camera!");
 	RenderState ret = initState();
-	ret.projection = cameras.uMain->perspectiveProj(aspect);
+	ret.projection = cameras.uMain->perspectiveProj();
 	ret.view = cameras.uMain->view();
 	return ret;
 }
 
-RenderState Scene::orthographic(glm::vec4 lrbt) const
+RenderState Scene::orthographic(f32 zoom) const
 {
 	ASSERT(cameras.uMain.get(), "No main camera!");
 	RenderState ret = initState();
-	ret.projection = cameras.uMain->orthographicProj(lrbt);
+	ret.projection = cameras.uMain->orthographicProj(zoom);
 	ret.view = cameras.uMain->view();
 	return ret;
 }

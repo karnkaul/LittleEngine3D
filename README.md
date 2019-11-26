@@ -19,9 +19,12 @@ This is essentially a v2 of [`LittleEngine`](https://github.com/karnkaul/LittleE
 	1. Run le3d-test (or custom executable target)
 
 ### MVP Target
+- [x] Perspective and orthographic projections
+- [x] 2D view and quad drawing
+- [ ] AssImp integration
+- [ ] Model loading
 - [ ] Freetype integration
 - [ ] Text rendering
-- [ ] 2D camera and objects
 - [ ] Particle systems (using quads)
 
 ### Submodules / External:

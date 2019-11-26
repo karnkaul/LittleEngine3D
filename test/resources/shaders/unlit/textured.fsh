@@ -23,5 +23,6 @@ uniform vec3 viewPos;
 
 void main()
 {
-	fragColour = texture(material.diffuse1, texCoord) * tint;
+	vec4 texColour = texture(material.diffuse1, texCoord);
+	fragColour = texColour * tint;
 }

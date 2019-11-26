@@ -53,11 +53,43 @@ struct HMesh final
 #pragma endregion
 
 #pragma region Data
-struct Vertex final
+struct Vertices final
 {
-	glm::vec3 position = glm::vec3(0.0f);
-	glm::vec3 normal = glm::vec3(0.0f, 0.0f, 1.0f);
-	glm::vec2 texCoords = glm::vec2(0.0f, 0.0f);
+	std::vector<f32> points;
+	std::vector<f32> normals;
+	std::vector<f32> texCoords;
+	std::vector<u32> indices;
+
+	inline u32 bytes() const
+	{
+		u32 total = (u32)(points.size() * sizeof(f32));
+		total += (u32)(normals.size() * sizeof(f32));
+		total += (u32)(texCoords.size() * sizeof(f32));
+		return total;
+	}
+
+	inline void addPoint(glm::vec3 point)
+	{
+		points.push_back(point.x);
+		points.push_back(point.y);
+		points.push_back(point.z);
+	}
+
+	inline void addNormals(glm::vec3 normal, u16 count = 1)
+	{
+		for (u16 i = 0; i < count; ++i)
+		{
+			normals.push_back(normal.x);
+			normals.push_back(normal.y);
+			normals.push_back(normal.z);
+		}
+	}
+
+	inline void addTexCoord(glm::vec2 texCoord)
+	{
+		texCoords.push_back(texCoord.x);
+		texCoords.push_back(texCoord.y);
+	}
 };
 
 struct LitTint final
