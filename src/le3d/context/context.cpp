@@ -99,6 +99,8 @@ bool context::create(u16 width, u16 height, std::string_view title)
 		inputImpl::init(*g_pRenderWindow);
 		g_contextThreadID = std::this_thread::get_id();
 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 	glframeBufferResizeCallback(g_pRenderWindow, width, height);
 	glfwSetFramebufferSizeCallback(g_pRenderWindow, &glframeBufferResizeCallback);
