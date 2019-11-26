@@ -218,6 +218,7 @@ void runTest()
 		tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::getTexture("awesomeface");
 		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		tl.space = tr.space = bl.space = br.space = uiSpace;
+		tl.oTexCoords = tr.oTexCoords = bl.oTexCoords = br.oTexCoords = glm::vec4(0.5f, 0.5f, 1.0f, 1.0f);
 		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
 		tl.pos = {-tr.pos.x, tr.pos.y};
 		bl.pos = {-tr.pos.x, -tr.pos.y};

@@ -144,23 +144,7 @@ void gfx::gl::releaseShader(HShader& shader)
 	shader = HShader();
 }
 
-HVerts gfx::gl::genVAO(bool bEBO)
-{
-	HVerts hVerts;
-	if (context::exists())
-	{
-		Lock lock(context::g_glMutex);
-		glChk(glGenVertexArrays(1, &hVerts.vao.handle));
-		glChk(glGenBuffers(1, &hVerts.vbo.handle));
-		if (bEBO)
-		{
-			glChk(glGenBuffers(1, &hVerts.ebo.handle));
-		}
-	}
-	return hVerts;
-}
-
-void gfx::gl::releaseVAO(HVerts& hVerts)
+void gfx::gl::releaseVerts(HVerts& hVerts)
 {
 	if (context::exists() && hVerts.vao > 0)
 	{
@@ -172,47 +156,48 @@ void gfx::gl::releaseVAO(HVerts& hVerts)
 	hVerts = HVerts();
 }
 
-void gfx::gl::bindBuffers(HVerts& hVerts, std::vector<Vertex> vertices, std::vector<u32> indices)
-{
-	if (context::exists())
-	{
-		Lock lock(context::g_glMutex);
-		glChk(glBindVertexArray(hVerts.vao));
-		glChk(glBindBuffer(GL_ARRAY_BUFFER, hVerts.vbo));
-		glChk(glBufferData(GL_ARRAY_BUFFER, (s64)vertices.size() * (s64)sizeof(Vertex), vertices.data(), GL_STATIC_DRAW));
-		hVerts.vCount = (u16)vertices.size();
-		if (!indices.empty())
-		{
-			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo));
-			glChk(glBufferData(GL_ELEMENT_ARRAY_BUFFER, (s64)indices.size() * (s64)sizeof(u32), indices.data(), GL_STATIC_DRAW));
-			hVerts.iCount = (u16)indices.size();
-		}
-		glChk(glBindVertexArray(0));
-	}
-}
-
-HVerts gfx::gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indices /* = */, const HShader* pShader /* = nullptr */)
+HVerts gfx::gl::genVertices(Vertices vertices, Type drawType, const HShader* pShader)
 {
 	HVerts hVerts;
 	if (context::exists())
 	{
-		hVerts = genVAO(!indices.empty());
-		bindBuffers(hVerts, vertices, indices);
+		ASSERT(vertices.points.size() % 3 == 0, "Point/normal count mismatch!");
+		ASSERT(vertices.normals.empty() || vertices.normals.size() == vertices.points.size(), "Point/normal count mismatch!");
+		ASSERT(vertices.texCoords.empty() || 3 * vertices.texCoords.size() == 2 * vertices.points.size(), "Point/UV count mismatch!");
+		GLenum type = drawType == Type::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 		Lock lock(context::g_glMutex);
+		glChk(glGenVertexArrays(1, &hVerts.vao.handle));
+		glChk(glGenBuffers(1, &hVerts.vbo.handle));
+		if (!vertices.indices.empty())
+		{
+			glChk(glGenBuffers(1, &hVerts.ebo.handle));
+		}
 		glChk(glBindVertexArray(hVerts.vao));
-		const auto stride = sizeof(Vertex);
-		// Colour
-		GLint loc = 0;
-
+		glChk(glBindBuffer(GL_ARRAY_BUFFER, hVerts.vbo));
+		glChk(glBufferData(GL_ARRAY_BUFFER, (s64)vertices.bytes(), nullptr, type));
+		size_t sf = (size_t)sizeof(f32);
+		auto& p = vertices.points;
+		auto& n = vertices.normals;
+		auto& t = vertices.texCoords;
+		glChk(glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sf * p.size()), p.data()));
+		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * p.size()), (GLsizeiptr)(sf * n.size()), n.data()));
+		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * p.size() + sf * n.size()), (GLsizeiptr)(sf * t.size()), t.data()));
+		hVerts.vCount = (u16)vertices.points.size() / 3;
+		if (!vertices.indices.empty())
+		{
+			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo));
+			glChk(glBufferData(GL_ELEMENT_ARRAY_BUFFER, (s64)vertices.indices.size() * (s64)sizeof(u32), vertices.indices.data(), type));
+			hVerts.iCount = (u16)vertices.indices.size();
+		}
 		// Position
-		loc = 0;
+		GLint loc = 0;
 		if (pShader)
 		{
 			loc = glGetAttribLocation(pShader->glID.handle, "aPosition");
 		}
 		if (loc >= 0)
 		{
-			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position))));
+			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 * sf), 0));
 			glChk(glEnableVertexAttribArray((u32)loc));
 		}
 
@@ -224,7 +209,7 @@ HVerts gfx::gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indic
 		}
 		if (loc >= 0)
 		{
-			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, normal))));
+			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 * sf), (void*)(sf * p.size())));
 			glChk(glEnableVertexAttribArray((u32)loc));
 		}
 
@@ -236,9 +221,11 @@ HVerts gfx::gl::genVertices(std::vector<Vertex> vertices, std::vector<u32> indic
 		}
 		if (loc >= 0)
 		{
-			glChk(glVertexAttribPointer((u32)loc, 2, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, texCoords))));
+			glChk(glVertexAttribPointer((u32)loc, 2, GL_FLOAT, GL_FALSE, (GLsizei)(2 * sf), (void*)(sf * p.size() + sf * n.size())));
 			glChk(glEnableVertexAttribArray((u32)loc));
 		}
+
+		glChk(glBindVertexArray(0));
 	}
 	return hVerts;
 }
@@ -284,13 +271,13 @@ void gfx::gl::draw(const HVerts& hVerts)
 	glBindVertexArray(0);
 }
 
-HMesh gfx::newMesh(std::string name, std::vector<Vertex> vertices, std::vector<u32> indices, const HShader* pShader /* = nullptr */)
+HMesh gfx::newMesh(std::string name, Vertices vertices, gl::Type type, const HShader* pShader /* = nullptr */)
 {
 	HMesh mesh;
 	mesh.name = std::move(name);
 	if (le::context::exists())
 	{
-		mesh.hVerts = gl::genVertices(std::move(vertices), std::move(indices), pShader);
+		mesh.hVerts = gl::genVertices(std::move(vertices), type, pShader);
 		LOGIF_I(!mesh.name.empty(), "== [%s] Mesh set up", mesh.name.data());
 	}
 	return mesh;
@@ -301,7 +288,7 @@ void gfx::releaseMeshes(std::vector<HMesh*> meshes)
 	for (auto pMesh : meshes)
 	{
 		LOGIF_I(pMesh->hVerts.vao > 0, "-- [%s] Mesh destroyed", pMesh->name.data());
-		gl::releaseVAO(pMesh->hVerts);
+		gl::releaseVerts(pMesh->hVerts);
 		pMesh->name.clear();
 	}
 }
@@ -406,12 +393,11 @@ HVerts gfx::tutorial::newLight(const HVerts& hVBO)
 	{
 		ret.vbo = hVBO.vbo;
 		ret.vCount = hVBO.vCount;
-		const auto stride = sizeof(Vertex);
 		Lock lock(context::g_glMutex);
 		glChk(glGenVertexArrays(1, &ret.vao.handle));
 		glChk(glBindVertexArray(ret.vao));
 		glChk(glBindBuffer(GL_ARRAY_BUFFER, ret.vbo));
-		glChk(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offsetof(Vertex, position))));
+		glChk(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 * sizeof(float)), 0));
 		glChk(glEnableVertexAttribArray(0));
 	}
 	return ret;

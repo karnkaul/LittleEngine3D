@@ -36,8 +36,25 @@ void draw2DQuads(const std::vector<Quad2D>& quads)
 		gfx::shading::setProjMat(shader, proj);
 		gfx::shading::setModelMats(shader, world, world);
 		gfx::shading::setV4(shader, "tint", quad.tint);
+		if (quad.oTexCoords)
+		{
+			const glm::vec4& uv = *quad.oTexCoords;
+			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.p, uv.q, uv.s, uv.q, uv.s, uv.t};
+			auto sf = sizeof(f32);
+			glChk(glBindVertexArray(quadMesh.hVerts.vao));
+			glChk(glBindBuffer(GL_ARRAY_BUFFER, quadMesh.hVerts.vbo));
+			glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data));
+		}
 		glViewport((s32)((s.x - w) * 0.5f), (s32)((s.y - h) * 0.5f), (s32)w, (s32)h);
 		gfx::drawMesh(quadMesh, shader);
+		if (quad.oTexCoords)
+		{
+			f32 data[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f};
+			auto sf = sizeof(f32);
+			glChk(glBindVertexArray(quadMesh.hVerts.vao));
+			glChk(glBindBuffer(GL_ARRAY_BUFFER, quadMesh.hVerts.vbo));
+			glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data));
+		}
 	}
 	std::swap(quadMesh.textures, orgTex);
 	glViewport(0, 0, (s32)s.x, (s32)s.y);
