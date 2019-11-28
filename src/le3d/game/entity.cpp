@@ -78,7 +78,7 @@ void Prop::render(const RenderState& state)
 	if (m_pArrow)
 	{
 		glDisable(GL_DEPTH_TEST);
-		HShader tinted = resources::findShader("unlit/tinted");
+		HShader tinted = resources::getShader("unlit/tinted");
 		glm::mat4 mZ = m_transform.model();
 		glm::mat4 mX = glm::rotate(mZ, glm::radians(90.0f), g_nUp);
 		glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);

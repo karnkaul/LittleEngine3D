@@ -4,12 +4,12 @@
 
 namespace le::gfx
 {
-HMesh createQuad(f32 side);
-HMesh createCube(f32 side);
-HMesh create4Pyramid(f32 side);
-HMesh createTetrahedron(f32 side);
+HMesh createQuad(f32 width, f32 height, std::string name);
+HMesh createCube(f32 side, std::string name);
+HMesh create4Pyramid(f32 side, std::string name);
+HMesh createTetrahedron(f32 side, std::string name);
 
-HMesh createCircle(f32 diam, s32 points);
-HMesh createCone(f32 diam, f32 height, s32 points);
-HMesh createCylinder(f32 diam, f32 height, s32 points);
+HMesh createCircle(f32 diam, s32 points, std::string name);
+HMesh createCone(f32 diam, f32 height, s32 points, std::string name);
+HMesh createCylinder(f32 diam, f32 height, s32 points, std::string name);
 } // namespace le::gfx

@@ -1,4 +1,7 @@
+#include <glad/glad.h>
+#include <glm/glm.hpp>
 #include "le3d/context/context.hpp"
+#include "le3d/core/gdata.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
 #include "le3d/env/env.hpp"
@@ -44,12 +47,20 @@ void runTest()
 	camera.m_position = {0.0f, 0.0f, 3.0f};
 	camera.m_flags.set((s32)FreeCam::Flag::FixedSpeed, false);
 
-	static const std::string DIFFUSE = "diffuse";
-	static const std::string SPECULAR = "specular";
+	resources::loadTexture("container2", TexType::Diffuse, readBytes(resourcePath("textures/container2.png")), false);
+	resources::loadTexture("container2_specular", TexType::Specular, readBytes(resourcePath("textures/container2_specular.png")), false);
+	resources::loadTexture("awesomeface", TexType::Diffuse, readBytes(resourcePath("textures/awesomeface.png")), false);
+	HTexture& fontSheet =
+		resources::loadTexture("source-code-pro", TexType::Diffuse, readBytes(resourcePath("fonts/scp_1024x512.png")), true);
 
-	resources::loadTexture("container2", DIFFUSE, readBytes(resourcePath("textures/container2.png")));
-	resources::loadTexture("container2_specular", SPECULAR, readBytes(resourcePath("textures/container2_specular.png")));
-	resources::loadTexture("awesomeface", DIFFUSE, readBytes(resourcePath("textures/awesomeface.png")));
+	std::string scpStr = readFile(resourcePath("fonts/scp_1024x512.json"));
+	GData scpData(std::move(scpStr));
+	glm::vec2 scpCellSize(scpData.getS32("cellX"), scpData.getS32("cellY"));
+	glm::vec2 scpOffset(scpData.getS32("offsetX"), scpData.getS32("offsetY"));
+	glm::ivec2 scpDims(scpData.getS32("cols"), scpData.getS32("rows"));
+	s32 scpStartCode = scpData.getS32("startCode");
+	std::string scpID = scpData.getString("id");
+	auto& hFont = resources::loadFont(scpData.getString("id"), fontSheet, scpCellSize, scpDims, (u8)scpStartCode, scpOffset);
 
 	Flags<HShader::MAX_FLAGS> noTex;
 	noTex.set((s32)gfx::shading::Flag::Untextured, true);
@@ -83,7 +94,7 @@ void runTest()
 		glm::mat4 m(1.0f);
 		m = glm::translate(m, pos);
 		m = glm::scale(m, glm::vec3(0.1f));
-		const auto& tinted = resources::findShader("unlit/tinted");
+		const auto& tinted = resources::getShader("unlit/tinted");
 		gfx::shading::setV4(tinted, "tint", Colour::White);
 		gfx::gl::draw(light, m, m, state, tinted);
 	};
@@ -122,7 +133,7 @@ void runTest()
 	prop0.addModel(cubeStack);
 	prop0.m_transform.setPosition({2.0f, 2.5f, -2.0f});
 	prop0.m_transform.setScale(2.0f);
-	prop0.setShader(resources::findShader("lit/textured"));
+	prop0.setShader(resources::getShader("lit/textured"));
 
 	Prop prop1;
 	prop1.setup("prop1");
@@ -130,13 +141,13 @@ void runTest()
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.25f);
 	prop0.m_transform.setParent(&prop1.m_transform);
-	prop1.setShader(resources::findShader("lit/tinted"));
+	prop1.setShader(resources::getShader("lit/tinted"));
 	prop1.m_oTintOverride = Colour::Yellow;
 
 	Prop quadProp;
 	quadProp.setup("quad");
 	quadProp.addModel(quad);
-	quadProp.setShader(resources::findShader("unlit/textured"));
+	quadProp.setShader(resources::getShader("unlit/textured"));
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
 	HVerts light0 = gfx::tutorial::newLight(cubeMesh.hVerts);
@@ -150,7 +161,7 @@ void runTest()
 		Model& m = i < 3 ? cube : blankCube;
 		prop.addModel(m);
 		std::string s = i < 3 ? "lit/textured" : "lit/tinted";
-		prop.setShader(resources::findShader(s));
+		prop.setShader(resources::getShader(s));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -211,22 +222,27 @@ void runTest()
 			// prop.setShader(resources::getShader("lit/textured"));
 			prop.render(state);
 		}
-
-		Quad2D tl, tr, bl, br;
-		// glm::vec2 uiSpace = {1920.0f, 1080.0f};
-		glm::vec2 uiSpace = {1280.0f, 720.0f};
-		tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::getTexture("awesomeface");
-		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
-		tl.space = tr.space = bl.space = br.space = uiSpace;
-		tl.oTexCoords = tr.oTexCoords = bl.oTexCoords = br.oTexCoords = glm::vec4(0.5f, 0.5f, 1.0f, 1.0f);
-		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
-		tl.pos = {-tr.pos.x, tr.pos.y};
-		bl.pos = {-tr.pos.x, -tr.pos.y};
-		br.pos = {tr.pos.x, -tr.pos.y};
-		draw2DQuads({tl, tr, bl, br});
-
 		drawLight(light0Pos, light0, state);
 		drawLight(light1Pos, light1, state);
+
+		// Quad2D tl, tr, bl, br;
+		//// glm::vec2 uiSpace = {1920.0f, 1080.0f};
+		// glm::vec2 uiSpace = {1280.0f, 720.0f};
+		// tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::getTexture("source-code-pro");
+		// tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
+		// tl.space = tr.space = bl.space = br.space = uiSpace;
+		// tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
+		// tl.pos = {-tr.pos.x, tr.pos.y};
+		// bl.pos = {-tr.pos.x, -tr.pos.y};
+		// br.pos = {tr.pos.x, -tr.pos.y};
+		// debug::draw2DQuads({tl, tr, bl, br});
+
+		Text2D text;
+		text.text = "Hello World!";
+		text.align = Align::Centre;
+		text.height = 100.0f;
+		debug::renderString(text, hFont, glm::vec2(0.0f, 300.0f));
+
 		context::swapBuffers();
 		context::pollEvents();
 	}

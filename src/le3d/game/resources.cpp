@@ -21,6 +21,7 @@ static const std::vector<u8> blank_1pxBytes = {
 
 std::unordered_map<std::string, HShader> g_shaderMap;
 std::unordered_map<std::string, HTexture> g_textureMap;
+std::unordered_map<std::string, HFont> g_fontMap;
 
 HMesh g_debugMesh;
 HMesh g_debugQuad;
@@ -32,6 +33,7 @@ Model g_debugArrow;
 
 HShader g_nullShader;
 HTexture g_nullTexture;
+HFont g_nullFont;
 } // namespace
 
 namespace resources
@@ -52,7 +54,7 @@ HShader& resources::loadShader(std::string id, std::string_view vertCode, std::s
 	return g_nullShader;
 }
 
-HShader& resources::findShader(const std::string& id)
+HShader& resources::getShader(const std::string& id)
 {
 	ASSERT(isShaderLoaded(id), "Shader not loaded!");
 	if (isShaderLoaded(id))
@@ -100,14 +102,14 @@ void resources::shadeLights(const std::vector<DirLight>& dirLights, const std::v
 	}
 }
 
-HTexture& resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
+HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> bytes, bool bClampToEdge)
 {
 	if (g_blankTex1px.glID <= 0)
 	{
-		g_blankTex1px = gfx::gl::genTex("blankTex", "diffuse", blank_1pxBytes);
+		g_blankTex1px = gfx::gl::genTex("blankTex", type, blank_1pxBytes, false);
 	}
 	ASSERT(g_textureMap.find(id) == g_textureMap.end(), "Texture already loaded!");
-	HTexture texture = gfx::gl::genTex(id, type, std::move(bytes));
+	HTexture texture = gfx::gl::genTex(id, type, std::move(bytes), bClampToEdge);
 	if (texture.glID > 0)
 	{
 		g_textureMap.emplace(id, std::move(texture));
@@ -165,11 +167,69 @@ u32 resources::textureCount()
 	return (u32)g_textureMap.size();
 }
 
+HFont& resources::loadFont(std::string id, HTexture spriteSheet, glm::ivec2 cellsize, glm::ivec2 colsRows, u8 startCode, glm::ivec2 offset)
+{
+	ASSERT(g_fontMap.find(id) == g_fontMap.end(), "Font already loaded!");
+	HFont font = gfx::newFont(std::move(id), std::move(spriteSheet), cellsize);
+	if (font.sheet.glID > 0 && font.quad.hVerts.vao > 0)
+	{
+		font.colsRows = colsRows;
+		font.offset = offset;
+		font.startCode = startCode;
+		g_fontMap.emplace(id, std::move(font));
+		return g_fontMap[id];
+	}
+	return g_nullFont;
+}
+
+HFont& resources::getFont(const std::string& id)
+{
+	auto search = g_fontMap.find(id);
+	if (search != g_fontMap.end())
+	{
+		return search->second;
+	}
+	return g_nullFont;
+}
+
+bool resources::isFontLoaded(const std::string& id)
+{
+	return g_fontMap.find(id) != g_fontMap.end();
+}
+
+bool resources::unload(HFont& font)
+{
+	auto search = g_fontMap.find(font.name);
+	if (search != g_fontMap.end())
+	{
+		gfx::releaseFonts({&search->second});
+		g_fontMap.erase(search);
+		return true;
+	}
+	return false;
+}
+
+void resources::unloadFonts()
+{
+	std::vector<HFont*> fonts;
+	for (auto& kvp : g_fontMap)
+	{
+		fonts.push_back(&kvp.second);
+	}
+	gfx::releaseFonts(fonts);
+	g_fontMap.clear();
+}
+
+u32 resources::fontCount()
+{
+	return (u32)g_fontMap.size();
+}
+
 HMesh& resources::debugCube()
 {
 	if (g_debugMesh.hVerts.vao <= 0)
 	{
-		g_debugMesh = gfx::createCube(1.0f);
+		g_debugMesh = gfx::createCube(1.0f, "dCube");
 	}
 	return g_debugMesh;
 }
@@ -178,7 +238,7 @@ HMesh& resources::debugQuad()
 {
 	if (g_debugQuad.hVerts.vao <= 0)
 	{
-		g_debugQuad = gfx::createQuad(1.0f);
+		g_debugQuad = gfx::createQuad(1.0f, 1.0f, "dQuad");
 	}
 	return g_debugQuad;
 }
@@ -187,7 +247,7 @@ HMesh& resources::debugPyramid()
 {
 	if (g_debugPyramid.hVerts.vao <= 0)
 	{
-		g_debugPyramid = gfx::create4Pyramid(1.0f);
+		g_debugPyramid = gfx::create4Pyramid(1.0f, "dPyramid");
 	}
 	return g_debugPyramid;
 }
@@ -196,7 +256,7 @@ HMesh& resources::debugTetrahedron()
 {
 	if (g_debugTetrahedron.hVerts.vao <= 0)
 	{
-		g_debugTetrahedron = gfx::createTetrahedron(1.0f);
+		g_debugTetrahedron = gfx::createTetrahedron(1.0f, "dTetrahedron");
 	}
 	return g_debugTetrahedron;
 }
@@ -205,7 +265,7 @@ HMesh& resources::debugCone()
 {
 	if (g_debugCone.hVerts.vao <= 0)
 	{
-		g_debugCone = gfx::createCone(1.0f, 1.0f, 16);
+		g_debugCone = gfx::createCone(1.0f, 1.0f, 16, "dCone");
 	}
 	return g_debugCone;
 }
@@ -214,7 +274,7 @@ HMesh& resources::debugCylinder()
 {
 	if (g_debugCylinder.hVerts.vao <= 0)
 	{
-		g_debugCylinder = gfx::createCylinder(1.0f, 1.0f, 16);
+		g_debugCylinder = gfx::createCylinder(1.0f, 1.0f, 16, "dCylinder");
 	}
 	return g_debugCylinder;
 }
@@ -242,6 +302,7 @@ void resources::unloadAll()
 {
 	g_debugArrow.release();
 	gfx::releaseMeshes({&g_debugMesh, &g_debugQuad, &g_debugPyramid, &g_debugTetrahedron, &g_debugCone, &g_debugCylinder});
+	unloadFonts();
 	unloadTextures(true);
 	unloadShaders();
 }

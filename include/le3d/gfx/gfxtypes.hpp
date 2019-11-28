@@ -15,11 +15,18 @@ enum class DrawFlag
 	_COUNT
 };
 
+enum class TexType
+{
+	Diffuse = 0,
+	Specular
+};
+
 #pragma region Handles
 struct HTexture final
 {
 	std::string id;
-	std::string type;
+	glm::ivec2 size = glm::ivec2(0);
+	TexType type;
 	GLObj glID;
 };
 
@@ -49,6 +56,17 @@ struct HMesh final
 #if defined(DEBUGGING)
 	mutable Flags<(s32)DrawFlag::_COUNT> drawFlags;
 #endif
+};
+
+struct HFont final
+{
+	std::string name;
+	HMesh quad;
+	HTexture sheet;
+	glm::ivec2 cellSize = glm::ivec2(0);
+	glm::ivec2 colsRows = glm::ivec2(0);
+	glm::ivec2 offset = glm::ivec2(0);
+	u8 startCode = 0;
 };
 #pragma endregion
 

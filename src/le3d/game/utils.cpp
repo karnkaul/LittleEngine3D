@@ -1,4 +1,5 @@
 #include <glad/glad.h>
+#include "le3d/core/assert.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/shading.hpp"
@@ -7,18 +8,18 @@
 
 namespace le
 {
-void draw2DQuads(const std::vector<Quad2D>& quads)
+void debug::draw2DQuads(std::vector<Quad2D> quads)
 {
-	const HShader& textured = resources::findShader("ui/textured");
-	const HShader& tinted = resources::findShader("ui/tinted");
-	auto& quadMesh = resources::debugQuad();
+	const HShader& textured = resources::getShader("ui/textured");
+	const HShader& tinted = resources::getShader("ui/tinted");
 	const glm::vec2 s = context::size();
 	const f32 ar = s.x / s.y;
 	std::vector<HTexture> orgTex;
-	std::swap(quadMesh.textures, orgTex);
 
-	for (const auto& quad : quads)
+	for (auto& quad : quads)
 	{
+		auto& quadMesh = quad.oMesh ? *quad.oMesh : resources::debugQuad();
+		std::swap(quadMesh.textures, orgTex);
 		const f32 uiw = quad.space.x;
 		const f32 uih = quad.space.y;
 		f32 uiar = uiw / uih;
@@ -55,8 +56,80 @@ void draw2DQuads(const std::vector<Quad2D>& quads)
 			glChk(glBindBuffer(GL_ARRAY_BUFFER, quadMesh.hVerts.vbo));
 			glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data));
 		}
+		std::swap(quadMesh.textures, orgTex);
 	}
-	std::swap(quadMesh.textures, orgTex);
 	glViewport(0, 0, (s32)s.x, (s32)s.y);
+}
+
+void debug::renderString(const Text2D& text, const HFont& hFont, glm::vec2 pos)
+{
+	ASSERT(hFont.sheet.glID.handle > 0, "Font has no texture!");
+	const auto& shader = resources::getShader("ui/textured");
+	f32 cellAR = (f32)hFont.cellSize.x / hFont.cellSize.y;
+	glm::vec2 cell(text.height * cellAR, text.height);
+	glm::vec2 duv = {(f32)hFont.cellSize.x / hFont.sheet.size.x, (f32)hFont.cellSize.y / hFont.sheet.size.y};
+	f32 uiw = text.space.x;
+	f32 uih = text.space.y;
+	f32 width = cell.x * text.text.length();
+	glm::vec2 topLeft = pos;
+	switch (text.align)
+	{
+	case Align::Centre:
+	{
+		topLeft.x -= width;
+		topLeft.x += cell.x;
+		topLeft.x *= 0.5f;
+		break;
+	}
+	case Align::Left:
+	default:
+		break;
+
+	case Align::Right:
+	{
+		topLeft.x -= width;
+		topLeft.x += cell.x;
+		break;
+	}
+	}
+	glm::mat4 proj = glm::ortho(-uiw * 0.5f, uiw * 0.5f, -uih * 0.5f, uih * 0.5f, 0.0f, 2.0f);
+	gfx::shading::setProjMat(shader, proj);
+	gfx::shading::setS32(shader, "material.diffuse1", 0);
+	gfx::shading::setV4(shader, "tint", text.colour);
+	glChk(glActiveTexture(GL_TEXTURE0));
+	glChk(glBindTexture(GL_TEXTURE_2D, hFont.sheet.glID.handle));
+	glBindVertexArray(hFont.quad.hVerts.vao.handle);
+	glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.hVerts.vbo.handle);
+	s32 idx = 0;
+	for (auto c : text.text)
+	{
+		s32 ascii = static_cast<s32>(c);
+		s32 start = (s32)hFont.startCode;
+		s32 end = (s32)hFont.startCode - 1 + (s32)hFont.colsRows.x * (s32)hFont.colsRows.y;
+		if (ascii >= start && ascii < end)
+		{
+			s32 texIdx = ascii - start;
+			s32 row = hFont.colsRows.y - (texIdx / hFont.colsRows.x) - 1;
+			s32 col = texIdx % hFont.colsRows.x;
+			s32 y = row * hFont.cellSize.y - hFont.offset.y;
+			s32 x = col * hFont.cellSize.x + hFont.offset.x;
+			f32 s = (f32)x / hFont.sheet.size.x;
+			f32 t = (f32)y / hFont.sheet.size.y;
+			glm::vec4 uv = {s, t, s + duv.x, t + duv.y};
+			glm::mat4 world(1.0f);
+			glm::vec3 p = glm::vec3(topLeft.x, topLeft.y, 0.0f) + glm::vec3(cell.x * idx, 0.0f, 0.0f);
+			world = glm::translate(world, p);
+			world = glm::scale(world, glm::vec3(text.height, text.height, 1.0f));
+			gfx::shading::setModelMats(shader, world, world);
+			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.p, uv.q, uv.s, uv.q, uv.s, uv.t};
+			auto sf = sizeof(f32);
+			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data);
+			gfx::gl::draw(hFont.quad.hVerts);
+		}
+		++idx;
+	}
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glChk(glBindTexture(GL_TEXTURE_2D, 0));
 }
 } // namespace le

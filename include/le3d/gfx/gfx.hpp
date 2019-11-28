@@ -9,29 +9,32 @@ namespace le::gfx
 {
 namespace gl
 {
-enum class Type
+enum class Draw
 {
 	Dynamic = 0,
 	Static
 };
 
-HTexture genTex(std::string name, std::string type, std::vector<u8> bytes);
-void releaseTex(std::vector<HTexture*> textures);
+HTexture genTex(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge);
+void releaseTex(const std::vector<HTexture*>& textures);
 
 HShader genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
 void releaseShader(HShader& shader);
 
 void releaseVerts(HVerts& hVerts);
 
-HVerts genVertices(Vertices vertices, Type drawType = Type::Dynamic, const HShader* pShader = nullptr);
+HVerts genVertices(Vertices vertices, Draw drawType = Draw::Dynamic, const HShader* pShader = nullptr);
 
 void draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const HShader& s);
 void draw(const HVerts& hVerts);
 } // namespace gl
 
-HMesh newMesh(std::string name, Vertices vertices, gl::Type type, const HShader* pShader = nullptr);
-void releaseMeshes(std::vector<HMesh*> mesh);
+HMesh newMesh(std::string name, Vertices vertices, gl::Draw type, const HShader* pShader = nullptr);
+void releaseMeshes(const std::vector<HMesh*>& meshes);
 void drawMesh(const HMesh& mesh, const HShader& shader);
+
+HFont newFont(std::string name, const HTexture& spritesheet, glm::ivec2 cellSize);
+void releaseFonts(const std::vector<HFont*>& fonts);
 
 namespace tutorial
 {
