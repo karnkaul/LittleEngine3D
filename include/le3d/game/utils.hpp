@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+#include "le3d/core/time.hpp"
 #include "le3d/stdtypes.hpp"
 #include "le3d/gfx/colour.hpp"
 #include "le3d/gfx/gfxtypes.hpp"
@@ -28,6 +29,7 @@ struct Text2D
 {
 	std::string text;
 	glm::vec2 space = glm::vec2(1920.0f, 1080.0f);
+	glm::vec2 pos = glm::vec2(0.0f);
 	f32 height = 40.0f;
 	Align align = Align::Centre;
 	Colour colour = Colour::White;
@@ -35,7 +37,20 @@ struct Text2D
 
 namespace debug
 {
+HMesh& debugCube();
+HMesh& debugQuad();
+HMesh& debugPyramid();
+HMesh& debugTetrahedron();
+
+HMesh& debugCone();
+HMesh& debugCylinder();
+
+Model& debugArrow(const glm::quat& orientation);
+
 void draw2DQuads(std::vector<Quad2D> quads);
-void renderString(const Text2D& text, const HFont& hFont, glm::vec2 pos);
+void renderString(const Text2D& text, const HFont& hFont);
+
+extern Text2D g_fpsStyle;
+void renderFPS(const HFont& font);
 } // namespace debug
 } // namespace le

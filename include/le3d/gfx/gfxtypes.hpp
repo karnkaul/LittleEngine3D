@@ -26,6 +26,7 @@ struct HTexture final
 {
 	std::string id;
 	glm::ivec2 size = glm::ivec2(0);
+	u32 bytes = 0;
 	TexType type;
 	GLObj glID;
 };

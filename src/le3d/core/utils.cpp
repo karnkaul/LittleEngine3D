@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <fstream>
 #include <stack>
 #include "le3d/core/utils.hpp"
@@ -26,6 +27,19 @@ std::vector<u8> utils::readBytes(std::string_view path)
 		buf = std::vector<u8>(std::istreambuf_iterator<char>(file), {});
 	}
 	return buf;
+}
+
+std::pair<f32, std::string_view> utils::friendlySize(u64 byteCount)
+{
+	static std::array suffixes = {"B", "KiB", "MiB", "GiB"};
+	f32 bytes = static_cast<f32>(byteCount);
+	size_t idx = 0;
+	while (bytes > 1024.0f && idx < 4)
+	{
+		++idx;
+		bytes /= 1024.0f;
+	}
+	return std::make_pair(bytes, suffixes[idx < 4 ? idx : 3]);
 }
 
 namespace utils::strings

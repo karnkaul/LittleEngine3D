@@ -9,6 +9,8 @@ namespace le::utils
 std::string readFile(std::string_view path);
 std::vector<u8> readBytes(std::string_view path);
 
+std::pair<f32, std::string_view> friendlySize(u64 byteCount);
+
 namespace strings
 {
 // ASCII only

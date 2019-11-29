@@ -100,8 +100,8 @@ void runTest()
 	};
 
 	HTexture bad;
-	auto& cubeMesh = resources::debugCube();
-	auto& quadMesh = resources::debugQuad();
+	auto& cubeMesh = debug::debugCube();
+	auto& quadMesh = debug::debugQuad();
 	quadMesh.textures = {resources::getTexture("awesomeface")};
 	// quad.m_textures = {bad};
 	cubeMesh.textures = {resources::getTexture("container2"), resources::getTexture("container2_specular")};
@@ -241,7 +241,10 @@ void runTest()
 		text.text = "Hello World!";
 		text.align = Align::Centre;
 		text.height = 100.0f;
-		debug::renderString(text, hFont, glm::vec2(0.0f, 300.0f));
+		text.pos = glm::vec2(0.0f, 300.0f);
+		debug::renderString(text, hFont);
+
+		debug::renderFPS(hFont);
 
 		context::swapBuffers();
 		context::pollEvents();

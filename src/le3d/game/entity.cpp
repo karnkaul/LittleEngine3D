@@ -8,6 +8,7 @@
 #include "le3d/game/entity.hpp"
 #if defined(DEBUGGING)
 #include "le3d/game/resources.hpp"
+#include "le3d/game/utils.hpp"
 #endif
 
 namespace le
@@ -27,7 +28,7 @@ void Entity::setEnabled(bool bEnabled)
 Prop::Prop()
 {
 #if defined(DEBUGGING)
-	m_pArrow = &resources::debugArrow(g_qIdentity);
+	m_pArrow = &debug::debugArrow(g_qIdentity);
 #endif
 }
 

@@ -36,16 +36,6 @@ bool unload(HFont& font);
 void unloadFonts();
 u32 fontCount();
 
-HMesh& debugCube();
-HMesh& debugQuad();
-HMesh& debugPyramid();
-HMesh& debugTetrahedron();
-
-HMesh& debugCone();
-HMesh& debugCylinder();
-
-Model& debugArrow(const glm::quat& orientation);
-
 void unloadAll();
 } // namespace resources
 } // namespace le
