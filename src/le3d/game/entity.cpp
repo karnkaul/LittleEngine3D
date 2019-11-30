@@ -6,14 +6,14 @@
 #include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/game/entity.hpp"
-#if defined(DEBUGGING)
 #include "le3d/game/resources.hpp"
+#if defined(DEBUGGING)
 #include "le3d/game/utils.hpp"
 #endif
 
 namespace le
 {
-void Entity::render(const RenderState& /*state*/) {}
+void Entity::render() {}
 
 bool Entity::isEnabled() const
 {
@@ -32,13 +32,12 @@ Prop::Prop()
 #endif
 }
 
-void Prop::render(const RenderState& state)
+void Prop::render()
 {
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-	gfx::shading::setViewMats(m_shader, state.view, state.projection);
 	for (auto pModel : m_models)
 	{
 		ASSERT(m_shader.glID.handle > 0, "null shader!");

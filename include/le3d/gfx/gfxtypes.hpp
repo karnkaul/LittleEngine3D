@@ -48,6 +48,12 @@ struct HVerts final
 	u16 vCount = 0;
 };
 
+struct HUBO final
+{
+	GLObj ubo;
+	u32 bindingPoint = 0;
+};
+
 struct HMesh final
 {
 	std::string name;

@@ -100,6 +100,11 @@ void gfx::gl::releaseTex(const std::vector<HTexture*>& textures)
 
 HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
 {
+	if (!context::exists())
+	{
+		return {};
+	}
+
 	s32 success;
 	if (vertCode.empty())
 	{
@@ -165,18 +170,6 @@ void gfx::gl::releaseShader(HShader& shader)
 	LOG_I("-- [%s] Shader destroyed", shader.id.data());
 	glChk(glDeleteProgram(shader.glID));
 	shader = HShader();
-}
-
-void gfx::gl::releaseVerts(HVerts& hVerts)
-{
-	if (context::exists() && hVerts.vao > 0)
-	{
-		Lock lock(context::g_glMutex);
-		glChk(glDeleteVertexArrays(1, &hVerts.vao.handle));
-		glDeleteBuffers(1, &hVerts.vbo.handle);
-		glChk(glDeleteBuffers(1, &hVerts.ebo.handle));
-	}
-	hVerts = HVerts();
 }
 
 HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pShader)
@@ -253,53 +246,72 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 	return hVerts;
 }
 
-void gfx::gl::draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const HShader& s)
+void gfx::gl::releaseVerts(HVerts& hVerts)
 {
-	Lock lock(context::g_glMutex);
-	shading::setupLights(s, rs.dirLights, rs.pointLights);
-	auto temp = glGetUniformLocation(s.glID.handle, "model");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(m));
-	temp = glGetUniformLocation(s.glID.handle, "normalModel");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(nm));
-	temp = glGetUniformLocation(s.glID.handle, "view");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(rs.view));
-	temp = glGetUniformLocation(s.glID.handle, "projection");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(rs.projection));
-	glChk(glBindVertexArray(hVerts.vao.handle));
-	if (hVerts.ebo.handle > 0)
+	if (context::exists() && hVerts.vao > 0)
 	{
-		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo.handle));
-		glChk(glDrawElements(GL_TRIANGLES, hVerts.iCount, GL_UNSIGNED_INT, 0));
+		Lock lock(context::g_glMutex);
+		glChk(glDeleteVertexArrays(1, &hVerts.vao.handle));
+		glDeleteBuffers(1, &hVerts.vbo.handle);
+		glChk(glDeleteBuffers(1, &hVerts.ebo.handle));
 	}
-	else
+	hVerts = HVerts();
+}
+
+HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
+{
+	HUBO ret;
+	if (context::exists())
 	{
-		glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)hVerts.vCount));
+		Lock lock(context::g_glMutex);
+		glChk(glGenBuffers(1, &ret.ubo.handle));
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, ret.ubo.handle));
+		GLenum drawType = type == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+		glChk(glBufferData(GL_UNIFORM_BUFFER, size, nullptr, drawType));
+		glChk(glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ret.ubo.handle));
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
+		ret.bindingPoint = bindingPoint;
+		LOG_D("UBO [%d] created [%db] ", ret.bindingPoint, size);
 	}
-	glBindVertexArray(0);
+	return ret;
+}
+
+void gfx::gl::releaseUBO(HUBO& ubo)
+{
+	if (context::exists() && ubo.ubo > 0)
+	{
+		Lock lock(context::g_glMutex);
+		glChk(glDeleteBuffers(1, &ubo.ubo.handle));
+		LOG_D("UBO [%d] destroyed", ubo.bindingPoint);
+	}
+	ubo = HUBO();
 }
 
 void gfx::gl::draw(const HVerts& hVerts)
 {
-	Lock lock(context::g_glMutex);
-	glChk(glBindVertexArray(hVerts.vao.handle));
-	if (hVerts.ebo.handle > 0)
+	if (context::exists())
 	{
-		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo.handle));
-		glChk(glDrawElements(GL_TRIANGLES, hVerts.iCount, GL_UNSIGNED_INT, 0));
+		Lock lock(context::g_glMutex);
+		glChk(glBindVertexArray(hVerts.vao.handle));
+		if (hVerts.ebo.handle > 0)
+		{
+			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo.handle));
+			glChk(glDrawElements(GL_TRIANGLES, hVerts.iCount, GL_UNSIGNED_INT, 0));
+		}
+		else
+		{
+			glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)hVerts.vCount));
+		}
+		glBindVertexArray(0);
 	}
-	else
-	{
-		glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)hVerts.vCount));
-	}
-	glBindVertexArray(0);
 }
 
-HMesh gfx::newMesh(std::string name, Vertices vertices, gl::Draw type, const HShader* pShader /* = nullptr */)
+HMesh gfx::newMesh(std::string name, Vertices vertices, Draw type, const HShader* pShader /* = nullptr */)
 {
 	HMesh mesh;
-	mesh.name = std::move(name);
 	if (le::context::exists())
 	{
+		mesh.name = std::move(name);
 		mesh.hVerts = gl::genVertices(std::move(vertices), type, pShader);
 		LOGIF_I(!mesh.name.empty(), "== [%s] Mesh set up", mesh.name.data());
 	}
@@ -311,7 +323,10 @@ void gfx::releaseMeshes(const std::vector<HMesh*>& meshes)
 	for (auto pMesh : meshes)
 	{
 		LOGIF_I(pMesh->hVerts.vao > 0, "-- [%s] Mesh destroyed", pMesh->name.data());
-		gl::releaseVerts(pMesh->hVerts);
+		if (context::exists())
+		{
+			gl::releaseVerts(pMesh->hVerts);
+		}
 		*pMesh = HMesh();
 	}
 }

@@ -29,7 +29,7 @@ public:
 #endif
 
 public:
-	virtual void render(const struct RenderState& state);
+	virtual void render();
 
 public:
 	bool isEnabled() const;
@@ -56,7 +56,7 @@ public:
 	Prop();
 
 public:
-	void render(const RenderState& state) override;
+	void render() override;
 
 public:
 	void addModel(Model& model);

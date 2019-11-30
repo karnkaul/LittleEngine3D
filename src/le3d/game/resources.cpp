@@ -6,6 +6,7 @@
 #include "le3d/core/log.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/primitives.hpp"
+#include "le3d/gfx/shading.hpp"
 #include "le3d/game/resources.hpp"
 
 namespace le
@@ -32,6 +33,8 @@ std::unordered_map<std::string, HFont> g_fontMap;
 HShader g_nullShader;
 HTexture g_nullTexture;
 HFont g_nullFont;
+
+HUBO g_matUBO;
 } // namespace
 
 namespace resources
@@ -48,12 +51,23 @@ void FontAtlasData::deserialise(std::string json)
 	startCode = (u8)data.getS32("startCode", startCode);
 }
 
+HUBO& resources::matricesUBO()
+{
+	if (g_matUBO.ubo.handle == 0)
+	{
+		g_matUBO = gfx::gl::genUBO(2 * sizeof(glm::mat4), 0, gfx::Draw::Static);
+	}
+	return g_matUBO;
+}
+
 HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
 {
 	ASSERT(g_shaderMap.find(id) == g_shaderMap.end(), "Shader ID already loaded!");
 	HShader shader = gfx::gl::genShader(id, vertCode, fragCode, flags);
 	if (shader.glID.handle > 0)
 	{
+		HUBO& matrices = matricesUBO();
+		gfx::shading::bindUBO(shader, "Matrices", matrices);
 		g_shaderMap.emplace(id, std::move(shader));
 		return g_shaderMap[id];
 	}
@@ -105,7 +119,11 @@ void resources::shadeLights(const std::vector<DirLight>& dirLights, const std::v
 {
 	for (const auto& kvp : g_shaderMap)
 	{
-		gfx::shading::setupLights(kvp.second, dirLights, ptLights);
+		const HShader& shader = kvp.second;
+		if (!shader.flags.isSet((s32)gfx::shading::Flag::Unlit))
+		{
+			gfx::shading::setupLights(kvp.second, dirLights, ptLights);
+		}
 	}
 }
 
@@ -237,6 +255,7 @@ void resources::unloadAll()
 	debug::unloadAll();
 	unloadFonts();
 	unloadTextures(true);
+	gfx::gl::releaseUBO(g_matUBO);
 	unloadShaders();
 }
 } // namespace le

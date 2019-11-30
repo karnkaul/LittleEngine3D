@@ -239,4 +239,20 @@ void shading::setupLights(const HShader& shader, const std::vector<DirLight>& di
 		}
 	}
 }
+
+void shading::bindUBO(const HShader& shader, std::string_view id, const HUBO& ubo)
+{
+	u32 idx = glGetUniformBlockIndex(shader.glID.handle, id.data());
+	if ((s32)idx >= 0)
+	{
+		glChk(glUniformBlockBinding(shader.glID.handle, idx, ubo.bindingPoint));
+	}
+}
+
+void shading::setUBO(const HUBO& ubo, s64 offset, s64 size, const void* pData)
+{
+	glChk(glBindBuffer(GL_UNIFORM_BUFFER, ubo.ubo.handle));
+	glChk(glBufferSubData(GL_UNIFORM_BUFFER, offset, size, pData));
+	glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
+}
 } // namespace le::gfx

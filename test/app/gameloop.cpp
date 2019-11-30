@@ -1,4 +1,5 @@
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/glm.hpp>
 #include "le3d/context/context.hpp"
 #include "le3d/core/gdata.hpp"
@@ -84,13 +85,14 @@ void runTest()
 	scene.lighting.dirLight = dirLight;
 	scene.lighting.pointLights = {pl0, pl1};
 
-	auto drawLight = [](const glm::vec3& pos, HVerts light, const RenderState& state) {
+	auto drawLight = [](const glm::vec3& pos, HVerts light) {
 		glm::mat4 m(1.0f);
 		m = glm::translate(m, pos);
 		m = glm::scale(m, glm::vec3(0.1f));
 		const auto& tinted = resources::getShader("unlit/tinted");
 		gfx::shading::setV4(tinted, "tint", Colour::White);
-		gfx::gl::draw(light, m, m, state, tinted);
+		gfx::shading::setModelMats(tinted, m, m);
+		gfx::gl::draw(light);
 	};
 
 	HTexture bad;
@@ -208,16 +210,20 @@ void runTest()
 		resources::shadeLights({dirLight}, scene.lighting.pointLights);
 		// resources::shadeLights({}, {pl0});
 		RenderState state = scene.perspective();
-		prop0.render(state);
-		prop1.render(state);
-		quadProp.render(state);
+		auto& matrices = resources::matricesUBO();
+		gfx::shading::setUBO(matrices, 0, sizeof(glm::mat4), glm::value_ptr(state.view));
+		gfx::shading::setUBO(matrices, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(state.projection));
+
+		prop0.render();
+		prop1.render();
+		quadProp.render();
 		for (auto& prop : props)
 		{
 			// prop.setShader(resources::getShader("lit/textured"));
-			prop.render(state);
+			prop.render();
 		}
-		drawLight(light0Pos, light0, state);
-		drawLight(light1Pos, light1, state);
+		drawLight(light0Pos, light0);
+		drawLight(light1Pos, light1);
 
 		// Quad2D tl, tr, bl, br;
 		//// glm::vec2 uiSpace = {1920.0f, 1080.0f};
