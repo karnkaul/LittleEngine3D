@@ -6,6 +6,17 @@
 
 namespace le
 {
+struct FontAtlasData
+{
+	glm::ivec2 cellSize = glm::ivec2(0);
+	glm::ivec2 colsRows = glm::ivec2(0);
+	glm::ivec2 offset = glm::ivec2(0);
+	std::vector<u8> bytes;
+	u8 startCode = 32;
+
+	void deserialise(std::string json);
+};
+
 namespace resources
 {
 HShader& loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
@@ -27,8 +38,7 @@ bool unload(HTexture& texture);
 void unloadTextures(bool bUnloadBlankTex);
 u32 textureCount();
 
-HFont& loadFont(std::string id, HTexture spriteSheet, glm::ivec2 cellsize, glm::ivec2 colsRows, u8 startCode = 32,
-				glm::ivec2 offset = glm::ivec2(0));
+HFont& loadFont(std::string id, FontAtlasData atlas);
 HFont& getFont(const std::string& id);
 
 bool isFontLoaded(const std::string& id);

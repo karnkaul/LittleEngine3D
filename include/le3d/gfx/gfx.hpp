@@ -33,7 +33,7 @@ HMesh newMesh(std::string name, Vertices vertices, gl::Draw type, const HShader*
 void releaseMeshes(const std::vector<HMesh*>& meshes);
 void drawMesh(const HMesh& mesh, const HShader& shader);
 
-HFont newFont(std::string name, const HTexture& spritesheet, glm::ivec2 cellSize);
+HFont newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cellSize);
 void releaseFonts(const std::vector<HFont*>& fonts);
 
 namespace tutorial

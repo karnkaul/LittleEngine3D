@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "le3d/context/context.hpp"
 #include "le3d/core/assert.hpp"
+#include "le3d/core/gdata.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/primitives.hpp"
@@ -36,6 +37,15 @@ HFont g_nullFont;
 namespace resources
 {
 HTexture g_blankTex1px;
+}
+
+void FontAtlasData::deserialise(std::string json)
+{
+	GData data(std::move(json));
+	cellSize = {data.getS32("cellX", cellSize.x), data.getS32("cellY", cellSize.y)};
+	offset = {data.getS32("offsetX", offset.x), data.getS32("offsetY", offset.y)};
+	colsRows = {data.getS32("cols", colsRows.x), data.getS32("rows", colsRows.y)};
+	startCode = (u8)data.getS32("startCode", startCode);
 }
 
 HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
@@ -164,15 +174,15 @@ u32 resources::textureCount()
 	return (u32)g_textureMap.size();
 }
 
-HFont& resources::loadFont(std::string id, HTexture spriteSheet, glm::ivec2 cellsize, glm::ivec2 colsRows, u8 startCode, glm::ivec2 offset)
+HFont& resources::loadFont(std::string id, FontAtlasData atlas)
 {
 	ASSERT(g_fontMap.find(id) == g_fontMap.end(), "Font already loaded!");
-	HFont font = gfx::newFont(std::move(id), std::move(spriteSheet), cellsize);
+	HFont font = gfx::newFont(std::move(id), std::move(atlas.bytes), atlas.cellSize);
 	if (font.sheet.glID > 0 && font.quad.hVerts.vao > 0)
 	{
-		font.colsRows = colsRows;
-		font.offset = offset;
-		font.startCode = startCode;
+		font.colsRows = atlas.colsRows;
+		font.offset = atlas.offset;
+		font.startCode = atlas.startCode;
 		g_fontMap.emplace(id, std::move(font));
 		return g_fontMap[id];
 	}

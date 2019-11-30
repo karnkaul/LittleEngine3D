@@ -50,17 +50,11 @@ void runTest()
 	resources::loadTexture("container2", TexType::Diffuse, readBytes(resourcePath("textures/container2.png")), false);
 	resources::loadTexture("container2_specular", TexType::Specular, readBytes(resourcePath("textures/container2_specular.png")), false);
 	resources::loadTexture("awesomeface", TexType::Diffuse, readBytes(resourcePath("textures/awesomeface.png")), false);
-	HTexture& fontSheet =
-		resources::loadTexture("source-code-pro", TexType::Diffuse, readBytes(resourcePath("fonts/scp_1024x512.png")), true);
 
-	std::string scpStr = readFile(resourcePath("fonts/scp_1024x512.json"));
-	GData scpData(std::move(scpStr));
-	glm::vec2 scpCellSize(scpData.getS32("cellX"), scpData.getS32("cellY"));
-	glm::vec2 scpOffset(scpData.getS32("offsetX"), scpData.getS32("offsetY"));
-	glm::ivec2 scpDims(scpData.getS32("cols"), scpData.getS32("rows"));
-	s32 scpStartCode = scpData.getS32("startCode");
-	std::string scpID = scpData.getString("id");
-	auto& hFont = resources::loadFont(scpData.getString("id"), fontSheet, scpCellSize, scpDims, (u8)scpStartCode, scpOffset);
+	FontAtlasData scpSheet;
+	scpSheet.bytes = readBytes(resourcePath("fonts/scp_1024x512.png"));
+	scpSheet.deserialise(readFile(resourcePath("fonts/scp_1024x512.json")));
+	auto& hFont = resources::loadFont("default", std::move(scpSheet));
 
 	Flags<HShader::MAX_FLAGS> noTex;
 	noTex.set((s32)gfx::shading::Flag::Untextured, true);

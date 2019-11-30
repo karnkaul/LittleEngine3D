@@ -56,8 +56,7 @@ HTexture gfx::gl::genTex(std::string name, TexType type, std::vector<u8> bytes, 
 			ret = {std::move(name), glm::ivec2(w, h), (u32)bytes.size(), type, std::move(hTex)};
 			std::string typeStr = ret.type == TexType::Diffuse ? "Diffuse" : "Specular";
 			auto size = utils::friendlySize((u64)bytes.size());
-			LOG_I("== [%s] [%.2f%s] (%s) Texture created [%u]", ret.id.data(), size.first, size.second.data(), typeStr.data(),
-				  ret.glID.handle);
+			LOG_I("== [%s] [%.2f%s] (%s) Texture created", ret.id.data(), size.first, size.second.data(), typeStr.data());
 		}
 		else
 		{
@@ -94,7 +93,7 @@ void gfx::gl::releaseTex(const std::vector<HTexture*>& textures)
 		glChk(glDeleteTextures((GLsizei)texIDs.size(), texIDs.data()));
 #if defined(DEBUGGING)
 		auto size = utils::friendlySize(bytes);
-		LOG_I("[%.2f%s] texture memory released", size.first, size.second.data());
+		LOG_D("[%.2f%s] texture memory released", size.first, size.second.data());
 #endif
 	}
 }
@@ -422,7 +421,7 @@ void gfx::drawMesh(const HMesh& mesh, const HShader& shader)
 	}
 }
 
-HFont gfx::newFont(std::string name, const HTexture& spritesheet, glm::ivec2 cellSize)
+HFont gfx::newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cellSize)
 {
 	HFont ret;
 	if (context::exists())
@@ -431,10 +430,9 @@ HFont gfx::newFont(std::string name, const HTexture& spritesheet, glm::ivec2 cel
 		f32 cellAR = (f32)cellSize.x / cellSize.y;
 		f32 width = cellAR < 1.0f ? 1.0f * cellAR : 1.0f;
 		f32 height = cellAR > 1.0f ? 1.0f / cellAR : 1.0f;
-		HMesh quad = createQuad(width, height, name + "_quad");
+		ret.quad = createQuad(width, height, name + "_quad");
+		ret.sheet = gl::genTex(name + "_sheet", TexType::Diffuse, std::move(spritesheet), true);
 		ret.name = std::move(name);
-		ret.quad = std::move(quad);
-		ret.sheet = spritesheet;
 		ret.cellSize = cellSize;
 		LOG_I("== [%s] Font created", ret.name.data());
 	}
@@ -446,14 +444,21 @@ void gfx::releaseFonts(const std::vector<HFont*>& fonts)
 	if (context::exists())
 	{
 		std::vector<HMesh*> meshes;
+		std::vector<HTexture*> textures;
 		meshes.reserve(fonts.size());
+		textures.reserve(fonts.size());
+		for (auto pFont : fonts)
+		{
+			meshes.push_back(&pFont->quad);
+			textures.push_back(&pFont->sheet);
+		}
+		releaseMeshes(meshes);
+		gl::releaseTex(textures);
 		for (auto pFont : fonts)
 		{
 			LOG_I("-- [%s] Font destroyed", pFont->name.data());
-			meshes.push_back(&pFont->quad);
 			*pFont = HFont();
 		}
-		releaseMeshes(meshes);
 	}
 }
 
