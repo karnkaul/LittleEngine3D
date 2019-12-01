@@ -28,10 +28,10 @@ Text2D g_fpsStyle;
 void unloadAll();
 } // namespace debug
 
-void renderSkybox(const Skybox& skybox, const HShader& shader)
+void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)
 {
 	glDepthMask(GL_FALSE);
-	gfx::shading::setV4(shader, "tint", Colour::White);
+	gfx::shading::setV4(shader, "tint", tint);
 	glBindVertexArray(skybox.mesh.hVerts.vao.handle);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemap.glID.handle);
 	glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.hVerts.vCount);

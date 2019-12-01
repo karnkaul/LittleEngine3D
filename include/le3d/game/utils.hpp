@@ -35,7 +35,7 @@ struct Text2D
 	Colour colour = Colour::White;
 };
 
-void renderSkybox(const Skybox& skybox, const HShader& shader);
+void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint = Colour::White);
 
 namespace debug
 {
