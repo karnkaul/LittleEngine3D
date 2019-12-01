@@ -2,13 +2,20 @@
 #include <unordered_map>
 #include "le3d/context/context.hpp"
 #include "le3d/core/assert.hpp"
+#include "le3d/core/gdata.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/primitives.hpp"
+#include "le3d/gfx/shading.hpp"
 #include "le3d/game/resources.hpp"
 
 namespace le
 {
+namespace debug
+{
+extern void unloadAll();
+}
+
 namespace
 {
 static const std::vector<u8> blank_1pxBytes = {
@@ -21,22 +28,46 @@ static const std::vector<u8> blank_1pxBytes = {
 
 std::unordered_map<std::string, HShader> g_shaderMap;
 std::unordered_map<std::string, HTexture> g_textureMap;
-
-HMesh g_debugMesh;
-HMesh g_debugQuad;
-HMesh g_debugPyramid;
-HMesh g_debugTetrahedron;
-HMesh g_debugCone;
-HMesh g_debugCylinder;
-Model g_debugArrow;
+std::unordered_map<std::string, HFont> g_fontMap;
 
 HShader g_nullShader;
 HTexture g_nullTexture;
+HFont g_nullFont;
+
+HUBO g_matUBO;
+HUBO g_uiUBO;
 } // namespace
 
 namespace resources
 {
 HTexture g_blankTex1px;
+}
+
+void FontAtlasData::deserialise(std::string json)
+{
+	GData data(std::move(json));
+	cellSize = {data.getS32("cellX", cellSize.x), data.getS32("cellY", cellSize.y)};
+	offset = {data.getS32("offsetX", offset.x), data.getS32("offsetY", offset.y)};
+	colsRows = {data.getS32("cols", colsRows.x), data.getS32("rows", colsRows.y)};
+	startCode = (u8)data.getS32("startCode", startCode);
+}
+
+HUBO& resources::matricesUBO()
+{
+	if (g_matUBO.ubo == 0)
+	{
+		g_matUBO = gfx::gl::genUBO(2 * sizeof(glm::mat4), 10, gfx::Draw::Dynamic);
+	}
+	return g_matUBO;
+}
+
+HUBO& resources::uiUBO()
+{
+	if (g_uiUBO.ubo == 0)
+	{
+		g_uiUBO = gfx::gl::genUBO(sizeof(glm::mat4), 11, gfx::Draw::Dynamic);
+	}
+	return g_uiUBO;
 }
 
 HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
@@ -45,6 +76,10 @@ HShader& resources::loadShader(std::string id, std::string_view vertCode, std::s
 	HShader shader = gfx::gl::genShader(id, vertCode, fragCode, flags);
 	if (shader.glID.handle > 0)
 	{
+		HUBO& matrices = matricesUBO();
+		HUBO& ui = uiUBO();
+		gfx::shading::bindUBO(shader, "Matrices", matrices);
+		gfx::shading::bindUBO(shader, "UI", ui);
 		g_shaderMap.emplace(id, std::move(shader));
 		return g_shaderMap[id];
 	}
@@ -52,7 +87,7 @@ HShader& resources::loadShader(std::string id, std::string_view vertCode, std::s
 	return g_nullShader;
 }
 
-HShader& resources::findShader(const std::string& id)
+HShader& resources::getShader(const std::string& id)
 {
 	ASSERT(isShaderLoaded(id), "Shader not loaded!");
 	if (isShaderLoaded(id))
@@ -96,18 +131,22 @@ void resources::shadeLights(const std::vector<DirLight>& dirLights, const std::v
 {
 	for (const auto& kvp : g_shaderMap)
 	{
-		gfx::shading::setupLights(kvp.second, dirLights, ptLights);
+		const HShader& shader = kvp.second;
+		if (!shader.flags.isSet((s32)gfx::shading::Flag::Unlit))
+		{
+			gfx::shading::setupLights(kvp.second, dirLights, ptLights);
+		}
 	}
 }
 
-HTexture& resources::loadTexture(std::string id, std::string type, std::vector<u8> bytes)
+HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> bytes, bool bClampToEdge)
 {
 	if (g_blankTex1px.glID <= 0)
 	{
-		g_blankTex1px = gfx::gl::genTex("blankTex", "diffuse", blank_1pxBytes);
+		g_blankTex1px = gfx::gl::genTexture("blankTex", type, blank_1pxBytes, false);
 	}
 	ASSERT(g_textureMap.find(id) == g_textureMap.end(), "Texture already loaded!");
-	HTexture texture = gfx::gl::genTex(id, type, std::move(bytes));
+	HTexture texture = gfx::gl::genTexture(id, type, std::move(bytes), bClampToEdge);
 	if (texture.glID > 0)
 	{
 		g_textureMap.emplace(id, std::move(texture));
@@ -127,6 +166,24 @@ HTexture& resources::getTexture(const std::string& id)
 	return g_nullTexture;
 }
 
+Skybox resources::createSkybox(std::string name, std::array<std::vector<u8>, 6> rltbfb)
+{
+	Skybox ret;
+	ret.cubemap = gfx::gl::genCubemap(name + "_map", std::move(rltbfb));
+	ret.mesh = gfx::createCube(1.0f, name + "_mesh");
+	ret.name = std::move(name);
+	LOG_D("[%s] Skybox created", ret.name.data());
+	return ret;
+}
+
+void resources::destroySkybox(Skybox& skybox)
+{
+	LOG_D("[%s] Skybox destroyed", skybox.name.data());
+	gfx::gl::releaseCubemap(skybox.cubemap);
+	gfx::releaseMeshes({&skybox.mesh});
+	skybox = Skybox();
+}
+
 bool resources::isTextureLoaded(const std::string& id)
 {
 	return g_textureMap.find(id) != g_textureMap.end();
@@ -137,7 +194,7 @@ bool resources::unload(HTexture& texture)
 	auto search = g_textureMap.find(texture.id);
 	if (search != g_textureMap.end())
 	{
-		gfx::gl::releaseTex({&search->second});
+		gfx::gl::releaseTexture({&search->second});
 		g_textureMap.erase(search);
 		return true;
 	}
@@ -156,7 +213,7 @@ void resources::unloadTextures(bool bUnloadBlankTex)
 	{
 		toDel.push_back(&g_blankTex1px);
 	}
-	gfx::gl::releaseTex(std::move(toDel));
+	gfx::gl::releaseTexture(std::move(toDel));
 	g_textureMap.clear();
 }
 
@@ -165,84 +222,70 @@ u32 resources::textureCount()
 	return (u32)g_textureMap.size();
 }
 
-HMesh& resources::debugCube()
+HFont& resources::loadFont(std::string id, FontAtlasData atlas)
 {
-	if (g_debugMesh.hVerts.vao <= 0)
+	ASSERT(g_fontMap.find(id) == g_fontMap.end(), "Font already loaded!");
+	HFont font = gfx::newFont(std::move(id), std::move(atlas.bytes), atlas.cellSize);
+	if (font.sheet.glID > 0 && font.quad.hVerts.vao > 0)
 	{
-		g_debugMesh = gfx::createCube(1.0f);
+		font.colsRows = atlas.colsRows;
+		font.offset = atlas.offset;
+		font.startCode = atlas.startCode;
+		g_fontMap.emplace(id, std::move(font));
+		return g_fontMap[id];
 	}
-	return g_debugMesh;
+	return g_nullFont;
 }
 
-HMesh& resources::debugQuad()
+HFont& resources::getFont(const std::string& id)
 {
-	if (g_debugQuad.hVerts.vao <= 0)
+	auto search = g_fontMap.find(id);
+	if (search != g_fontMap.end())
 	{
-		g_debugQuad = gfx::createQuad(1.0f);
+		return search->second;
 	}
-	return g_debugQuad;
+	return g_nullFont;
 }
 
-HMesh& resources::debugPyramid()
+bool resources::isFontLoaded(const std::string& id)
 {
-	if (g_debugPyramid.hVerts.vao <= 0)
-	{
-		g_debugPyramid = gfx::create4Pyramid(1.0f);
-	}
-	return g_debugPyramid;
+	return g_fontMap.find(id) != g_fontMap.end();
 }
 
-HMesh& resources::debugTetrahedron()
+bool resources::unload(HFont& font)
 {
-	if (g_debugTetrahedron.hVerts.vao <= 0)
+	auto search = g_fontMap.find(font.name);
+	if (search != g_fontMap.end())
 	{
-		g_debugTetrahedron = gfx::createTetrahedron(1.0f);
+		gfx::releaseFonts({&search->second});
+		g_fontMap.erase(search);
+		return true;
 	}
-	return g_debugTetrahedron;
+	return false;
 }
 
-HMesh& resources::debugCone()
+void resources::unloadFonts()
 {
-	if (g_debugCone.hVerts.vao <= 0)
+	std::vector<HFont*> fonts;
+	for (auto& kvp : g_fontMap)
 	{
-		g_debugCone = gfx::createCone(1.0f, 1.0f, 16);
+		fonts.push_back(&kvp.second);
 	}
-	return g_debugCone;
+	gfx::releaseFonts(fonts);
+	g_fontMap.clear();
 }
 
-HMesh& resources::debugCylinder()
+u32 resources::fontCount()
 {
-	if (g_debugCylinder.hVerts.vao <= 0)
-	{
-		g_debugCylinder = gfx::createCylinder(1.0f, 1.0f, 16);
-	}
-	return g_debugCylinder;
-}
-
-Model& resources::debugArrow(const glm::quat& orientation)
-{
-	if (g_debugArrow.meshCount() == 0)
-	{
-		g_debugArrow.setupModel("dArrow");
-		glm::mat4 m = glm::toMat4(orientation);
-		m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.5f));
-		m = glm::rotate(m, glm::radians(90.0f), g_nRight);
-		m = glm::translate(m, g_nUp * 0.5f);
-		g_debugArrow.addFixture(debugCylinder(), m);
-		m = glm::toMat4(orientation);
-		m = glm::translate(m, g_nFront * 0.5f);
-		m = glm::rotate(m, glm::radians(90.0f), g_nRight);
-		m = glm::scale(m, glm::vec3(0.08f, 0.15f, 0.08f));
-		g_debugArrow.addFixture(debugCone(), m);
-	}
-	return g_debugArrow;
+	return (u32)g_fontMap.size();
 }
 
 void resources::unloadAll()
 {
-	g_debugArrow.release();
-	gfx::releaseMeshes({&g_debugMesh, &g_debugQuad, &g_debugPyramid, &g_debugTetrahedron, &g_debugCone, &g_debugCylinder});
+	debug::unloadAll();
+	unloadFonts();
 	unloadTextures(true);
+	gfx::gl::releaseUBO(g_matUBO);
 	unloadShaders();
 }
 } // namespace le

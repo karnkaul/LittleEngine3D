@@ -6,13 +6,14 @@
 #include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/game/entity.hpp"
-#if defined(DEBUGGING)
 #include "le3d/game/resources.hpp"
+#if defined(DEBUGGING)
+#include "le3d/game/utils.hpp"
 #endif
 
 namespace le
 {
-void Entity::render(const RenderState& /*state*/) {}
+void Entity::render() {}
 
 bool Entity::isEnabled() const
 {
@@ -27,17 +28,16 @@ void Entity::setEnabled(bool bEnabled)
 Prop::Prop()
 {
 #if defined(DEBUGGING)
-	m_pArrow = &resources::debugArrow(g_qIdentity);
+	m_pArrow = &debug::debugArrow(g_qIdentity);
 #endif
 }
 
-void Prop::render(const RenderState& state)
+void Prop::render()
 {
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-	gfx::shading::setViewMats(m_shader, state.view, state.projection);
 	for (auto pModel : m_models)
 	{
 		ASSERT(m_shader.glID.handle > 0, "null shader!");
@@ -78,7 +78,7 @@ void Prop::render(const RenderState& state)
 	if (m_pArrow)
 	{
 		glDisable(GL_DEPTH_TEST);
-		HShader tinted = resources::findShader("unlit/tinted");
+		HShader tinted = resources::getShader("unlit/tinted");
 		glm::mat4 mZ = m_transform.model();
 		glm::mat4 mX = glm::rotate(mZ, glm::radians(90.0f), g_nUp);
 		glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);

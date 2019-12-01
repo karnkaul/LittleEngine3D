@@ -1,6 +1,6 @@
 project(glad)
 
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/glad/glad.h")
+if("${CMAKE_CURRENT_SOURCE_DIR}/glad.zip" IS_NEWER_THAN "${CMAKE_CURRENT_SOURCE_DIR}/include/glad/glad.h")
 	unzip_archive(glad.zip "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 

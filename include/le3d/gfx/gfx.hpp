@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <glm/glm.hpp>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
@@ -7,31 +8,38 @@
 
 namespace le::gfx
 {
-namespace gl
-{
-enum class Type
+enum class Draw
 {
 	Dynamic = 0,
 	Static
 };
 
-HTexture genTex(std::string name, std::string type, std::vector<u8> bytes);
-void releaseTex(std::vector<HTexture*> textures);
+namespace gl
+{
+HTexture genTexture(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge);
+void releaseTexture(const std::vector<HTexture*>& textures);
+
+HCubemap genCubemap(std::string name, std::array<std::vector<u8>, 6> rltbfb);
+void releaseCubemap(HCubemap& cube);
 
 HShader genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
 void releaseShader(HShader& shader);
 
+HVerts genVertices(Vertices vertices, Draw drawType = Draw::Dynamic, const HShader* pShader = nullptr);
 void releaseVerts(HVerts& hVerts);
 
-HVerts genVertices(Vertices vertices, Type drawType = Type::Dynamic, const HShader* pShader = nullptr);
+HUBO genUBO(s64 size, u32 bindingPoint, Draw type);
+void releaseUBO(HUBO& ubo);
 
-void draw(const HVerts& hVerts, const glm::mat4& m, const glm::mat4& nm, const RenderState& rs, const HShader& s);
 void draw(const HVerts& hVerts);
 } // namespace gl
 
-HMesh newMesh(std::string name, Vertices vertices, gl::Type type, const HShader* pShader = nullptr);
-void releaseMeshes(std::vector<HMesh*> mesh);
+HMesh newMesh(std::string name, Vertices vertices, Draw type, const HShader* pShader = nullptr);
+void releaseMeshes(const std::vector<HMesh*>& meshes);
 void drawMesh(const HMesh& mesh, const HShader& shader);
+
+HFont newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cellSize);
+void releaseFonts(const std::vector<HFont*>& fonts);
 
 namespace tutorial
 {

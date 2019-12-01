@@ -4,6 +4,7 @@ set(SUB_SOURCES
 
 	le3d/core/assert.cpp
 	le3d/core/fixed.cpp
+	le3d/core/gdata.cpp
 	le3d/core/log.cpp
 	le3d/core/maths.cpp
 	le3d/core/time.cpp

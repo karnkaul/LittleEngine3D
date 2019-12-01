@@ -15,11 +15,27 @@ enum class DrawFlag
 	_COUNT
 };
 
+enum class TexType
+{
+	Diffuse = 0,
+	Specular
+};
+
 #pragma region Handles
 struct HTexture final
 {
 	std::string id;
-	std::string type;
+	glm::ivec2 size = glm::ivec2(0);
+	u32 bytes = 0;
+	TexType type;
+	GLObj glID;
+};
+
+struct HCubemap final
+{
+	std::string id;
+	glm::ivec2 size = glm::ivec2(0);
+	u32 bytes = 0;
 	GLObj glID;
 };
 
@@ -40,6 +56,12 @@ struct HVerts final
 	u16 vCount = 0;
 };
 
+struct HUBO final
+{
+	GLObj ubo;
+	u32 bindingPoint = 0;
+};
+
 struct HMesh final
 {
 	std::string name;
@@ -49,6 +71,17 @@ struct HMesh final
 #if defined(DEBUGGING)
 	mutable Flags<(s32)DrawFlag::_COUNT> drawFlags;
 #endif
+};
+
+struct HFont final
+{
+	std::string name;
+	HMesh quad;
+	HTexture sheet;
+	glm::ivec2 cellSize = glm::ivec2(0);
+	glm::ivec2 colsRows = glm::ivec2(0);
+	glm::ivec2 offset = glm::ivec2(0);
+	u8 startCode = 0;
 };
 #pragma endregion
 
@@ -125,7 +158,7 @@ struct RenderState final
 {
 	glm::mat4 view;
 	glm::mat4 projection;
-	std::vector<PtLight> pointLights;
+	std::vector<PtLight> ptLights;
 	std::vector<DirLight> dirLights;
 };
 #pragma endregion

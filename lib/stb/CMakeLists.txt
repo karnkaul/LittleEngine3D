@@ -1,6 +1,6 @@
 project(stb-image)
 
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/glad/glad.h")
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/stb/stb_image.h")
 	unzip_archive(stb.zip "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 

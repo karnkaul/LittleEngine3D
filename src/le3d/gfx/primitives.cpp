@@ -5,17 +5,18 @@
 
 namespace le
 {
-HMesh gfx::createQuad(f32 side)
+HMesh gfx::createQuad(f32 width, f32 height, std::string name)
 {
-	const f32 s = side * 0.5f;
+	const f32 w = width * 0.5f;
+	const f32 h = height * 0.5f;
 	Vertices vertices;
-	vertices.points = {-s, -s, 0.0f, s, -s, 0.0f, s, s, 0.0f, s, s, 0.0f, -s, s, 0.0f, -s, -s, 0.0f};
+	vertices.points = {-w, -h, 0.0f, w, -h, 0.0f, w, h, 0.0f, w, h, 0.0f, -w, h, 0.0f, -w, -h, 0.0f};
 	vertices.normals = {0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f};
 	vertices.texCoords = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f};
-	return newMesh("dQuad", std::move(vertices), gl::Type::Dynamic);
+	return newMesh(std::move(name), std::move(vertices), Draw::Dynamic);
 }
 
-HMesh gfx::createCube(f32 side)
+HMesh gfx::createCube(f32 side, std::string name)
 {
 	const f32 s = side * 0.5f;
 	Vertices vertices;
@@ -66,10 +67,10 @@ HMesh gfx::createCube(f32 side)
 	};
 	ASSERT(3 * vertices.texCoords.size() == 2 * vertices.points.size(), "Vertex size mismatch!");
 	ASSERT(vertices.normals.size() == vertices.points.size(), "Vertex size mismatch!");
-	return newMesh("dCube", std::move(vertices), gl::Type::Static);
+	return newMesh(std::move(name), std::move(vertices), Draw::Static);
 }
 
-HMesh gfx::create4Pyramid(f32 side)
+HMesh gfx::create4Pyramid(f32 side, std::string name)
 {
 	const f32 s = side * 0.5f;
 	const glm::vec3 nF = glm::normalize(glm::cross(glm::vec3(-s, -s, -s), glm::vec3(s, -s, -s)));
@@ -100,10 +101,10 @@ HMesh gfx::create4Pyramid(f32 side)
 
 		nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, // down
 	};
-	return newMesh("dPyramid", std::move(vertices), gl::Type::Static);
+	return newMesh(std::move(name), std::move(vertices), Draw::Static);
 }
 
-HMesh gfx::createTetrahedron(f32 side)
+HMesh gfx::createTetrahedron(f32 side, std::string name)
 {
 	const f32 s = side * 0.5f;
 	const f32 t30 = glm::tan(glm::radians(30.0f));
@@ -135,10 +136,10 @@ HMesh gfx::createTetrahedron(f32 side)
 
 		nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, nD.x, nD.y, nD.z, // down
 	};
-	return newMesh("dTetrahedron", std::move(vertices), gl::Type::Static);
+	return newMesh(std::move(name), std::move(vertices), Draw::Static);
 }
 
-HMesh gfx::createCircle(f32 diam, s32 points)
+HMesh gfx::createCircle(f32 diam, s32 points, std::string name)
 {
 	const f32 r = diam * 0.5f;
 	Vertices vertices;
@@ -155,10 +156,10 @@ HMesh gfx::createCircle(f32 diam, s32 points)
 		vertices.addPoint(glm::vec3(x1, y1, 0.0f));
 		vertices.addNormals(norm, 3);
 	}
-	return newMesh("dCircle", std::move(vertices), gl::Type::Static);
+	return newMesh(std::move(name), std::move(vertices), Draw::Static);
 }
 
-HMesh gfx::createCone(f32 diam, f32 height, s32 points)
+HMesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name)
 {
 	const f32 r = diam * 0.5f;
 	Vertices vertices;
@@ -185,10 +186,10 @@ HMesh gfx::createCone(f32 diam, f32 height, s32 points)
 		vertices.addPoint(v1);
 		vertices.addNormals(norm, 3);
 	}
-	return newMesh("dCone", std::move(vertices), gl::Type::Static);
+	return newMesh(std::move(name), std::move(vertices), Draw::Static);
 }
 
-HMesh gfx::createCylinder(f32 diam, f32 height, s32 points)
+HMesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name)
 {
 	const f32 r = diam * 0.5f;
 	const glm::vec3 c0(0.0f, -height * 0.5f, 0.0f);
@@ -228,6 +229,6 @@ HMesh gfx::createCylinder(f32 diam, f32 height, s32 points)
 		vertices.addPoint(v11);
 		vertices.addNormals(norm, 6);
 	}
-	return newMesh("dCylinder", std::move(vertices), gl::Type::Static);
+	return newMesh(std::move(name), std::move(vertices), Draw::Static);
 }
 } // namespace le

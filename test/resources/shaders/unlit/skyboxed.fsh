@@ -4,15 +4,11 @@
 
 out vec4 fragColour;
 
-in vec2 texCoord;
+in vec3 texCoord;
 
-struct Material
-{
-	sampler2D diffuse1;
-};
+uniform samplerCube skybox;
+uniform sampler2D tex;
 
-uniform Material material;
-uniform vec3 viewPos;
 #ifdef GL_ES
 	uniform vec4 tint;
 #else
@@ -21,6 +17,6 @@ uniform vec3 viewPos;
 
 void main()
 {
-	vec4 texColour = texture(material.diffuse1, texCoord);
+	vec4 texColour = texture(skybox, texCoord);
 	fragColour = texColour * tint;
 }

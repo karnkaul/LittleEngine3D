@@ -1,4 +1,8 @@
+#include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/glm.hpp>
 #include "le3d/context/context.hpp"
+#include "le3d/core/gdata.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
 #include "le3d/env/env.hpp"
@@ -44,12 +48,14 @@ void runTest()
 	camera.m_position = {0.0f, 0.0f, 3.0f};
 	camera.m_flags.set((s32)FreeCam::Flag::FixedSpeed, false);
 
-	static const std::string DIFFUSE = "diffuse";
-	static const std::string SPECULAR = "specular";
+	resources::loadTexture("container2", TexType::Diffuse, readBytes(resourcePath("textures/container2.png")), false);
+	resources::loadTexture("container2_specular", TexType::Specular, readBytes(resourcePath("textures/container2_specular.png")), false);
+	resources::loadTexture("awesomeface", TexType::Diffuse, readBytes(resourcePath("textures/awesomeface.png")), false);
 
-	resources::loadTexture("container2", DIFFUSE, readBytes(resourcePath("textures/container2.png")));
-	resources::loadTexture("container2_specular", SPECULAR, readBytes(resourcePath("textures/container2_specular.png")));
-	resources::loadTexture("awesomeface", DIFFUSE, readBytes(resourcePath("textures/awesomeface.png")));
+	FontAtlasData scpSheet;
+	scpSheet.bytes = readBytes(resourcePath("fonts/scp_1024x512.png"));
+	scpSheet.deserialise(readFile(resourcePath("fonts/scp_1024x512.json")));
+	auto& hFont = resources::loadFont("default", std::move(scpSheet));
 
 	Flags<HShader::MAX_FLAGS> noTex;
 	noTex.set((s32)gfx::shading::Flag::Untextured, true);
@@ -61,13 +67,23 @@ void runTest()
 
 	auto def = readFile(resourcePath("shaders/default.vsh"));
 	auto ui = readFile(resourcePath("shaders/ui.vsh"));
+	auto sb = readFile(resourcePath("shaders/skybox.vsh"));
 	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")), noTexNoLit);
 	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")), noLit);
 	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")), noTex);
 	scene.mainShader = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")), {});
 	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")), noTexNoLit);
 	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")), noLit);
+	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")), noLit);
 	gfx::shading::setV4(litTinted, "tint", Colour::Yellow);
+
+	auto sbf = readBytes(resourcePath("textures/skybox/front.jpg"));
+	auto sbbk = readBytes(resourcePath("textures/skybox/back.jpg"));
+	auto sbr = readBytes(resourcePath("textures/skybox/right.jpg"));
+	auto sbl = readBytes(resourcePath("textures/skybox/left.jpg"));
+	auto sbt = readBytes(resourcePath("textures/skybox/top.jpg"));
+	auto sbbt = readBytes(resourcePath("textures/skybox/bottom.jpg"));
+	Skybox skybox = resources::createSkybox("skybox", {sbr, sbl, sbt, sbbt, sbf, sbbk});
 
 	DirLight dirLight;
 	PtLight pl0, pl1;
@@ -77,20 +93,21 @@ void runTest()
 	pl0.position = light0Pos;
 	pl1.position = light1Pos;
 	scene.lighting.dirLight = dirLight;
-	scene.lighting.pointLights = {pl0, pl1};
+	scene.lighting.ptLights = {pl0, pl1};
 
-	auto drawLight = [](const glm::vec3& pos, HVerts light, const RenderState& state) {
+	auto drawLight = [](const glm::vec3& pos, HVerts light) {
 		glm::mat4 m(1.0f);
 		m = glm::translate(m, pos);
 		m = glm::scale(m, glm::vec3(0.1f));
-		const auto& tinted = resources::findShader("unlit/tinted");
+		const auto& tinted = resources::getShader("unlit/tinted");
 		gfx::shading::setV4(tinted, "tint", Colour::White);
-		gfx::gl::draw(light, m, m, state, tinted);
+		gfx::shading::setModelMats(tinted, m, m);
+		gfx::gl::draw(light);
 	};
 
 	HTexture bad;
-	auto& cubeMesh = resources::debugCube();
-	auto& quadMesh = resources::debugQuad();
+	auto& cubeMesh = debug::debugCube();
+	auto& quadMesh = debug::debugQuad();
 	quadMesh.textures = {resources::getTexture("awesomeface")};
 	// quad.m_textures = {bad};
 	cubeMesh.textures = {resources::getTexture("container2"), resources::getTexture("container2_specular")};
@@ -122,7 +139,7 @@ void runTest()
 	prop0.addModel(cubeStack);
 	prop0.m_transform.setPosition({2.0f, 2.5f, -2.0f});
 	prop0.m_transform.setScale(2.0f);
-	prop0.setShader(resources::findShader("lit/textured"));
+	prop0.setShader(resources::getShader("lit/textured"));
 
 	Prop prop1;
 	prop1.setup("prop1");
@@ -130,13 +147,13 @@ void runTest()
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.25f);
 	prop0.m_transform.setParent(&prop1.m_transform);
-	prop1.setShader(resources::findShader("lit/tinted"));
+	prop1.setShader(resources::getShader("lit/tinted"));
 	prop1.m_oTintOverride = Colour::Yellow;
 
 	Prop quadProp;
 	quadProp.setup("quad");
 	quadProp.addModel(quad);
-	quadProp.setShader(resources::findShader("unlit/textured"));
+	quadProp.setShader(resources::getShader("unlit/textured"));
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
 	HVerts light0 = gfx::tutorial::newLight(cubeMesh.hVerts);
@@ -150,7 +167,7 @@ void runTest()
 		Model& m = i < 3 ? cube : blankCube;
 		prop.addModel(m);
 		std::string s = i < 3 ? "lit/textured" : "lit/tinted";
-		prop.setShader(resources::findShader(s));
+		prop.setShader(resources::getShader(s));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -200,37 +217,51 @@ void runTest()
 		quadProp.m_transform.setOrientation(
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 
-		resources::shadeLights({dirLight}, scene.lighting.pointLights);
+		resources::shadeLights({dirLight}, scene.lighting.ptLights);
 		// resources::shadeLights({}, {pl0});
 		RenderState state = scene.perspective();
-		prop0.render(state);
-		prop1.render(state);
-		quadProp.render(state);
+		auto& matrices = resources::matricesUBO();
+		gfx::shading::setUBOMats(matrices, {&state.view, &state.projection});
+
+		renderSkybox(skybox, resources::getShader("unlit/skybox"));
+
+		prop0.render();
+		prop1.render();
+		quadProp.render();
 		for (auto& prop : props)
 		{
 			// prop.setShader(resources::getShader("lit/textured"));
-			prop.render(state);
+			prop.render();
 		}
+		drawLight(light0Pos, light0);
+		drawLight(light1Pos, light1);
 
-		Quad2D tl, tr, bl, br;
-		// glm::vec2 uiSpace = {1920.0f, 1080.0f};
-		glm::vec2 uiSpace = {1280.0f, 720.0f};
-		tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::getTexture("awesomeface");
-		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
-		tl.space = tr.space = bl.space = br.space = uiSpace;
-		tl.oTexCoords = tr.oTexCoords = bl.oTexCoords = br.oTexCoords = glm::vec4(0.5f, 0.5f, 1.0f, 1.0f);
-		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
-		tl.pos = {-tr.pos.x, tr.pos.y};
-		bl.pos = {-tr.pos.x, -tr.pos.y};
-		br.pos = {tr.pos.x, -tr.pos.y};
-		draw2DQuads({tl, tr, bl, br});
+		// Quad2D tl, tr, bl, br;
+		//// glm::vec2 uiSpace = {1920.0f, 1080.0f};
+		// glm::vec2 uiSpace = {1280.0f, 720.0f};
+		// tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::getTexture("source-code-pro");
+		// tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
+		// tl.space = tr.space = bl.space = br.space = uiSpace;
+		// tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
+		// tl.pos = {-tr.pos.x, tr.pos.y};
+		// bl.pos = {-tr.pos.x, -tr.pos.y};
+		// br.pos = {tr.pos.x, -tr.pos.y};
+		// debug::draw2DQuads({tl, tr, bl, br});
 
-		drawLight(light0Pos, light0, state);
-		drawLight(light1Pos, light1, state);
+		Text2D text;
+		text.text = "Hello World!";
+		text.align = Align::Centre;
+		text.height = 100.0f;
+		text.pos = glm::vec2(0.0f, 300.0f);
+		debug::renderString(text, hFont);
+
+		debug::renderFPS(hFont);
+
 		context::swapBuffers();
 		context::pollEvents();
 	}
 
+	resources::destroySkybox(skybox);
 	prop0.clearModels();
 }
 } // namespace

@@ -8,7 +8,7 @@ namespace le
 {
 struct Lighting final
 {
-	std::vector<PtLight> pointLights;
+	std::vector<PtLight> ptLights;
 	DirLight dirLight;
 };
 
