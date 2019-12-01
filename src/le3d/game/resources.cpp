@@ -143,10 +143,10 @@ HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> b
 {
 	if (g_blankTex1px.glID <= 0)
 	{
-		g_blankTex1px = gfx::gl::genTex("blankTex", type, blank_1pxBytes, false);
+		g_blankTex1px = gfx::gl::genTexture("blankTex", type, blank_1pxBytes, false);
 	}
 	ASSERT(g_textureMap.find(id) == g_textureMap.end(), "Texture already loaded!");
-	HTexture texture = gfx::gl::genTex(id, type, std::move(bytes), bClampToEdge);
+	HTexture texture = gfx::gl::genTexture(id, type, std::move(bytes), bClampToEdge);
 	if (texture.glID > 0)
 	{
 		g_textureMap.emplace(id, std::move(texture));
@@ -166,6 +166,24 @@ HTexture& resources::getTexture(const std::string& id)
 	return g_nullTexture;
 }
 
+Skybox resources::createSkybox(std::string name, std::array<std::vector<u8>, 6> rltbfb)
+{
+	Skybox ret;
+	ret.cubemap = gfx::gl::genCubemap(name + "_map", std::move(rltbfb));
+	ret.mesh = gfx::createCube(1.0f, name + "_mesh");
+	ret.name = std::move(name);
+	LOG_D("[%s] Skybox created", ret.name.data());
+	return ret;
+}
+
+void resources::destroySkybox(Skybox& skybox)
+{
+	LOG_D("[%s] Skybox destroyed", skybox.name.data());
+	gfx::gl::releaseCubemap(skybox.cubemap);
+	gfx::releaseMeshes({&skybox.mesh});
+	skybox = Skybox();
+}
+
 bool resources::isTextureLoaded(const std::string& id)
 {
 	return g_textureMap.find(id) != g_textureMap.end();
@@ -176,7 +194,7 @@ bool resources::unload(HTexture& texture)
 	auto search = g_textureMap.find(texture.id);
 	if (search != g_textureMap.end())
 	{
-		gfx::gl::releaseTex({&search->second});
+		gfx::gl::releaseTexture({&search->second});
 		g_textureMap.erase(search);
 		return true;
 	}
@@ -195,7 +213,7 @@ void resources::unloadTextures(bool bUnloadBlankTex)
 	{
 		toDel.push_back(&g_blankTex1px);
 	}
-	gfx::gl::releaseTex(std::move(toDel));
+	gfx::gl::releaseTexture(std::move(toDel));
 	g_textureMap.clear();
 }
 

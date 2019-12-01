@@ -67,13 +67,23 @@ void runTest()
 
 	auto def = readFile(resourcePath("shaders/default.vsh"));
 	auto ui = readFile(resourcePath("shaders/ui.vsh"));
+	auto sb = readFile(resourcePath("shaders/skybox.vsh"));
 	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")), noTexNoLit);
 	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")), noLit);
 	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")), noTex);
 	scene.mainShader = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")), {});
 	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")), noTexNoLit);
 	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")), noLit);
+	auto& skyboxShader = resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")), noLit);
 	gfx::shading::setV4(litTinted, "tint", Colour::Yellow);
+
+	auto sbf = readBytes(resourcePath("textures/skybox/front.jpg"));
+	auto sbbk = readBytes(resourcePath("textures/skybox/back.jpg"));
+	auto sbr = readBytes(resourcePath("textures/skybox/right.jpg"));
+	auto sbl = readBytes(resourcePath("textures/skybox/left.jpg"));
+	auto sbt = readBytes(resourcePath("textures/skybox/top.jpg"));
+	auto sbbt = readBytes(resourcePath("textures/skybox/bottom.jpg"));
+	Skybox skybox = resources::createSkybox("skybox", {sbr, sbl, sbt, sbbt, sbf, sbbk});
 
 	DirLight dirLight;
 	PtLight pl0, pl1;
@@ -212,6 +222,9 @@ void runTest()
 		RenderState state = scene.perspective();
 		auto& matrices = resources::matricesUBO();
 		gfx::shading::setUBOMats(matrices, {&state.view, &state.projection});
+
+		renderSkybox(skybox, resources::getShader("unlit/skybox"));
+
 		prop0.render();
 		prop1.render();
 		quadProp.render();
@@ -248,6 +261,7 @@ void runTest()
 		context::pollEvents();
 	}
 
+	resources::destroySkybox(skybox);
 	prop0.clearModels();
 }
 } // namespace

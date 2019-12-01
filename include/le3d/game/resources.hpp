@@ -6,7 +6,7 @@
 
 namespace le
 {
-struct FontAtlasData
+struct FontAtlasData final
 {
 	glm::ivec2 cellSize = glm::ivec2(0);
 	glm::ivec2 colsRows = glm::ivec2(0);
@@ -15,6 +15,13 @@ struct FontAtlasData
 	u8 startCode = 32;
 
 	void deserialise(std::string json);
+};
+
+struct Skybox final
+{
+	std::string name;
+	HCubemap cubemap;
+	HMesh mesh;
 };
 
 namespace resources
@@ -35,6 +42,9 @@ extern HTexture g_blankTex1px;
 
 HTexture& loadTexture(std::string id, TexType type, std::vector<u8> bytes, bool bClampToEdge);
 HTexture& getTexture(const std::string& id);
+
+Skybox createSkybox(std::string name, std::array<std::vector<u8>, 6> rltbfb);
+void destroySkybox(Skybox& skybox);
 
 bool isTextureLoaded(const std::string& id);
 bool unload(HTexture& texture);

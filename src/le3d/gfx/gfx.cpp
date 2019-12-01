@@ -20,7 +20,7 @@ namespace
 s32 g_maxTexIdx = 0;
 }
 
-HTexture gfx::gl::genTex(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge)
+HTexture gfx::gl::genTexture(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge)
 {
 	HTexture ret;
 	if (context::exists())
@@ -67,7 +67,7 @@ HTexture gfx::gl::genTex(std::string name, TexType type, std::vector<u8> bytes, 
 	return ret;
 }
 
-void gfx::gl::releaseTex(const std::vector<HTexture*>& textures)
+void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
 {
 	if (context::exists())
 	{
@@ -98,6 +98,57 @@ void gfx::gl::releaseTex(const std::vector<HTexture*>& textures)
 	}
 }
 
+HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rltbfb)
+{
+	HCubemap ret;
+	if (context::exists())
+	{
+		glChk(glGenTextures(1, &ret.glID.handle));
+		glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, ret.glID.handle));
+		s32 w, h, ch;
+		u32 idx = 0;
+		stbi_set_flip_vertically_on_load(0);
+		for (const auto& side : rltbfb)
+		{
+			auto pData = stbi_load_from_memory(side.data(), (s32)side.size(), &w, &h, &ch, 0);
+			if (pData)
+			{
+				bool bAlpha = ch > 3;
+				s32 channels = bAlpha ? GL_RGBA : GL_RGB;
+				glChk(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, 0, channels, w, h, 0, (u32)channels, GL_UNSIGNED_BYTE, pData));
+				ret.bytes += (u32)side.size();
+			}
+			else
+			{
+				LOG_E("Failed to load cubemap texture #%d!", idx);
+			}
+			++idx;
+			stbi_image_free(pData);
+		}
+		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
+		ret.id = std::move(name);
+		auto size = utils::friendlySize(ret.bytes);
+		LOG_I("== [%s] [%.2f%s] Cubemap created", ret.id.data(), size.first, size.second.data());
+	}
+	return ret;
+}
+
+void gfx::gl::releaseCubemap(HCubemap& cube)
+{
+	if (context::exists())
+	{
+		GLuint texID[] = {cube.glID.handle};
+		glChk(glDeleteTextures(1, texID));
+		auto size = utils::friendlySize(cube.bytes);
+		LOG_I("-- [%s] [%.2f%s] Cubemap destroyed", cube.id.data(), size.first, size.second.data());
+	}
+	cube = HCubemap();
+}
+
 HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
 {
 	if (!context::exists())
@@ -109,6 +160,11 @@ HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::strin
 	if (vertCode.empty())
 	{
 		LOG_E("[%s] Shader: Failed to compile vertex shader: empty input string!", id.data());
+		return {};
+	}
+	if (fragCode.empty())
+	{
+		LOG_E("[%s] Shader: Failed to compile fragment shader: empty input string!", id.data());
 		return {};
 	}
 
@@ -209,7 +265,7 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 		GLint loc = 0;
 		if (pShader)
 		{
-			loc = glGetAttribLocation(pShader->glID.handle, "aPosition");
+			loc = glGetAttribLocation(pShader->glID.handle, "aPos");
 		}
 		if (loc >= 0)
 		{
@@ -446,7 +502,7 @@ HFont gfx::newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cel
 		f32 width = cellAR < 1.0f ? 1.0f * cellAR : 1.0f;
 		f32 height = cellAR > 1.0f ? 1.0f / cellAR : 1.0f;
 		ret.quad = createQuad(width, height, name + "_quad");
-		ret.sheet = gl::genTex(name + "_sheet", TexType::Diffuse, std::move(spritesheet), true);
+		ret.sheet = gl::genTexture(name + "_sheet", TexType::Diffuse, std::move(spritesheet), true);
 		ret.name = std::move(name);
 		ret.cellSize = cellSize;
 		LOG_I("== [%s] Font created", ret.name.data());
@@ -468,7 +524,7 @@ void gfx::releaseFonts(const std::vector<HFont*>& fonts)
 			textures.push_back(&pFont->sheet);
 		}
 		releaseMeshes(meshes);
-		gl::releaseTex(textures);
+		gl::releaseTexture(textures);
 		for (auto pFont : fonts)
 		{
 			LOG_I("-- [%s] Font destroyed", pFont->name.data());

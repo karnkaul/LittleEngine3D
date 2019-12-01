@@ -31,6 +31,14 @@ struct HTexture final
 	GLObj glID;
 };
 
+struct HCubemap final
+{
+	std::string id;
+	glm::ivec2 size = glm::ivec2(0);
+	u32 bytes = 0;
+	GLObj glID;
+};
+
 struct HShader final
 {
 	static const size_t MAX_FLAGS = 8;

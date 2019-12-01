@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <glm/glm.hpp>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
@@ -15,8 +16,11 @@ enum class Draw
 
 namespace gl
 {
-HTexture genTex(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge);
-void releaseTex(const std::vector<HTexture*>& textures);
+HTexture genTexture(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge);
+void releaseTexture(const std::vector<HTexture*>& textures);
+
+HCubemap genCubemap(std::string name, std::array<std::vector<u8>, 6> rltbfb);
+void releaseCubemap(HCubemap& cube);
 
 HShader genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
 void releaseShader(HShader& shader);
