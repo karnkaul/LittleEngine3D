@@ -10,8 +10,12 @@ out vec3 normal;
 out vec3 fragPos;
 out vec2 texCoord;
 
+layout (std140) uniform UI
+{
+	mat4 projection;
+};
+
 uniform mat4 model;
-uniform mat4 projection;
 uniform mat4 normalModel;
 
 void main()

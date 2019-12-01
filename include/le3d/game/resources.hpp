@@ -20,6 +20,7 @@ struct FontAtlasData
 namespace resources
 {
 HUBO& matricesUBO();
+HUBO& uiUBO();
 
 HShader& loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
 HShader& getShader(const std::string& id);

@@ -127,7 +127,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads)
 		{
 			quadMesh.textures = {*quad.pTexture};
 		}
-		gfx::shading::setProjMat(shader, proj);
+		gfx::shading::setUBOMats(resources::uiUBO(), {&proj});
 		gfx::shading::setModelMats(shader, world, world);
 		gfx::shading::setV4(shader, "tint", quad.tint);
 		if (quad.oTexCoords)
@@ -185,7 +185,7 @@ void debug::renderString(const Text2D& text, const HFont& hFont)
 	}
 	}
 	glm::mat4 proj = glm::ortho(-uiw * 0.5f, uiw * 0.5f, -uih * 0.5f, uih * 0.5f, 0.0f, 2.0f);
-	gfx::shading::setProjMat(shader, proj);
+	gfx::shading::setUBOMats(resources::uiUBO(), {&proj});
 	gfx::shading::setS32(shader, "material.diffuse1", 0);
 	gfx::shading::setV4(shader, "tint", text.colour);
 	glChk(glActiveTexture(GL_TEXTURE0));

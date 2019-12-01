@@ -11,7 +11,7 @@
 namespace le::gfx
 {
 const u8 shading::MAX_DIR_LIGHTS = 4;
-const u8 shading::MAX_POINT_LIGHTS = 4;
+const u8 shading::MAX_PT_LIGHTS = 4;
 
 void shading::use(const HShader& shader)
 {
@@ -123,53 +123,19 @@ void shading::setModelMats(const HShader& shader, const glm::mat4& model, const 
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(normals));
 }
 
-void shading::setViewMats(const HShader& shader, const glm::mat4& view, const glm::mat4& proj)
+void shading::setupLights(const HShader& shader, const std::vector<DirLight>& dirLights, const std::vector<PtLight>& ptLights)
 {
 	use(shader);
-	auto temp = glGetUniformLocation(shader.glID.handle, "view");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(view));
-	temp = glGetUniformLocation(shader.glID.handle, "projection");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(proj));
-	temp = glGetUniformLocation(shader.glID.handle, "viewPos");
-	glChk(glUniform3f(temp, -view[3][0], -view[3][1], -view[3][2]));
-}
+	auto temp = glGetUniformLocation(shader.glID.handle, "dirLightCount");
+	glChk(glUniform1i(temp, (GLint)dirLights.size()));
+	temp = glGetUniformLocation(shader.glID.handle, "ptLightCount");
+	glChk(glUniform1i(temp, (GLint)ptLights.size()));
 
-void shading::setProjMat(const HShader& shader, const glm::mat4& proj)
-{
-	use(shader);
-	auto temp = glGetUniformLocation(shader.glID.handle, "projection");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(proj));
-}
-
-void shading::setAllMats(const HShader& shader, const glm::mat4& m, const glm::mat4& n, const glm::mat4& v, const glm::mat4& p)
-{
-	use(shader);
-	auto temp = glGetUniformLocation(shader.glID.handle, "model");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(m));
-	temp = glGetUniformLocation(shader.glID.handle, "normalModel");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(n));
-	temp = glGetUniformLocation(shader.glID.handle, "view");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(v));
-	temp = glGetUniformLocation(shader.glID.handle, "projection");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(p));
-	temp = glGetUniformLocation(shader.glID.handle, "viewPos");
-	glChk(glUniform3f(temp, -v[3][0], -v[3][1], -v[3][2]));
-}
-
-void shading::setupLights(const HShader& shader, const std::vector<DirLight>& dirLights, const std::vector<PtLight>& pointLights)
-{
-	use(shader);
 	size_t i;
-	LightData blank;
-	blank.ambient = blank.diffuse = blank.specular = glm::vec3(0.0f);
-	PtLight blankP;
-	blankP.light = blank;
-	DirLight blankD;
-	blankD.light = blank;
 	char buf[64];
-	for (i = 0; i < MAX_DIR_LIGHTS; ++i)
+	for (i = 0; i < dirLights.size() && i < MAX_DIR_LIGHTS; ++i)
 	{
-		const auto& dirLight = i < dirLights.size() ? dirLights[i] : blankD;
+		const auto& dirLight = dirLights[i];
 		{
 			std::snprintf(buf, ARR_SIZE(buf), "dirLights[%d].ambient", (s32)i);
 			auto temp = glGetUniformLocation(shader.glID.handle, buf);
@@ -195,47 +161,47 @@ void shading::setupLights(const HShader& shader, const std::vector<DirLight>& di
 			glChk(glUniform3f(temp, v.x, v.y, v.z));
 		}
 	}
-	for (i = 0; i < MAX_POINT_LIGHTS; ++i)
+	for (i = 0; i < ptLights.size() && i < MAX_PT_LIGHTS; ++i)
 	{
-		const auto& pointLight = i < pointLights.size() ? pointLights[i] : blankP;
+		const auto& ptLight = ptLights[i];
 		{
-			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].ambient", (s32)i);
+			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].ambient", (s32)i);
 			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = pointLight.light.ambient;
+			const auto& v = ptLight.light.ambient;
 			glChk(glUniform3f(temp, v.x, v.y, v.z));
 		}
 		{
-			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].diffuse", (s32)i);
+			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].diffuse", (s32)i);
 			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = pointLight.light.diffuse;
+			const auto& v = ptLight.light.diffuse;
 			glChk(glUniform3f(temp, v.x, v.y, v.z));
 		}
 		{
-			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].specular", (s32)i);
+			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].specular", (s32)i);
 			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = pointLight.light.specular;
+			const auto& v = ptLight.light.specular;
 			glChk(glUniform3f(temp, v.x, v.y, v.z));
 		}
 		{
-			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].position", (s32)i);
+			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].position", (s32)i);
 			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = pointLight.position;
+			const auto& v = ptLight.position;
 			glChk(glUniform3f(temp, v.x, v.y, v.z));
 		}
 		{
-			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].constant", (s32)i);
+			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].constant", (s32)i);
 			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			glChk(glUniform1f(temp, pointLight.constant));
+			glChk(glUniform1f(temp, ptLight.constant));
 		}
 		{
-			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].linear", (s32)i);
+			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].linear", (s32)i);
 			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			glChk(glUniform1f(temp, pointLight.linear));
+			glChk(glUniform1f(temp, ptLight.linear));
 		}
 		{
-			std::snprintf(buf, ARR_SIZE(buf), "pointLights[%d].quadratic", (s32)i);
+			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].quadratic", (s32)i);
 			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			glChk(glUniform1f(temp, pointLight.quadratic));
+			glChk(glUniform1f(temp, ptLight.quadratic));
 		}
 	}
 }
@@ -251,8 +217,21 @@ void shading::bindUBO(const HShader& shader, std::string_view id, const HUBO& ub
 
 void shading::setUBO(const HUBO& ubo, s64 offset, s64 size, const void* pData)
 {
-	glChk(glBindBuffer(GL_UNIFORM_BUFFER, ubo.ubo.handle));
-	glChk(glBufferSubData(GL_UNIFORM_BUFFER, offset, size, pData));
-	glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
+	if (ubo.ubo.handle > 0)
+	{
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, ubo.ubo.handle));
+		glChk(glBufferSubData(GL_UNIFORM_BUFFER, offset, size, pData));
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
+	}
+}
+
+void shading::setUBOMats(const HUBO& ubo, const std::vector<glm::mat4*>& mats)
+{
+	s64 offset = 0;
+	for (const auto pMat : mats)
+	{
+		setUBO(ubo, offset, sizeof(glm::mat4), glm::value_ptr(*pMat));
+		offset += sizeof(glm::mat4);
+	}
 }
 } // namespace le::gfx

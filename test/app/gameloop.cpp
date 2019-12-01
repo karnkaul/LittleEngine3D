@@ -83,7 +83,7 @@ void runTest()
 	pl0.position = light0Pos;
 	pl1.position = light1Pos;
 	scene.lighting.dirLight = dirLight;
-	scene.lighting.pointLights = {pl0, pl1};
+	scene.lighting.ptLights = {pl0, pl1};
 
 	auto drawLight = [](const glm::vec3& pos, HVerts light) {
 		glm::mat4 m(1.0f);
@@ -207,13 +207,11 @@ void runTest()
 		quadProp.m_transform.setOrientation(
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 
-		resources::shadeLights({dirLight}, scene.lighting.pointLights);
+		resources::shadeLights({dirLight}, scene.lighting.ptLights);
 		// resources::shadeLights({}, {pl0});
 		RenderState state = scene.perspective();
 		auto& matrices = resources::matricesUBO();
-		gfx::shading::setUBO(matrices, 0, sizeof(glm::mat4), glm::value_ptr(state.view));
-		gfx::shading::setUBO(matrices, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(state.projection));
-
+		gfx::shading::setUBOMats(matrices, {&state.view, &state.projection});
 		prop0.render();
 		prop1.render();
 		quadProp.render();

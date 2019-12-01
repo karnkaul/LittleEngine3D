@@ -35,6 +35,7 @@ HTexture g_nullTexture;
 HFont g_nullFont;
 
 HUBO g_matUBO;
+HUBO g_uiUBO;
 } // namespace
 
 namespace resources
@@ -53,11 +54,20 @@ void FontAtlasData::deserialise(std::string json)
 
 HUBO& resources::matricesUBO()
 {
-	if (g_matUBO.ubo.handle == 0)
+	if (g_matUBO.ubo == 0)
 	{
-		g_matUBO = gfx::gl::genUBO(2 * sizeof(glm::mat4), 0, gfx::Draw::Static);
+		g_matUBO = gfx::gl::genUBO(2 * sizeof(glm::mat4), 10, gfx::Draw::Dynamic);
 	}
 	return g_matUBO;
+}
+
+HUBO& resources::uiUBO()
+{
+	if (g_uiUBO.ubo == 0)
+	{
+		g_uiUBO = gfx::gl::genUBO(sizeof(glm::mat4), 11, gfx::Draw::Dynamic);
+	}
+	return g_uiUBO;
 }
 
 HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
@@ -67,7 +77,9 @@ HShader& resources::loadShader(std::string id, std::string_view vertCode, std::s
 	if (shader.glID.handle > 0)
 	{
 		HUBO& matrices = matricesUBO();
+		HUBO& ui = uiUBO();
 		gfx::shading::bindUBO(shader, "Matrices", matrices);
+		gfx::shading::bindUBO(shader, "UI", ui);
 		g_shaderMap.emplace(id, std::move(shader));
 		return g_shaderMap[id];
 	}

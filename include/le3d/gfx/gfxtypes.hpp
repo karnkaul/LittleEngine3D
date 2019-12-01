@@ -150,7 +150,7 @@ struct RenderState final
 {
 	glm::mat4 view;
 	glm::mat4 projection;
-	std::vector<PtLight> pointLights;
+	std::vector<PtLight> ptLights;
 	std::vector<DirLight> dirLights;
 };
 #pragma endregion

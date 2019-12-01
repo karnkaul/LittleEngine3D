@@ -15,7 +15,7 @@ struct Material
 	float shininess;
 };
 
-struct PointLight
+struct PtLight
 {
 	vec3 ambient;
 	vec3 diffuse;
@@ -37,12 +37,14 @@ struct DirLight
 	vec3 direction;
 };
 
-#define POINT_LIGHT_COUNT 4
-#define DIR_LIGHT_COUNT 4
+#define MAX_PT_LIGHTS 4
+#define MAX_DIR_LIGHTS 4
 
 uniform Material material;
-uniform PointLight pointLights[POINT_LIGHT_COUNT];
-uniform DirLight dirLights[DIR_LIGHT_COUNT];
+uniform int ptLightCount;
+uniform PtLight ptLights[MAX_PT_LIGHTS];
+uniform int dirLightCount;
+uniform DirLight dirLights[MAX_DIR_LIGHTS];
 uniform vec3 viewPos;
 #ifdef GL_ES
 	uniform vec4 tint;
@@ -62,7 +64,7 @@ vec3 calcDirLight(DirLight light, vec3 norm, vec3 toView)
 	return ambient + diffuse + specular;
 }
 
-vec3 calcPointLight(PointLight light, vec3 norm, vec3 fragPos, vec3 toView)
+vec3 calcPtLight(PtLight light, vec3 norm, vec3 fragPos, vec3 toView)
 {
 	float distance = length(light.position - fragPos);
 	float attenuation = 1.0 / (light.constant + distance * light.linear + distance * distance * light.quadratic);
@@ -82,13 +84,13 @@ void main()
 	vec3 toView = normalize(viewPos - fragPos);
 
 	vec3 result = vec3(0.0f);
-	for (int i = 0; i < DIR_LIGHT_COUNT; i++)
+	for (int i = 0; i < dirLightCount; i++)
 	{
 		result += calcDirLight(dirLights[i], norm, toView);
 	}
-	for (int i = 0; i < POINT_LIGHT_COUNT; ++i)
+	for (int i = 0; i < ptLightCount; ++i)
 	{
-		result += calcPointLight(pointLights[i], norm, fragPos, toView);
+		result += calcPtLight(ptLights[i], norm, fragPos, toView);
 	}
 	fragColour = vec4(result, 1.0) * tint;
 }
