@@ -39,6 +39,13 @@ void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)
 	glDepthMask(GL_TRUE);
 }
 
+void renderMeshes(const HMesh& mesh, const std::vector<glm::mat4> m, const std::vector<glm::mat4> nm, const HShader& shader, Colour tint)
+{
+	ASSERT(shader.glID.handle > 0, "null shader!");
+	gfx::shading::setV4(shader, "tint", tint);
+	gfx::drawMeshes(mesh, mesh.textures, m, nm, shader);
+}
+
 HMesh& debug::debugCube()
 {
 	if (g_debugMesh.hVerts.vao <= 0)
@@ -138,7 +145,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads)
 		{
 			quadMesh.textures = {*quad.pTexture};
 		}
-		gfx::shading::setUBOMats(resources::uiUBO(), {&proj});
+		gfx::shading::setUBO(resources::uiUBO(), 0, sizeof(glm::mat4), glm::value_ptr(proj));
 		gfx::shading::setModelMats(shader, world, world);
 		gfx::shading::setV4(shader, "tint", quad.tint);
 		if (quad.oTexCoords)
@@ -196,7 +203,7 @@ void debug::renderString(const Text2D& text, const HFont& hFont)
 	}
 	}
 	glm::mat4 proj = glm::ortho(-uiw * 0.5f, uiw * 0.5f, -uih * 0.5f, uih * 0.5f, 0.0f, 2.0f);
-	gfx::shading::setUBOMats(resources::uiUBO(), {&proj});
+	gfx::shading::setUBO(resources::uiUBO(), 0, sizeof(glm::mat4), glm::value_ptr(proj));
 	gfx::shading::setS32(shader, "material.diffuse1", 0);
 	gfx::shading::setV4(shader, "tint", text.colour);
 	glChk(glActiveTexture(GL_TEXTURE0));

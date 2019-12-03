@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include "le3d/context/context.hpp"
 #include "le3d/core/gdata.hpp"
+#include "le3d/core/jobs.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
 #include "le3d/env/env.hpp"
@@ -77,13 +78,31 @@ void runTest()
 	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")), noLit);
 	gfx::shading::setV4(litTinted, "tint", Colour::Yellow);
 
-	auto sbf = readBytes(resourcePath("textures/skybox/front.jpg"));
-	auto sbbk = readBytes(resourcePath("textures/skybox/back.jpg"));
-	auto sbr = readBytes(resourcePath("textures/skybox/right.jpg"));
-	auto sbl = readBytes(resourcePath("textures/skybox/left.jpg"));
-	auto sbt = readBytes(resourcePath("textures/skybox/top.jpg"));
-	auto sbbt = readBytes(resourcePath("textures/skybox/bottom.jpg"));
-	Skybox skybox = resources::createSkybox("skybox", {sbr, sbl, sbt, sbbt, sbf, sbbk});
+	Time _t = Time::now();
+	std::vector<u8> l, r, u, d, f, b;
+	std::vector<JobHandle> jobHandles;
+	Skybox skybox;
+	{
+		/*auto r = readBytes(resourcePath("textures/skybox/right.jpg"));
+		auto l = readBytes(resourcePath("textures/skybox/left.jpg"));
+		auto u = readBytes(resourcePath("textures/skybox/up.jpg"));
+		auto d = readBytes(resourcePath("textures/skybox/down.jpg"));
+		auto f = readBytes(resourcePath("textures/skybox/front.jpg"));
+		auto b = readBytes(resourcePath("textures/skybox/back.jpg"));*/
+		jobHandles.push_back(jobs::enqueue([&l]() { l = readBytes(resourcePath("textures/skybox/left.jpg")); }, "skybox_l"));
+		jobHandles.push_back(jobs::enqueue([&r]() { r = readBytes(resourcePath("textures/skybox/right.jpg")); }, "skybox_r"));
+		jobHandles.push_back(jobs::enqueue([&u]() { u = readBytes(resourcePath("textures/skybox/up.jpg")); }, "skybox_u"));
+		jobHandles.push_back(jobs::enqueue([&d]() { d = readBytes(resourcePath("textures/skybox/down.jpg")); }, "skybox_d"));
+		jobHandles.push_back(jobs::enqueue([&f]() { f = readBytes(resourcePath("textures/skybox/front.jpg")); }, "skybox_f"));
+		jobHandles.push_back(jobs::enqueue([&b]() { b = readBytes(resourcePath("textures/skybox/back.jpg")); }, "skybox_b"));
+		for (auto& jh : jobHandles)
+		{
+			jh->wait();
+		}
+		skybox = resources::createSkybox("skybox", {r, l, u, d, f, b});
+	}
+	Time _dt = Time::now() - _t;
+	LOG_D("Skybox time: %.2fms", _dt.assecs() * 1000);
 
 	DirLight dirLight;
 	PtLight pl0, pl1;
@@ -221,18 +240,26 @@ void runTest()
 		// resources::shadeLights({}, {pl0});
 		RenderState state = scene.perspective();
 		auto& matrices = resources::matricesUBO();
-		gfx::shading::setUBOMats(matrices, {&state.view, &state.projection});
+		glm::mat4 viewMats[] = {state.view, state.projection};
+		gfx::shading::setUBO(matrices, 0, sizeof(viewMats), viewMats);
+		//gfx::shading::setUBOMats(matrices, {&state.view, &state.projection});
 
 		renderSkybox(skybox, resources::getShader("unlit/skybox"));
 
 		prop0.render();
 		prop1.render();
 		quadProp.render();
+		std::vector<glm::mat4> m, nm;
 		for (auto& prop : props)
 		{
 			// prop.setShader(resources::getShader("lit/textured"));
-			prop.render();
+			m.push_back(prop.m_transform.model());
+			nm.push_back(prop.m_transform.normalModel());
+			//prop.render();
 		}
+		gfx::shading::setV4(scene.mainShader, "tint", Colour::White);
+		const auto& cube = debug::debugCube();
+		gfx::drawMeshes(cube, cube.textures, m, nm, scene.mainShader);
 		drawLight(light0Pos, light0);
 		drawLight(light1Pos, light1);
 
@@ -268,7 +295,8 @@ void runTest()
 
 s32 gameloop::run(s32 argc, char** argv)
 {
-	le::env::init(argc, argv);
+	env::init(argc, argv);
+	jobs::init(4);
 	FileLogger fileLogger(env::fullPath("debug.log"));
 
 	constexpr u16 WIDTH = 1280;
@@ -283,6 +311,7 @@ s32 gameloop::run(s32 argc, char** argv)
 	}
 	runTest();
 	context::destroy();
+	jobs::cleanup();
 	return 0;
 }
 } // namespace letest

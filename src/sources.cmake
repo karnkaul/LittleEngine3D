@@ -5,6 +5,13 @@ set(SUB_SOURCES
 	le3d/core/assert.cpp
 	le3d/core/fixed.cpp
 	le3d/core/gdata.cpp
+	le3d/core/jobs.cpp
+	le3d/core/jobs/jobCatalogue.cpp
+	le3d/core/jobs/jobHandle.cpp
+	le3d/core/jobs/jobManager.hpp
+	le3d/core/jobs/jobManager.cpp
+	le3d/core/jobs/jobWorker.hpp
+	le3d/core/jobs/jobWorker.cpp
 	le3d/core/log.cpp
 	le3d/core/maths.cpp
 	le3d/core/time.cpp

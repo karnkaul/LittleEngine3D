@@ -224,14 +224,4 @@ void shading::setUBO(const HUBO& ubo, s64 offset, s64 size, const void* pData)
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 	}
 }
-
-void shading::setUBOMats(const HUBO& ubo, const std::vector<glm::mat4*>& mats)
-{
-	s64 offset = 0;
-	for (const auto pMat : mats)
-	{
-		setUBO(ubo, offset, sizeof(glm::mat4), glm::value_ptr(*pMat));
-		offset += sizeof(glm::mat4);
-	}
-}
 } // namespace le::gfx

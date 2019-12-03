@@ -36,6 +36,8 @@ struct Text2D
 };
 
 void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint = Colour::White);
+void renderMeshes(const HMesh& mesh, const std::vector<glm::mat4> m, const std::vector<glm::mat4> nm, const HShader& shader,
+				  Colour tint = Colour::White);
 
 namespace debug
 {

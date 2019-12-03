@@ -1,6 +1,7 @@
 #include <memory>
 #include <thread>
 #include <unordered_map>
+#include "le3d/core/assert.hpp"
 #include "le3d/env/threads.hpp"
 
 namespace le
@@ -37,6 +38,15 @@ void threads::join(HThread& id)
 		}
 	}
 	id = HThread();
+}
+
+void threads::join(const std::vector<HThread*>& ids)
+{
+	for (auto pID : ids)
+	{
+		ASSERT(pID, "Thread handle is null!");
+		join(*pID);
+	}
 }
 
 void threads::joinAll()

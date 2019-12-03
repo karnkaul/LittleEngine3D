@@ -30,5 +30,4 @@ void setupLights(const HShader& shader, const std::vector<DirLight>& dirLights, 
 
 void bindUBO(const HShader& shader, std::string_view id, const HUBO& ubo);
 void setUBO(const HUBO& ubo, s64 offset, s64 size, const void* pData);
-void setUBOMats(const HUBO& ubo, const std::vector<glm::mat4*>& mats);
 } // namespace le::gfx::shading

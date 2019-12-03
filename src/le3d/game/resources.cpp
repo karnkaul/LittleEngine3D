@@ -166,10 +166,10 @@ HTexture& resources::getTexture(const std::string& id)
 	return g_nullTexture;
 }
 
-Skybox resources::createSkybox(std::string name, std::array<std::vector<u8>, 6> rltbfb)
+Skybox resources::createSkybox(std::string name, std::array<std::vector<u8>, 6> rludfb)
 {
 	Skybox ret;
-	ret.cubemap = gfx::gl::genCubemap(name + "_map", std::move(rltbfb));
+	ret.cubemap = gfx::gl::genCubemap(name + "_map", std::move(rludfb));
 	ret.mesh = gfx::createCube(1.0f, name + "_mesh");
 	ret.name = std::move(name);
 	LOG_D("[%s] Skybox created", ret.name.data());

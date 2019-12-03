@@ -98,17 +98,18 @@ void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
 	}
 }
 
-HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rltbfb)
+HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rlupfb)
 {
 	HCubemap ret;
 	if (context::exists())
 	{
+		Lock lock(context::g_glMutex);
 		glChk(glGenTextures(1, &ret.glID.handle));
 		glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, ret.glID.handle));
 		s32 w, h, ch;
 		u32 idx = 0;
 		stbi_set_flip_vertically_on_load(0);
-		for (const auto& side : rltbfb)
+		for (const auto& side : rlupfb)
 		{
 			auto pData = stbi_load_from_memory(side.data(), (s32)side.size(), &w, &h, &ch, 0);
 			if (pData)
@@ -141,6 +142,7 @@ void gfx::gl::releaseCubemap(HCubemap& cube)
 {
 	if (context::exists())
 	{
+		Lock lock(context::g_glMutex);
 		GLuint texID[] = {cube.glID.handle};
 		glChk(glDeleteTextures(1, texID));
 		auto size = utils::friendlySize(cube.bytes);
@@ -489,6 +491,95 @@ void gfx::drawMesh(const HMesh& mesh, const HShader& shader)
 #if defined(DEBUGGING)
 		mesh.drawFlags.flags.reset();
 #endif
+	}
+}
+
+void gfx::drawMeshes(const HMesh& mesh, const std::vector<HTexture>& textures, const std::vector<glm::mat4> m, const std::vector<glm::mat4> nm,
+					 const HShader& shader)
+{
+	if (context::exists())
+	{
+		bool bResetTint = false;
+		ASSERT(shader.glID.handle > 0, "shader is null!");
+		ASSERT(nm.empty() || nm.size() == m.size(), "Matrices count mismatch!");
+		{
+			Lock lock(context::g_glMutex);
+			s32 txID = 0;
+			u32 diffuse = 0;
+			u32 specular = 0;
+			auto drawBlankTex = [&](bool bMagenta) {
+				if (bMagenta)
+				{
+					gfx::shading::setV4(shader, "tint", Colour::Magenta);
+					bResetTint = true;
+				}
+				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+				glChk(glBindTexture(GL_TEXTURE_2D, 1));
+			};
+			for (const auto& texture : textures)
+			{
+				std::string id = "material.";
+				std::string number;
+				bool bContinue = false;
+				if (txID > g_maxTexIdx)
+				{
+					g_maxTexIdx = txID;
+				}
+				switch (texture.type)
+				{
+				case TexType::Diffuse:
+				{
+					id += "diffuse";
+					number = std::to_string(++diffuse);
+					break;
+				}
+				case TexType::Specular:
+				{
+					id += "specular";
+					number = std::to_string(++specular);
+					break;
+				}
+				default:
+				{
+					if (txID == 0)
+					{
+						drawBlankTex(true);
+					}
+					bContinue = true;
+					break;
+				}
+				}
+				if (bContinue)
+				{
+					continue;
+				}
+				id += number;
+				if (texture.glID.handle > 0)
+				{
+					glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+					glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
+					gfx::shading::setS32(shader, id, txID++);
+				}
+				else
+				{
+					drawBlankTex(true);
+				}
+			}
+			for (; txID <= g_maxTexIdx; ++txID)
+			{
+				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+				glChk(glBindTexture(GL_TEXTURE_2D, 0));
+			}
+		}
+		for (size_t i = 0; i < m.size(); ++i)
+		{
+			gfx::shading::setModelMats(shader, m[i], nm.empty() ? m[i] : nm[i]);
+			gl::draw(mesh.hVerts);
+		}
+		if (bResetTint)
+		{
+			gfx::shading::setV4(shader, "tint", Colour::White);
+		}
 	}
 }
 
