@@ -33,4 +33,4 @@ private:
 
 	friend class JobManager;
 };
-} // namespace Core
+} // namespace le

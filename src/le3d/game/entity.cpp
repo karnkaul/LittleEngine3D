@@ -48,7 +48,6 @@ void Prop::render()
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{
-			// pShader->setV4("tint", Colour::Red);
 			pModel->m_renderFlags.set((s32)DrawFlag::BlankMagenta, true);
 		}
 #endif

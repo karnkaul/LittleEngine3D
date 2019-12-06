@@ -329,7 +329,6 @@ HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
 		glChk(glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ret.ubo.handle));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 		ret.bindingPoint = bindingPoint;
-		LOG_D("UBO [%d] created [%db] ", ret.bindingPoint, size);
 	}
 	return ret;
 }
@@ -340,7 +339,6 @@ void gfx::gl::releaseUBO(HUBO& ubo)
 	{
 		Lock lock(context::g_glMutex);
 		glChk(glDeleteBuffers(1, &ubo.ubo.handle));
-		LOG_D("UBO [%d] destroyed", ubo.bindingPoint);
 	}
 	ubo = HUBO();
 }
@@ -494,8 +492,8 @@ void gfx::drawMesh(const HMesh& mesh, const HShader& shader)
 	}
 }
 
-void gfx::drawMeshes(const HMesh& mesh, const std::vector<HTexture>& textures, const std::vector<glm::mat4> m, const std::vector<glm::mat4> nm,
-					 const HShader& shader)
+void gfx::drawMeshes(const HMesh& mesh, const std::vector<HTexture>& textures, const std::vector<glm::mat4>& m,
+					 const std::vector<glm::mat4>& nm, const HShader& shader)
 {
 	if (context::exists())
 	{

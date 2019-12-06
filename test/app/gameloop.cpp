@@ -12,14 +12,15 @@
 #include "le3d/game/entity.hpp"
 #include "le3d/game/fileLogger.hpp"
 #include "le3d/game/resources.hpp"
-#include "le3d/game/scene.hpp"
 #include "le3d/game/utils.hpp"
 #include "le3d/gfx/model.hpp"
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/input/input.hpp"
 
+#include "ubotypes.hpp"
 #include "gameloop.hpp"
+#include "utils.hpp"
 
 namespace letest
 {
@@ -41,9 +42,7 @@ std::string resourcePath(std::string_view id)
 
 void runTest()
 {
-	Scene scene;
-	scene.cameras.uMain = std::make_unique<FreeCam>();
-	auto& camera = *dynamic_cast<FreeCam*>(scene.cameras.uMain.get());
+	FreeCam camera;
 	camera.setup("freecam");
 	// input::setCursorMode(CursorMode::Disabled);
 	camera.m_position = {0.0f, 0.0f, 3.0f};
@@ -57,6 +56,10 @@ void runTest()
 	scpSheet.bytes = readBytes(resourcePath("fonts/scp_1024x512.png"));
 	scpSheet.deserialise(readFile(resourcePath("fonts/scp_1024x512.json")));
 	auto& hFont = resources::loadFont("default", std::move(scpSheet));
+
+	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::bindingPoint, gfx::Draw::Dynamic);
+	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::bindingPoint, gfx::Draw::Dynamic);
+	resources::addUBO("UI", sizeof(uboData::UI), uboData::UI::bindingPoint, gfx::Draw::Dynamic);
 
 	Flags<HShader::MAX_FLAGS> noTex;
 	noTex.set((s32)gfx::shading::Flag::Untextured, true);
@@ -72,7 +75,7 @@ void runTest()
 	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")), noTexNoLit);
 	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")), noLit);
 	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")), noTex);
-	scene.mainShader = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")), {});
+	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")), {});
 	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")), noTexNoLit);
 	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")), noLit);
 	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")), noLit);
@@ -104,15 +107,18 @@ void runTest()
 	Time _dt = Time::now() - _t;
 	LOG_D("Skybox time: %.2fms", _dt.assecs() * 1000);
 
-	DirLight dirLight;
-	PtLight pl0, pl1;
-	glm::vec3 light0Pos(0.0f, 0.0f, 2.0f);
-	glm::vec3 light1Pos(-4.0f, 2.0f, 2.0f);
-
-	pl0.position = light0Pos;
-	pl1.position = light1Pos;
-	scene.lighting.dirLight = dirLight;
-	scene.lighting.ptLights = {pl0, pl1};
+	glm::vec3 pl0Pos(0.0f, 0.0f, 2.0f);
+	glm::vec3 pl1Pos(-4.0f, 2.0f, 2.0f);
+	uboData::Lights lights;
+	lights.ptLightCount = 2;
+	lights.dirLightCount = 1;
+	lights.ptLights[0].position = glm::vec4(pl0Pos, 0.0f);
+	lights.ptLights[1].position = glm::vec4(pl1Pos, 0.0f);
+	lights.dirLights[0].direction = glm::vec4(-1.0f, -1.0f, 1.0f, 0.0f);
+	lights.ptLights[0].clq = lights.ptLights[1].clq = glm::vec4(1.0f, 0.09f, 0.032f, 0.0f);
+	lights.ptLights[0].ambient = lights.ptLights[1].ambient = lights.dirLights[0].ambient = glm::vec4(0.2f);
+	lights.ptLights[0].diffuse = lights.ptLights[1].diffuse = lights.dirLights[0].diffuse = glm::vec4(0.5f);
+	lights.ptLights[0].specular = lights.ptLights[1].specular = lights.dirLights[0].specular = glm::vec4(1.0f);
 
 	auto drawLight = [](const glm::vec3& pos, HVerts light) {
 		glm::mat4 m(1.0f);
@@ -236,37 +242,43 @@ void runTest()
 		quadProp.m_transform.setOrientation(
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 
-		resources::shadeLights({dirLight}, scene.lighting.ptLights);
-		// resources::shadeLights({}, {pl0});
-		RenderState state = scene.perspective();
-		auto& matrices = resources::matricesUBO();
-		glm::mat4 viewMats[] = {state.view, state.projection};
-		gfx::shading::setUBO(matrices, 0, sizeof(viewMats), viewMats);
-		//gfx::shading::setUBOMats(matrices, {&state.view, &state.projection});
+		gfx::shading::setUBO<uboData::Lights>(hLightsUBO, lights);
+		uboData::Matrices mats{camera.view(), camera.perspectiveProj(), glm::vec4(camera.m_position, 0.0f)};
+		gfx::shading::setUBO<uboData::Matrices>(hMatricesUBO, mats);
 
 		renderSkybox(skybox, resources::getShader("unlit/skybox"));
 
 		prop0.render();
 		prop1.render();
-		quadProp.render();
 		std::vector<glm::mat4> m, nm;
-		for (auto& prop : props)
+		for (size_t i = 0; i < 3; ++i)
 		{
+			const auto& prop = props[i];
 			// prop.setShader(resources::getShader("lit/textured"));
 			m.push_back(prop.m_transform.model());
 			nm.push_back(prop.m_transform.normalModel());
-			//prop.render();
+			// prop.render();
 		}
-		gfx::shading::setV4(scene.mainShader, "tint", Colour::White);
+		gfx::shading::setV4(litTextured, "tint", Colour::White);
 		const auto& cube = debug::debugCube();
-		gfx::drawMeshes(cube, cube.textures, m, nm, scene.mainShader);
-		drawLight(light0Pos, light0);
-		drawLight(light1Pos, light1);
+		gfx::drawMeshes(cube, cube.textures, m, nm, litTextured);
+		m.clear();
+		nm.clear();
+		for (size_t i = 3; i < props.size(); ++i)
+		{
+			const auto& prop = props[i];
+			m.push_back(prop.m_transform.model());
+			nm.push_back(prop.m_transform.normalModel());
+		}
+		gfx::drawMeshes(cube, cube.textures, m, nm, litTinted);
+		drawLight(pl0Pos, light0);
+		drawLight(pl1Pos, light1);
+		quadProp.render();
 
 		// Quad2D tl, tr, bl, br;
 		//// glm::vec2 uiSpace = {1920.0f, 1080.0f};
 		// glm::vec2 uiSpace = {1280.0f, 720.0f};
-		// tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::getTexture("source-code-pro");
+		// tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::getTexture("awesomeface");
 		// tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		// tl.space = tr.space = bl.space = br.space = uiSpace;
 		// tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};

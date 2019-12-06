@@ -158,4 +158,4 @@ bool JobManager::areWorkersIdle() const
 	}
 	return m_jobQueue.empty();
 }
-} // namespace Core
+} // namespace le

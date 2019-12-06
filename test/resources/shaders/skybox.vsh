@@ -10,6 +10,7 @@ layout (std140) uniform Matrices
 {
 	mat4 view;
 	mat4 projection;
+	vec4 viewPosition;
 };
 
 void main()

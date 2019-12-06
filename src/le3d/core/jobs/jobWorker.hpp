@@ -33,4 +33,4 @@ private:
 	std::string m_logName;
 	void run();
 };
-} // namespace Core
+} // namespace le

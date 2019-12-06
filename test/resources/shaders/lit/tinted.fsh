@@ -2,10 +2,14 @@
 	precision mediump float;
 #endif
 
+#define MAX_PT_LIGHTS 4
+#define MAX_DIR_LIGHTS 4
+
 out vec4 fragColour;
 
 in vec3 normal;
 in vec3 fragPos;
+in vec3 viewPos;
 
 struct Material
 {
@@ -17,35 +21,30 @@ struct Material
 
 struct PtLight
 {
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
-
-	vec3 position;
-
-	float constant;
-	float linear;
-	float quadratic;
+	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	vec4 position;
+	vec4 clq;
 };
 
 struct DirLight
 {
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
-
-	vec3 direction;
+	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	vec4 direction;
 };
 
-#define MAX_PT_LIGHTS 4
-#define MAX_DIR_LIGHTS 4
+layout (std140) uniform Lights
+{
+	PtLight ptLights[MAX_PT_LIGHTS];
+	DirLight dirLights[MAX_DIR_LIGHTS];
+	int ptLightCount;
+	int dirLightCount;
+};
 
 uniform Material material;
-uniform int ptLightCount;
-uniform PtLight ptLights[MAX_PT_LIGHTS];
-uniform int dirLightCount;
-uniform DirLight dirLights[MAX_DIR_LIGHTS];
-uniform vec3 viewPos;
 #ifdef GL_ES
 	uniform vec4 tint;
 #else
@@ -54,27 +53,28 @@ uniform vec3 viewPos;
 
 vec3 calcDirLight(DirLight light, vec3 norm, vec3 toView)
 {
-	vec3 toLight = normalize(-light.direction);
-	float diff = max(dot(norm, toLight), 0.0);
+	vec3 toLight = normalize(-vec3(light.direction));
 	vec3 reflectDir = reflect(-toLight, norm);
+	float diff = max(dot(norm, toLight), 0.0);
 	float spec = pow(max(dot(toView, reflectDir), 0.0), material.shininess);
-	vec3 ambient  = light.ambient  * material.ambient;
-	vec3 diffuse  = light.diffuse  * diff * material.diffuse;
-	vec3 specular = light.specular * spec * material.specular;
+	vec3 ambient  = vec3(light.ambient)  * material.ambient;
+	vec3 diffuse  = vec3(light.diffuse)  * diff * material.diffuse;
+	vec3 specular = vec3(light.specular) * spec * material.specular;
 	return ambient + diffuse + specular;
 }
 
 vec3 calcPtLight(PtLight light, vec3 norm, vec3 fragPos, vec3 toView)
 {
-	float distance = length(light.position - fragPos);
-	float attenuation = 1.0 / (light.constant + distance * light.linear + distance * distance * light.quadratic);
-	vec3 toLight = normalize(light.position - fragPos);
-	vec3 reflectDir = reflect(-toLight, norm);
-	float diff = max(dot(norm, toLight), 0.0);
+	vec3 toLight = vec3(light.position) - fragPos;
+	vec3 nToLight = normalize(toLight);
+	vec3 reflectDir = reflect(-nToLight, norm);
+	float distance = length(toLight);
+	float attenuation = 1.0 / (light.clq.x + distance * light.clq.y + distance * distance * light.clq.z);
+	float diff = max(dot(norm, nToLight), 0.0);
 	float spec = pow(max(dot(toView, reflectDir), 0.0), material.shininess);
-	vec3 ambient = light.ambient * material.ambient * attenuation;
-	vec3 diffuse = light.diffuse * (diff * material.diffuse) * attenuation;
-	vec3 specular = light.specular * (spec * material.specular) * attenuation;
+	vec3 ambient = vec3(light.ambient) * material.ambient * attenuation;
+	vec3 diffuse = vec3(light.diffuse) * (diff * material.diffuse) * attenuation;
+	vec3 specular = vec3(light.specular) * (spec * material.specular) * attenuation;
 	return ambient + diffuse + specular;
 }
 

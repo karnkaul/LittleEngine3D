@@ -62,4 +62,4 @@ private:
 
 	friend class JobWorker;
 };
-} // namespace Core
+} // namespace le

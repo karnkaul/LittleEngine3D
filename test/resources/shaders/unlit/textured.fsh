@@ -12,7 +12,6 @@ struct Material
 };
 
 uniform Material material;
-uniform vec3 viewPos;
 #ifdef GL_ES
 	uniform vec4 tint;
 #else

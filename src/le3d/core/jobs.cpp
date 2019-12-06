@@ -56,5 +56,5 @@ bool areWorkersIdle()
 {
 	return uManager ? uManager->areWorkersIdle() : true;
 }
-} // namespace Jobs
-} // namespace Core
+} // namespace jobs
+} // namespace le

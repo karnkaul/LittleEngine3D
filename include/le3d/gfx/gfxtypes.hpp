@@ -131,35 +131,5 @@ struct LitTint final
 	glm::vec3 diffuse = glm::vec3(1.0f);
 	glm::vec3 specular = glm::vec3(1.0f);
 };
-
-struct LightData final
-{
-	glm::vec3 ambient = glm::vec3(0.2f);
-	glm::vec3 diffuse = glm::vec3(0.5f);
-	glm::vec3 specular = glm::vec3(1.0f);
-};
-
-struct DirLight final
-{
-	LightData light;
-	glm::vec3 direction = glm::vec3(-1.0f, -1.0f, 1.0f);
-};
-
-struct PtLight final
-{
-	LightData light;
-	glm::vec3 position = glm::vec3(0.0f);
-	f32 constant = 1.0f;
-	f32 linear = 0.09f;
-	f32 quadratic = 0.032f;
-};
-
-struct RenderState final
-{
-	glm::mat4 view;
-	glm::mat4 projection;
-	std::vector<PtLight> ptLights;
-	std::vector<DirLight> dirLights;
-};
 #pragma endregion
 } // namespace le

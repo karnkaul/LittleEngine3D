@@ -76,4 +76,4 @@ void JobCatalog::update()
 #endif
 	}
 }
-} // namespace Core
+} // namespace le

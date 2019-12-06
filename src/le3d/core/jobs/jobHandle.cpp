@@ -21,4 +21,4 @@ bool JobHandleBlock::hasCompleted() const
 {
 	return m_future.valid() && m_future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
 }
-} // namespace Core
+} // namespace le

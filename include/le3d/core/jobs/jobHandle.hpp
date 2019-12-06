@@ -26,4 +26,4 @@ private:
 };
 
 using JobHandle = std::shared_ptr<JobHandleBlock>;
-} // namespace Core
+} // namespace le

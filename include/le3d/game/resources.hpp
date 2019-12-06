@@ -26,8 +26,8 @@ struct Skybox final
 
 namespace resources
 {
-HUBO& matricesUBO();
-HUBO& uiUBO();
+HUBO& addUBO(std::string id, s64 size, u32 bindingPoint, gfx::Draw type);
+HUBO& getUBO(const std::string& id);
 
 HShader& loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
 HShader& getShader(const std::string& id);
@@ -36,7 +36,6 @@ bool isShaderLoaded(const std::string& id);
 bool unload(HShader& shader);
 void unloadShaders();
 u32 shaderCount();
-void shadeLights(const std::vector<DirLight>& dirLights, const std::vector<PtLight>& ptLights);
 
 extern HTexture g_blankTex1px;
 

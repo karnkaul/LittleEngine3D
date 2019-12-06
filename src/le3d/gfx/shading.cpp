@@ -10,9 +10,6 @@
 
 namespace le::gfx
 {
-const u8 shading::MAX_DIR_LIGHTS = 4;
-const u8 shading::MAX_PT_LIGHTS = 4;
-
 void shading::use(const HShader& shader)
 {
 	ASSERT(shader.glID.handle > 0, "Invalid shader program!");
@@ -121,89 +118,6 @@ void shading::setModelMats(const HShader& shader, const glm::mat4& model, const 
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(model));
 	temp = glGetUniformLocation(shader.glID.handle, "normalModel");
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(normals));
-}
-
-void shading::setupLights(const HShader& shader, const std::vector<DirLight>& dirLights, const std::vector<PtLight>& ptLights)
-{
-	use(shader);
-	auto temp = glGetUniformLocation(shader.glID.handle, "dirLightCount");
-	glChk(glUniform1i(temp, (GLint)dirLights.size()));
-	temp = glGetUniformLocation(shader.glID.handle, "ptLightCount");
-	glChk(glUniform1i(temp, (GLint)ptLights.size()));
-
-	size_t i;
-	char buf[64];
-	for (i = 0; i < dirLights.size() && i < MAX_DIR_LIGHTS; ++i)
-	{
-		const auto& dirLight = dirLights[i];
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "dirLights[%d].ambient", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = dirLight.light.ambient;
-			glChk(glUniform3f(temp, v.x, v.y, v.z));
-		}
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "dirLights[%d].diffuse", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = dirLight.light.diffuse;
-			glChk(glUniform3f(temp, v.x, v.y, v.z));
-		}
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "dirLights[%d].specular", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = dirLight.light.specular;
-			glChk(glUniform3f(temp, v.x, v.y, v.z));
-		}
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "dirLights[%d].direction", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = dirLight.direction;
-			glChk(glUniform3f(temp, v.x, v.y, v.z));
-		}
-	}
-	for (i = 0; i < ptLights.size() && i < MAX_PT_LIGHTS; ++i)
-	{
-		const auto& ptLight = ptLights[i];
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].ambient", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = ptLight.light.ambient;
-			glChk(glUniform3f(temp, v.x, v.y, v.z));
-		}
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].diffuse", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = ptLight.light.diffuse;
-			glChk(glUniform3f(temp, v.x, v.y, v.z));
-		}
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].specular", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = ptLight.light.specular;
-			glChk(glUniform3f(temp, v.x, v.y, v.z));
-		}
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].position", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			const auto& v = ptLight.position;
-			glChk(glUniform3f(temp, v.x, v.y, v.z));
-		}
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].constant", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			glChk(glUniform1f(temp, ptLight.constant));
-		}
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].linear", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			glChk(glUniform1f(temp, ptLight.linear));
-		}
-		{
-			std::snprintf(buf, ARR_SIZE(buf), "ptLights[%d].quadratic", (s32)i);
-			auto temp = glGetUniformLocation(shader.glID.handle, buf);
-			glChk(glUniform1f(temp, ptLight.quadratic));
-		}
-	}
 }
 
 void shading::bindUBO(const HShader& shader, std::string_view id, const HUBO& ubo)

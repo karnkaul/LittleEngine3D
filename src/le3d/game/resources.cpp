@@ -29,13 +29,12 @@ static const std::vector<u8> blank_1pxBytes = {
 std::unordered_map<std::string, HShader> g_shaderMap;
 std::unordered_map<std::string, HTexture> g_textureMap;
 std::unordered_map<std::string, HFont> g_fontMap;
+std::unordered_map<std::string, HUBO> g_uboMap;
 
 HShader g_nullShader;
 HTexture g_nullTexture;
 HFont g_nullFont;
-
-HUBO g_matUBO;
-HUBO g_uiUBO;
+HUBO g_nullUBO;
 } // namespace
 
 namespace resources
@@ -52,22 +51,27 @@ void FontAtlasData::deserialise(std::string json)
 	startCode = (u8)data.getS32("startCode", startCode);
 }
 
-HUBO& resources::matricesUBO()
+HUBO& resources::addUBO(std::string id, s64 size, u32 bindingPoint, gfx::Draw type)
 {
-	if (g_matUBO.ubo == 0)
+	ASSERT(g_uboMap.find(id) == g_uboMap.end(), "UBO ID already loaded");
+	HUBO ubo = gfx::gl::genUBO(size, bindingPoint, type);
+	if (ubo.ubo.handle > 0)
 	{
-		g_matUBO = gfx::gl::genUBO(2 * sizeof(glm::mat4), 10, gfx::Draw::Dynamic);
+		g_uboMap.emplace(id, ubo);
+		LOG_I("== [%s] UBO (%d) added for future shaders", id.data(), ubo.bindingPoint);
+		return g_uboMap[id];
 	}
-	return g_matUBO;
+	return g_nullUBO;
 }
 
-HUBO& resources::uiUBO()
+HUBO& resources::getUBO(const std::string& id)
 {
-	if (g_uiUBO.ubo == 0)
+	auto search = g_uboMap.find(id);
+	if (search != g_uboMap.end())
 	{
-		g_uiUBO = gfx::gl::genUBO(sizeof(glm::mat4), 11, gfx::Draw::Dynamic);
+		return search->second;
 	}
-	return g_uiUBO;
+	return g_nullUBO;
 }
 
 HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
@@ -76,10 +80,10 @@ HShader& resources::loadShader(std::string id, std::string_view vertCode, std::s
 	HShader shader = gfx::gl::genShader(id, vertCode, fragCode, flags);
 	if (shader.glID.handle > 0)
 	{
-		HUBO& matrices = matricesUBO();
-		HUBO& ui = uiUBO();
-		gfx::shading::bindUBO(shader, "Matrices", matrices);
-		gfx::shading::bindUBO(shader, "UI", ui);
+		for (const auto& kvp : g_uboMap)
+		{
+			gfx::shading::bindUBO(shader, kvp.first, kvp.second);
+		}
 		g_shaderMap.emplace(id, std::move(shader));
 		return g_shaderMap[id];
 	}
@@ -125,18 +129,6 @@ void resources::unloadShaders()
 u32 resources::shaderCount()
 {
 	return (u32)g_shaderMap.size();
-}
-
-void resources::shadeLights(const std::vector<DirLight>& dirLights, const std::vector<PtLight>& ptLights)
-{
-	for (const auto& kvp : g_shaderMap)
-	{
-		const HShader& shader = kvp.second;
-		if (!shader.flags.isSet((s32)gfx::shading::Flag::Unlit))
-		{
-			gfx::shading::setupLights(kvp.second, dirLights, ptLights);
-		}
-	}
 }
 
 HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> bytes, bool bClampToEdge)
@@ -285,7 +277,12 @@ void resources::unloadAll()
 	debug::unloadAll();
 	unloadFonts();
 	unloadTextures(true);
-	gfx::gl::releaseUBO(g_matUBO);
+	for (auto& kvp : g_uboMap)
+	{
+		LOG_I("-- [%s] UBO (%d) destroyed", kvp.first.data(), kvp.second.bindingPoint);
+		gfx::gl::releaseUBO(kvp.second);
+	}
+	g_uboMap.clear();
 	unloadShaders();
 }
 } // namespace le

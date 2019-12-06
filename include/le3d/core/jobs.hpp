@@ -17,5 +17,5 @@ void forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, siz
 
 void update();
 bool areWorkersIdle();
-} // namespace Jobs
-} // namespace Core
+} // namespace jobs
+} // namespace le
