@@ -5,6 +5,7 @@
 #include "le3d/context/contextImpl.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
 
@@ -111,13 +112,16 @@ bool shading::setV4(const HShader& shader, std::string_view id, const glm::vec4&
 	return false;
 }
 
-void shading::setModelMats(const HShader& shader, const glm::mat4& model, const glm::mat4& normals)
+void shading::setModelMats(const HShader& shader, const ModelMats& mats)
 {
 	use(shader);
-	auto temp = glGetUniformLocation(shader.glID.handle, "model");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(model));
-	temp = glGetUniformLocation(shader.glID.handle, "normalModel");
-	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(normals));
+	auto temp = glGetUniformLocation(shader.glID.handle, env::g_config.uniforms.modelMatrix.data());
+	glChk(glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(mats.model)));
+	if (mats.oNormals)
+	{
+		temp = glGetUniformLocation(shader.glID.handle, env::g_config.uniforms.normalMatrix.data());
+		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(*mats.oNormals));
+	}
 }
 
 void shading::bindUBO(const HShader& shader, std::string_view id, const HUBO& ubo)

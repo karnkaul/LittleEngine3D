@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/time.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/shading.hpp"
@@ -28,7 +29,7 @@ void unloadAll();
 void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)
 {
 	glChk(glDepthMask(GL_FALSE));
-	gfx::shading::setV4(shader, "tint", tint);
+	gfx::shading::setV4(shader, env::g_config.uniforms.tint, tint);
 	glChk(glBindVertexArray(skybox.mesh.hVerts.vao.handle));
 	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemap.glID.handle));
 	glChk(glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.hVerts.vCount));
@@ -36,11 +37,11 @@ void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)
 	glChk(glDepthMask(GL_TRUE));
 }
 
-void renderMeshes(const HMesh& mesh, const std::vector<glm::mat4> m, const std::vector<glm::mat4> nm, const HShader& shader, Colour tint)
+void renderMeshes(const HMesh& mesh, const std::vector<ModelMats>& mats, const HShader& shader, Colour tint)
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
-	gfx::shading::setV4(shader, "tint", tint);
-	gfx::drawMeshes(mesh, mesh.textures, m, nm, shader);
+	gfx::shading::setV4(shader, env::g_config.uniforms.tint, tint);
+	gfx::drawMeshes(mesh, mesh.textures, mats, shader);
 }
 
 HMesh& debug::debugCube()

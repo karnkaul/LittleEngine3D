@@ -40,15 +40,13 @@ layout (std140) uniform Lights
 {
 	PtLight ptLights[MAX_PT_LIGHTS];
 	DirLight dirLights[MAX_DIR_LIGHTS];
-	int ptLightCount;
-	int dirLightCount;
 };
 
 uniform Material material;
 #ifdef GL_ES
 	uniform vec4 tint;
 #else
-	uniform vec4 tint = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	uniform vec4 tint = vec4(1.0);
 #endif
 
 vec3 calcDirLight(DirLight light, vec3 norm, vec3 toView)
@@ -60,7 +58,8 @@ vec3 calcDirLight(DirLight light, vec3 norm, vec3 toView)
 	vec3 ambient  = vec3(light.ambient)  * material.ambient;
 	vec3 diffuse  = vec3(light.diffuse)  * diff * material.diffuse;
 	vec3 specular = vec3(light.specular) * spec * material.specular;
-	return ambient + diffuse + specular;
+	vec3 total = max(ambient, 0.0) + max(diffuse, 0.0) + max(specular, 0.0);
+	return total;
 }
 
 vec3 calcPtLight(PtLight light, vec3 norm, vec3 fragPos, vec3 toView)
@@ -75,7 +74,8 @@ vec3 calcPtLight(PtLight light, vec3 norm, vec3 fragPos, vec3 toView)
 	vec3 ambient = vec3(light.ambient) * material.ambient * attenuation;
 	vec3 diffuse = vec3(light.diffuse) * (diff * material.diffuse) * attenuation;
 	vec3 specular = vec3(light.specular) * (spec * material.specular) * attenuation;
-	return ambient + diffuse + specular;
+	vec3 total = max(ambient, 0.0) + max(diffuse, 0.0) + max(specular, 0.0);
+	return total;
 }
 
 void main()
@@ -84,11 +84,11 @@ void main()
 	vec3 toView = normalize(viewPos - fragPos);
 
 	vec3 result = vec3(0.0f);
-	for (int i = 0; i < dirLightCount; i++)
+	for (int i = 0; i < MAX_DIR_LIGHTS; i++)
 	{
 		result += calcDirLight(dirLights[i], norm, toView);
 	}
-	for (int i = 0; i < ptLightCount; ++i)
+	for (int i = 0; i < MAX_PT_LIGHTS; ++i)
 	{
 		result += calcPtLight(ptLights[i], norm, fragPos, toView);
 	}

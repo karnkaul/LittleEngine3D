@@ -7,6 +7,7 @@
 #include "le3d/core/utils.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/context/contextImpl.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/shading.hpp"
@@ -18,7 +19,96 @@ namespace le
 namespace
 {
 s32 g_maxTexIdx = 0;
+
+void setBlankTex(const HShader& shader, s32 txID, bool bMagenta, bool& bResetTint)
+{
+	if (bMagenta)
+	{
+		gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::Magenta);
+		bResetTint = true;
+	}
+	glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+	glChk(glBindTexture(GL_TEXTURE_2D, 1));
 }
+
+void setTextures(const HShader& shader, const std::vector<HTexture>& textures, bool& bResetTint)
+{
+	s32 txID = 0;
+	s32 diffuse = 0;
+	s32 specular = 0;
+	glChk(glBindTexture(GL_TEXTURE_2D, 0));
+	const auto& u = env::g_config.uniforms;
+	if (!shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
+	{
+		if (textures.empty())
+		{
+			setBlankTex(shader, 0, true, bResetTint);
+			++txID;
+		}
+	}
+	const size_t idLen = u.material.size() + 1 + std::max({u.diffuseTexPrefix.size() + 2, u.specularTexPrefix.size() + 2});
+	for (const auto& texture : textures)
+	{
+		std::string id;
+		id.reserve(idLen);
+		id += u.material;
+		id += ".";
+		std::string number;
+		number.reserve(2);
+		bool bContinue = false;
+		if (txID > g_maxTexIdx)
+		{
+			g_maxTexIdx = txID;
+		}
+		switch (texture.type)
+		{
+		case TexType::Diffuse:
+		{
+			id += u.diffuseTexPrefix;
+			number = std::to_string(diffuse++);
+			break;
+		}
+		case TexType::Specular:
+		{
+			id += u.specularTexPrefix;
+
+			number = std::to_string(specular++);
+			break;
+		}
+		default:
+		{
+			if (txID == 0)
+			{
+				setBlankTex(shader, txID, true, bResetTint);
+			}
+			bContinue = true;
+			break;
+		}
+		}
+		if (bContinue)
+		{
+			continue;
+		}
+		id += number;
+		ASSERT(id.length() <= idLen, "Incorrect uniform id reserve size!");
+		if (texture.glID.handle > 0)
+		{
+			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+			glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
+			gfx::shading::setS32(shader, id, txID++);
+		}
+		else
+		{
+			setBlankTex(shader, txID, true, bResetTint);
+		}
+	}
+	for (; txID <= g_maxTexIdx; ++txID)
+	{
+		glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+		glChk(glBindTexture(GL_TEXTURE_2D, 0));
+	}
+}
+} // namespace
 
 HTexture gfx::gl::genTexture(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge)
 {
@@ -392,99 +482,27 @@ void gfx::drawMesh(const HMesh& mesh, const HShader& shader)
 	if (le::context::exists() && mesh.hVerts.vao.handle > 0)
 	{
 		bool bResetTint = false;
+		const auto& u = env::g_config.uniforms;
 		ASSERT(shader.glID.handle > 0, "shader is null!");
 		{
 			Lock lock(context::g_glMutex);
 			gfx::shading::use(shader);
-			gfx::shading::setF32(shader, "material.shininess", mesh.shininess);
-			s32 txID = 0;
-			u32 diffuse = 0;
-			u32 specular = 0;
-			glChk(glBindTexture(GL_TEXTURE_2D, 0));
-			auto drawBlankTex = [&](bool bMagenta) {
-				if (bMagenta)
-				{
-					gfx::shading::setV4(shader, "tint", Colour::Magenta);
-					bResetTint = true;
-				}
-				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-				glChk(glBindTexture(GL_TEXTURE_2D, 1));
-			};
+			gfx::shading::setF32(shader, u.shininess, mesh.shininess);
 #if defined(DEBUGGING)
 			if (mesh.drawFlags.isSet((s32)DrawFlag::Blank) || mesh.drawFlags.isSet((s32)DrawFlag::BlankMagenta))
 			{
-				drawBlankTex(mesh.drawFlags.isSet((s32)DrawFlag::BlankMagenta));
+				setBlankTex(shader, 0, mesh.drawFlags.isSet((s32)DrawFlag::BlankMagenta), bResetTint);
 			}
 			else
 #endif
 			{
-				if (!shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
-				{
-					if (mesh.textures.empty())
-					{
-						drawBlankTex(true);
-					}
-				}
-				for (const auto& texture : mesh.textures)
-				{
-					std::string id = "material.";
-					std::string number;
-					bool bContinue = false;
-					if (txID > g_maxTexIdx)
-					{
-						g_maxTexIdx = txID;
-					}
-					switch (texture.type)
-					{
-					case TexType::Diffuse:
-					{
-						id += "diffuse";
-						number = std::to_string(++diffuse);
-						break;
-					}
-					case TexType::Specular:
-					{
-						id += "specular";
-						number = std::to_string(++specular);
-						break;
-					}
-					default:
-					{
-						if (txID == 0)
-						{
-							drawBlankTex(true);
-						}
-						bContinue = true;
-						break;
-					}
-					}
-					if (bContinue)
-					{
-						continue;
-					}
-					id += number;
-					if (texture.glID.handle > 0)
-					{
-						glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-						glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
-						gfx::shading::setS32(shader, id, txID++);
-					}
-					else
-					{
-						drawBlankTex(true);
-					}
-				}
-				for (; txID <= g_maxTexIdx; ++txID)
-				{
-					glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-					glChk(glBindTexture(GL_TEXTURE_2D, 0));
-				}
+				setTextures(shader, mesh.textures, bResetTint);
 			}
 		}
 		gl::draw(mesh.hVerts);
 		if (bResetTint)
 		{
-			gfx::shading::setV4(shader, "tint", Colour::White);
+			gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::White);
 		}
 #if defined(DEBUGGING)
 		mesh.drawFlags.flags.reset();
@@ -492,92 +510,40 @@ void gfx::drawMesh(const HMesh& mesh, const HShader& shader)
 	}
 }
 
-void gfx::drawMeshes(const HMesh& mesh, const std::vector<HTexture>& textures, const std::vector<glm::mat4>& m,
-					 const std::vector<glm::mat4>& nm, const HShader& shader)
+void gfx::drawMeshes(const HMesh& mesh, const std::vector<HTexture>& textures, const std::vector<ModelMats>& mats, const HShader& shader)
 {
 	if (context::exists())
 	{
 		bool bResetTint = false;
+		const auto& u = env::g_config.uniforms;
 		ASSERT(shader.glID.handle > 0, "shader is null!");
-		ASSERT(nm.empty() || nm.size() == m.size(), "Matrices count mismatch!");
 		{
 			Lock lock(context::g_glMutex);
-			s32 txID = 0;
-			u32 diffuse = 0;
-			u32 specular = 0;
-			auto drawBlankTex = [&](bool bMagenta) {
-				if (bMagenta)
-				{
-					gfx::shading::setV4(shader, "tint", Colour::Magenta);
-					bResetTint = true;
-				}
-				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-				glChk(glBindTexture(GL_TEXTURE_2D, 1));
-			};
-			for (const auto& texture : textures)
+			gfx::shading::use(shader);
+			gfx::shading::setF32(shader, u.shininess, mesh.shininess);
+#if defined(DEBUGGING)
+			if (mesh.drawFlags.isSet((s32)DrawFlag::Blank) || mesh.drawFlags.isSet((s32)DrawFlag::BlankMagenta))
 			{
-				std::string id = "material.";
-				std::string number;
-				bool bContinue = false;
-				if (txID > g_maxTexIdx)
-				{
-					g_maxTexIdx = txID;
-				}
-				switch (texture.type)
-				{
-				case TexType::Diffuse:
-				{
-					id += "diffuse";
-					number = std::to_string(++diffuse);
-					break;
-				}
-				case TexType::Specular:
-				{
-					id += "specular";
-					number = std::to_string(++specular);
-					break;
-				}
-				default:
-				{
-					if (txID == 0)
-					{
-						drawBlankTex(true);
-					}
-					bContinue = true;
-					break;
-				}
-				}
-				if (bContinue)
-				{
-					continue;
-				}
-				id += number;
-				if (texture.glID.handle > 0)
-				{
-					glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-					glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
-					gfx::shading::setS32(shader, id, txID++);
-				}
-				else
-				{
-					drawBlankTex(true);
-				}
+				setBlankTex(shader, 0, mesh.drawFlags.isSet((s32)DrawFlag::BlankMagenta), bResetTint);
 			}
-			for (; txID <= g_maxTexIdx; ++txID)
+			else
+#endif
 			{
-				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-				glChk(glBindTexture(GL_TEXTURE_2D, 0));
+				setTextures(shader, textures, bResetTint);
 			}
 		}
-		for (size_t i = 0; i < m.size(); ++i)
+		for (const auto& mat : mats)
 		{
-			gfx::shading::setModelMats(shader, m[i], nm.empty() ? m[i] : nm[i]);
+			gfx::shading::setModelMats(shader, mat);
 			gl::draw(mesh.hVerts);
 		}
 		if (bResetTint)
 		{
-			gfx::shading::setV4(shader, "tint", Colour::White);
+			gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::White);
 		}
+#if defined(DEBUGGING)
+		mesh.drawFlags.flags.reset();
+#endif
 	}
 }
 

@@ -19,12 +19,12 @@ layout (std140) uniform Matrices
 };
 
 uniform mat4 model;
-uniform mat4 normalModel;
+uniform mat4 normals;
 
 void main()
 {
 	gl_Position = projection * view * model * vec4(aPos, 1.0);
-	normal = mat3(normalModel) * aNormal;
+	normal = mat3(normals) * aNormal;
 	fragPos = vec3(model * vec4(aPos, 1.0f));
 	viewPos = vec3(viewPosition);
 	texCoord = aTexCoord;

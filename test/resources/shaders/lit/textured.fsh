@@ -14,8 +14,8 @@ in vec2 texCoord;
 
 struct Material
 {
-	sampler2D diffuse1;
-	sampler2D specular1;
+	sampler2D diffuse0;
+	sampler2D specular0;
 	float shininess;
 };
 
@@ -40,16 +40,30 @@ layout (std140) uniform Lights
 {
 	PtLight ptLights[MAX_PT_LIGHTS];
 	DirLight dirLights[MAX_DIR_LIGHTS];
-	int ptLightCount;
-	int dirLightCount;
 };
 
 uniform Material material;
 #ifdef GL_ES
 	uniform vec4 tint;
 #else
-	uniform vec4 tint = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	uniform vec4 tint = vec4(1.0);
 #endif
+
+vec3 calcDirColour(DirLight light, sampler2D diffuseTex, sampler2D specularTex, float diff, float spec)
+{
+	vec3 ambient  = vec3(light.ambient) * vec3(texture(diffuseTex, texCoord));
+	vec3 diffuse  = vec3(light.diffuse) * diff * vec3(texture(diffuseTex, texCoord));
+	vec3 specular = vec3(light.specular) * spec * vec3(texture(specularTex, texCoord));
+	return max(ambient + diffuse, 0.0) + max(specular, 0.0);
+}
+
+vec3 calcPtColour(PtLight light, sampler2D diffuseTex, sampler2D specularTex, float diff, float spec, float attenuation)
+{
+	vec3 ambient = vec3(light.ambient) * vec3(texture(diffuseTex, texCoord)) * attenuation;
+	vec3 diffuse = vec3(light.diffuse) * (diff * vec3(texture(diffuseTex, texCoord))) * attenuation;
+	vec3 specular = vec3(light.specular) * (spec * vec3(texture(specularTex, texCoord))) * attenuation;
+	return max(ambient + diffuse, 0.0) + max(specular, 0.0);
+}
 
 vec3 calcDirLight(DirLight light, vec3 norm, vec3 toView)
 {
@@ -57,10 +71,7 @@ vec3 calcDirLight(DirLight light, vec3 norm, vec3 toView)
 	vec3 reflectDir = reflect(-nToLight, norm);
 	float diff = max(dot(norm, nToLight), 0.0);
 	float spec = pow(max(dot(toView, reflectDir), 0.0), material.shininess);
-	vec3 ambient  = vec3(light.ambient) * vec3(texture(material.diffuse1, texCoord));
-	vec3 diffuse  = vec3(light.diffuse) * diff * vec3(texture(material.diffuse1, texCoord));
-	vec3 specular = vec3(light.specular) * spec * vec3(texture(material.specular1, texCoord));
-	return ambient + diffuse + specular;
+	return calcDirColour(light, material.diffuse0, material.specular0, diff, spec);
 }
 
 vec3 calcPtLight(PtLight light, vec3 norm, vec3 fragPos, vec3 toView)
@@ -72,10 +83,7 @@ vec3 calcPtLight(PtLight light, vec3 norm, vec3 fragPos, vec3 toView)
 	float attenuation = 1.0 / (light.clq.x + distance * light.clq.y + distance * distance * light.clq.z);
 	float diff = max(dot(norm, nToLight), 0.0);
 	float spec = pow(max(dot(toView, reflectDir), 0.0), material.shininess);
-	vec3 ambient = vec3(light.ambient) * vec3(texture(material.diffuse1, texCoord)) * attenuation;
-	vec3 diffuse = vec3(light.diffuse) * (diff * vec3(texture(material.diffuse1, texCoord))) * attenuation;
-	vec3 specular = vec3(light.specular) * (spec * vec3(texture(material.specular1, texCoord))) * attenuation;
-	return ambient + diffuse + specular;
+	return calcPtColour(light, material.diffuse0, material.specular0, diff, spec, attenuation);
 }
 
 void main()
@@ -84,11 +92,11 @@ void main()
 	vec3 toView = normalize(viewPos - fragPos);
 
 	vec3 result = vec3(0.0f);
-	for (int i = 0; i < dirLightCount; i++)
+	for (int i = 0; i < MAX_DIR_LIGHTS; i++)
 	{
 		result += calcDirLight(dirLights[i], norm, toView);
 	}
-	for (int i = 0; i < ptLightCount; ++i)
+	for (int i = 0; i < MAX_PT_LIGHTS; ++i)
 	{
 		result += calcPtLight(ptLights[i], norm, fragPos, toView);
 	}

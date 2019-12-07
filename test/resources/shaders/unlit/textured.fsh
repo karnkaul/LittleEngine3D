@@ -8,18 +8,20 @@ in vec2 texCoord;
 
 struct Material
 {
-	sampler2D diffuse1;
+	sampler2D diffuse0;
 };
 
 uniform Material material;
+
 #ifdef GL_ES
 	uniform vec4 tint;
 #else
-	uniform vec4 tint = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	uniform vec4 tint = vec4(1.0);
 #endif
 
 void main()
 {
-	vec4 texColour = texture(material.diffuse1, texCoord);
+	vec4 texColour = vec4(0.0);
+	texColour += max(texture(material.diffuse0, texCoord), 0.0);
 	fragColour = texColour * tint;
 }

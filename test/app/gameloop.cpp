@@ -79,9 +79,11 @@ void runTest()
 	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")), noTexNoLit);
 	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")), noLit);
 	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")), noLit);
-	gfx::shading::setV4(litTinted, "tint", Colour::Yellow);
+	gfx::shading::setV4(litTinted, env::g_config.uniforms.tint, Colour::Yellow);
 
+#if defined(DEBUGGING)
 	Time _t = Time::now();
+#endif
 	std::vector<u8> l, r, u, d, f, b;
 	std::vector<JobHandle> jobHandles;
 	Skybox skybox;
@@ -104,14 +106,14 @@ void runTest()
 		}
 		skybox = resources::createSkybox("skybox", {r, l, u, d, f, b});
 	}
+#if defined(DEBUGGING)
 	Time _dt = Time::now() - _t;
 	LOG_D("Skybox time: %.2fms", _dt.assecs() * 1000);
+#endif
 
 	glm::vec3 pl0Pos(0.0f, 0.0f, 2.0f);
 	glm::vec3 pl1Pos(-4.0f, 2.0f, 2.0f);
 	uboData::Lights lights;
-	lights.ptLightCount = 2;
-	lights.dirLightCount = 1;
 	lights.ptLights[0].position = glm::vec4(pl0Pos, 0.0f);
 	lights.ptLights[1].position = glm::vec4(pl1Pos, 0.0f);
 	lights.dirLights[0].direction = glm::vec4(-1.0f, -1.0f, 1.0f, 0.0f);
@@ -121,12 +123,12 @@ void runTest()
 	lights.ptLights[0].specular = lights.ptLights[1].specular = lights.dirLights[0].specular = glm::vec4(1.0f);
 
 	auto drawLight = [](const glm::vec3& pos, HVerts light) {
-		glm::mat4 m(1.0f);
-		m = glm::translate(m, pos);
-		m = glm::scale(m, glm::vec3(0.1f));
+		ModelMats mats;
+		mats.model = glm::translate(mats.model, pos);
+		mats.oNormals = mats.model = glm::scale(mats.model, glm::vec3(0.1f));
 		const auto& tinted = resources::getShader("unlit/tinted");
-		gfx::shading::setV4(tinted, "tint", Colour::White);
-		gfx::shading::setModelMats(tinted, m, m);
+		gfx::shading::setV4(tinted, env::g_config.uniforms.tint, Colour::White);
+		gfx::shading::setModelMats(tinted, mats);
 		gfx::gl::draw(light);
 	};
 
@@ -136,6 +138,7 @@ void runTest()
 	quadMesh.textures = {resources::getTexture("awesomeface")};
 	// quad.m_textures = {bad};
 	cubeMesh.textures = {resources::getTexture("container2"), resources::getTexture("container2_specular")};
+	//cubeMesh.textures = {resources::getTexture("container2")};
 	HMesh blankCubeMesh = cubeMesh;
 	blankCubeMesh.textures.clear();
 	Model cube;
@@ -250,27 +253,26 @@ void runTest()
 
 		prop0.render();
 		prop1.render();
-		std::vector<glm::mat4> m, nm;
+		std::vector<ModelMats> m(3, ModelMats());
 		for (size_t i = 0; i < 3; ++i)
 		{
 			const auto& prop = props[i];
 			// prop.setShader(resources::getShader("lit/textured"));
-			m.push_back(prop.m_transform.model());
-			nm.push_back(prop.m_transform.normalModel());
+			m[i].model = prop.m_transform.model();
+			m[i].oNormals = prop.m_transform.normalModel();
 			// prop.render();
 		}
-		gfx::shading::setV4(litTextured, "tint", Colour::White);
+		gfx::shading::setV4(litTextured, env::g_config.uniforms.tint, Colour::White);
 		const auto& cube = debug::debugCube();
-		gfx::drawMeshes(cube, cube.textures, m, nm, litTextured);
-		m.clear();
-		nm.clear();
+		gfx::drawMeshes(cube, cube.textures, m, litTextured);
+		m = std::vector<ModelMats>(props.size() - 3, ModelMats());
 		for (size_t i = 3; i < props.size(); ++i)
 		{
 			const auto& prop = props[i];
-			m.push_back(prop.m_transform.model());
-			nm.push_back(prop.m_transform.normalModel());
+			m[i - 3].model = prop.m_transform.model();
+			m[i - 3].oNormals = prop.m_transform.normalModel();
 		}
-		gfx::drawMeshes(cube, cube.textures, m, nm, litTinted);
+		gfx::drawMeshes(cube, cube.textures, m, litTinted);
 		drawLight(pl0Pos, light0);
 		drawLight(pl1Pos, light1);
 		quadProp.render();
@@ -282,7 +284,7 @@ void runTest()
 		// tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		// tl.space = tr.space = bl.space = br.space = uiSpace;
 		// tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
-		// tl.pos = {-tr.pos.x, tr.pos.y};
+		// tl.pos = {-tr.pos.x + 200.0f, tr.pos.y - 200.0f};
 		// bl.pos = {-tr.pos.x, -tr.pos.y};
 		// br.pos = {tr.pos.x, -tr.pos.y};
 		// debug::draw2DQuads({tl, tr, bl, br});

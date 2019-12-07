@@ -10,6 +10,9 @@
 #if defined(DEBUGGING)
 #include "le3d/game/utils.hpp"
 #endif
+#if defined(__arm__)
+#include "le3d/env/env.hpp"
+#endif
 
 namespace le
 {
@@ -43,7 +46,7 @@ void Prop::render()
 		ASSERT(m_shader.glID.handle > 0, "null shader!");
 #if defined(__arm__)
 		// Compensate for lack of uniform initialisation in GLES
-		gfx::shading::setV4(m_shader, "tint", Colour::White);
+		gfx::shading::setV4(m_shader, env::g_config.uniforms.tint, Colour::White);
 #endif
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
@@ -51,7 +54,7 @@ void Prop::render()
 			pModel->m_renderFlags.set((s32)DrawFlag::BlankMagenta, true);
 		}
 #endif
-		if (!m_shader.flags.isSet((s32)gfx::shading::Flag::Unlit))
+		if (!m_shader.flags.isSet((s32)gfx::shading::Flag::Unlit) && m_shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
 		{
 			gfx::shading::setV3(m_shader, "material.ambient", m_untexturedTint.ambient);
 			gfx::shading::setV3(m_shader, "material.diffuse", m_untexturedTint.diffuse);
@@ -63,7 +66,10 @@ void Prop::render()
 			tint = pModel->m_tint;
 			pModel->m_tint = *m_oTintOverride;
 		}
-		pModel->render(m_shader, m_transform.model(), m_transform.normalModel());
+		ModelMats mats;
+		mats.model = m_transform.model();
+		mats.oNormals = m_transform.normalModel();
+		pModel->render(m_shader, mats);
 		if (m_oTintOverride)
 		{
 			pModel->m_tint = tint;
@@ -81,12 +87,16 @@ void Prop::render()
 		glm::mat4 mZ = m_transform.model();
 		glm::mat4 mX = glm::rotate(mZ, glm::radians(90.0f), g_nUp);
 		glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);
+		ModelMats mats;
+		mats.model = mX;
 		m_pArrow->m_tint = Colour::Red;
-		m_pArrow->render(tinted, mX);
+		m_pArrow->render(tinted, mats);
+		mats.model = mY;
 		m_pArrow->m_tint = Colour::Green;
-		m_pArrow->render(tinted, mY);
+		m_pArrow->render(tinted, mats);
+		mats.model = mZ;
 		m_pArrow->m_tint = Colour::Blue;
-		m_pArrow->render(tinted, mZ);
+		m_pArrow->render(tinted, mats);
 		glEnable(GL_DEPTH_TEST);
 	}
 #endif

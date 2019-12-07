@@ -12,7 +12,7 @@ uniform sampler2D tex;
 #ifdef GL_ES
 	uniform vec4 tint;
 #else
-	uniform vec4 tint = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	uniform vec4 tint = vec4(1.0);
 #endif
 
 void main()

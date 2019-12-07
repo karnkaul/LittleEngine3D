@@ -1,5 +1,6 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/gfx/model.hpp"
 #include "le3d/gfx/shading.hpp"
 #include "le3d/game/resources.hpp"
@@ -27,24 +28,30 @@ void Model::setupModel(std::string name)
 	LOG_D("[%s] %s setup", m_name.data(), m_type.data());
 }
 
-void Model::render(const HShader& shader, const glm::mat4& model, std::optional<glm::mat4> normals /* = std::nullopt */)
+void Model::render(const HShader& shader, const ModelMats& mats)
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
 	for (auto& fixture : m_fixtures)
 	{
 		ASSERT(fixture.pMesh, "Mesh is null!");
-		gfx::shading::setV4(shader, "tint", m_tint);
+		gfx::shading::setV4(shader, env::g_config.uniforms.tint, m_tint);
 #if defined(DEBUGGING)
 		fixture.pMesh->drawFlags = m_renderFlags;
 #endif
-		glm::mat4 m = model;
-		glm::mat4 nm = normals ? *normals : model;
 		if (fixture.oWorld)
 		{
-			m *= *fixture.oWorld;
-			nm *= *fixture.oWorld;
+			ModelMats matsCopy = mats;
+			matsCopy.model *= *fixture.oWorld;
+			if (matsCopy.oNormals)
+			{
+				*matsCopy.oNormals *= *fixture.oWorld;
+			}
+			gfx::shading::setModelMats(shader, matsCopy);
 		}
-		gfx::shading::setModelMats(shader, m, nm);
+		else
+		{
+			gfx::shading::setModelMats(shader, mats);
+		}
 		gfx::drawMesh(*fixture.pMesh, shader);
 #if defined(DEBUGGING)
 		m_renderFlags.flags.reset();

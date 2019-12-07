@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include "le3d/thirdParty.hpp"
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
@@ -130,6 +131,12 @@ struct LitTint final
 	glm::vec3 ambient = glm::vec3(1.0f);
 	glm::vec3 diffuse = glm::vec3(1.0f);
 	glm::vec3 specular = glm::vec3(1.0f);
+};
+
+struct ModelMats final
+{
+	glm::mat4 model = glm::mat4(1.0f);
+	std::optional<glm::mat4> oNormals = std::nullopt;
 };
 #pragma endregion
 } // namespace le

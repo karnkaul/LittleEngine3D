@@ -22,7 +22,7 @@ bool setV3(const HShader& shader, std::string_view id, const glm::vec3& val);
 bool setV4(const HShader& shader, std::string_view id, const glm::vec4& val);
 bool setV4(const HShader& shader, std::string_view id, Colour colour);
 
-void setModelMats(const HShader& shader, const glm::mat4& model, const glm::mat4& normals);
+void setModelMats(const HShader& shader, const ModelMats& mats);
 
 void bindUBO(const HShader& shader, std::string_view id, const HUBO& ubo);
 void setUBO(const HUBO& ubo, s64 offset, s64 size, const void* pData);

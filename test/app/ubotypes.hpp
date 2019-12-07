@@ -39,8 +39,6 @@ struct Lights final
 
 	std::array<Pt, MAX_PT_LIGHTS> ptLights;
 	std::array<Dir, MAX_DIR_LIGHTS> dirLights;
-	s32 ptLightCount = 0;
-	s32 dirLightCount = 0;
 };
 
 struct UI final

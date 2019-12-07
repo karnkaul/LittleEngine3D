@@ -42,7 +42,7 @@ public:
 public:
 	void setupModel(std::string name);
 	void addFixture(const HMesh& mesh, std::optional<glm::mat4> model = std::nullopt);
-	void render(const HShader& shader, const glm::mat4& model, std::optional<glm::mat4> normals = std::nullopt);
+	void render(const HShader& shader, const ModelMats& mats);
 
 	u32 meshCount() const;
 	void release();

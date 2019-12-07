@@ -2,6 +2,7 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/game/resources.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/game/utils.hpp"
@@ -36,15 +37,16 @@ void debug::draw2DQuads(std::vector<Quad2D> quads)
 		ui.projection = glm::ortho(-uiw * 0.5f, uiw * 0.5f, -uih * 0.5f, uih * 0.5f, 0.0f, 2.0f);
 		glm::mat4 world(1.0f);
 		const HShader& shader = quad.pTexture ? textured : tinted;
+		ModelMats mats;
 		world = glm::translate(world, glm::vec3(quad.pos.x, quad.pos.y, 0.0f));
-		world = glm::scale(world, glm::vec3(quad.size.x, quad.size.y, 1.0f));
+		mats.model = glm::scale(world, glm::vec3(quad.size.x, quad.size.y, 1.0f));
 		if (quad.pTexture)
 		{
 			quadMesh.textures = {*quad.pTexture};
 		}
 		gfx::shading::setUBO<uboData::UI>(resources::getUBO("UI"), ui);
-		gfx::shading::setModelMats(shader, world, world);
-		gfx::shading::setV4(shader, "tint", quad.tint);
+		gfx::shading::setModelMats(shader, mats);
+		gfx::shading::setV4(shader, env::g_config.uniforms.tint, quad.tint);
 		if (quad.oTexCoords)
 		{
 			const glm::vec4& uv = *quad.oTexCoords;
@@ -102,8 +104,15 @@ void debug::renderString(const Text2D& text, const HFont& hFont)
 	uboData::UI ui;
 	ui.projection = glm::ortho(-uiw * 0.5f, uiw * 0.5f, -uih * 0.5f, uih * 0.5f, 0.0f, 2.0f);
 	gfx::shading::setUBO<uboData::UI>(resources::getUBO("UI"), ui);
-	gfx::shading::setS32(shader, "material.diffuse1", 0);
-	gfx::shading::setV4(shader, "tint", text.colour);
+	const auto& u = env::g_config.uniforms;
+	std::string matID;
+	matID.reserve(128);
+	matID += u.material;
+	matID += ".";
+	matID += u.diffuseTexPrefix;
+	matID += "[0]";
+	gfx::shading::setS32(shader, matID, 0);
+	gfx::shading::setV4(shader, env::g_config.uniforms.tint, text.colour);
 	glChk(glActiveTexture(GL_TEXTURE0));
 	glChk(glBindTexture(GL_TEXTURE_2D, hFont.sheet.glID.handle));
 	glBindVertexArray(hFont.quad.hVerts.vao.handle);
@@ -126,9 +135,10 @@ void debug::renderString(const Text2D& text, const HFont& hFont)
 			glm::vec4 uv = {s, t, s + duv.x, t + duv.y};
 			glm::mat4 world(1.0f);
 			glm::vec3 p = glm::vec3(topLeft.x, topLeft.y, 0.0f) + glm::vec3(cell.x * idx, 0.0f, 0.0f);
+			ModelMats mats;
 			world = glm::translate(world, p);
-			world = glm::scale(world, glm::vec3(text.height, text.height, 1.0f));
-			gfx::shading::setModelMats(shader, world, world);
+			mats.model = glm::scale(world, glm::vec3(text.height, text.height, 1.0f));
+			gfx::shading::setModelMats(shader, mats);
 			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.p, uv.q, uv.s, uv.q, uv.s, uv.t};
 			auto sf = sizeof(f32);
 			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data);
