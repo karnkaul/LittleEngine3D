@@ -109,7 +109,7 @@ Fixed Fixed::arcTan() const
 std::string Fixed::toStr() const
 {
 	std::array<char, 16> buf;
-	SPRINTF(buf.data(), buf.size(), "%.2f", toF32());
+	std::snprintf(buf.data(), buf.size(), "%.2f", toF32());
 	return std::string(buf.data());
 }
 } // namespace le

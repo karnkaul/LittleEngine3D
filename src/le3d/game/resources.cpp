@@ -4,6 +4,7 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/core/log.hpp"
+#include "le3d/core/utils.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/shading.hpp"
@@ -32,7 +33,6 @@ std::unordered_map<std::string, HFont> g_fontMap;
 std::unordered_map<std::string, HUBO> g_uboMap;
 
 HShader g_nullShader;
-HTexture g_nullTexture;
 HFont g_nullFont;
 HUBO g_nullUBO;
 } // namespace
@@ -54,17 +54,19 @@ void FontAtlasData::deserialise(std::string json)
 HUBO& resources::addUBO(std::string id, s64 size, u32 bindingPoint, gfx::Draw type)
 {
 	ASSERT(g_uboMap.find(id) == g_uboMap.end(), "UBO ID already loaded");
-	HUBO ubo = gfx::gl::genUBO(size, bindingPoint, type);
-	if (ubo.ubo.handle > 0)
+	HUBO hUBO = gfx::gl::genUBO(size, bindingPoint, type);
+	if (hUBO.ubo.handle > 0)
 	{
-		g_uboMap.emplace(id, ubo);
-		LOG_I("== [%s] UBO (%d) added for future shaders", id.data(), ubo.bindingPoint);
+		g_uboMap.emplace(id, hUBO);
+		auto size = utils::friendlySize(hUBO.bytes);
+		LOG_I("== [%s] [%.1f%s] UBO (%d) added for future shaders", id.data(), size.first, size.second.data(), hUBO.bindingPoint);
 		return g_uboMap[id];
 	}
 	return g_nullUBO;
 }
 
-HUBO& resources::getUBO(const std::string& id)
+template <>
+HUBO& resources::get<HUBO>(const std::string& id)
 {
 	auto search = g_uboMap.find(id);
 	if (search != g_uboMap.end())
@@ -72,6 +74,54 @@ HUBO& resources::getUBO(const std::string& id)
 		return search->second;
 	}
 	return g_nullUBO;
+}
+
+template <>
+bool resources::isLoaded<HUBO>(const std::string& id)
+{
+	return g_uboMap.find(id) != g_uboMap.end();
+}
+
+template <>
+bool resources::unload<HUBO>(HUBO& hUBO)
+{
+	auto search = g_uboMap.begin();
+	for (; search != g_uboMap.end(); ++search)
+	{
+		if (search->second.ubo.handle == hUBO.ubo.handle)
+		{
+			break;
+		}
+	}
+	if (search != g_uboMap.end())
+	{
+		std::string id = search->first;
+		g_uboMap.erase(search);
+		auto size = utils::friendlySize(hUBO.bytes);
+		LOG_I("-- [%s] [%.1f%s] UBO (%d) destroyed", id.data(), size.first, size.second.data(), hUBO.bindingPoint);
+		gfx::gl::releaseUBO(hUBO);
+		return true;
+	}
+	return false;
+}
+
+template <>
+void resources::unloadAll<HUBO>()
+{
+	for (auto& kvp : g_uboMap)
+	{
+		auto& hUBO = kvp.second;
+		auto size = utils::friendlySize(hUBO.bytes);
+		LOG_I("-- [%s] [%.1f%s] UBO (%d) destroyed", kvp.first.data(), size.first, size.second.data(), hUBO.bindingPoint);
+		gfx::gl::releaseUBO(hUBO);
+	}
+	g_uboMap.clear();
+}
+
+template <>
+u32 resources::count<HUBO>()
+{
+	return (u32)g_uboMap.size();
 }
 
 HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
@@ -91,22 +141,25 @@ HShader& resources::loadShader(std::string id, std::string_view vertCode, std::s
 	return g_nullShader;
 }
 
-HShader& resources::getShader(const std::string& id)
+template <>
+HShader& resources::get<HShader>(const std::string& id)
 {
-	ASSERT(isShaderLoaded(id), "Shader not loaded!");
-	if (isShaderLoaded(id))
+	ASSERT(isLoaded<HShader>(id), "Shader not loaded!");
+	if (isLoaded<HShader>(id))
 	{
 		return g_shaderMap[id];
 	}
 	return g_nullShader;
 }
 
-bool resources::isShaderLoaded(const std::string& id)
+template <>
+bool resources::isLoaded<HShader>(const std::string& id)
 {
 	return g_shaderMap.find(id) != g_shaderMap.end();
 }
 
-bool resources::unload(HShader& shader)
+template <>
+bool resources::unload<HShader>(HShader& shader)
 {
 	auto search = g_shaderMap.find(shader.id);
 	if (search != g_shaderMap.end())
@@ -117,7 +170,8 @@ bool resources::unload(HShader& shader)
 	return false;
 }
 
-void resources::unloadShaders()
+template <>
+void resources::unloadAll<HShader>()
 {
 	for (auto& kvp : g_shaderMap)
 	{
@@ -126,7 +180,8 @@ void resources::unloadShaders()
 	g_shaderMap.clear();
 }
 
-u32 resources::shaderCount()
+template <>
+u32 resources::count<HShader>()
 {
 	return (u32)g_shaderMap.size();
 }
@@ -136,6 +191,7 @@ HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> b
 	if (g_blankTex1px.glID <= 0)
 	{
 		g_blankTex1px = gfx::gl::genTexture("blankTex", type, blank_1pxBytes, false);
+		gfx::g_blankTexID = g_blankTex1px.glID;
 	}
 	ASSERT(g_textureMap.find(id) == g_textureMap.end(), "Texture already loaded!");
 	HTexture texture = gfx::gl::genTexture(id, type, std::move(bytes), bClampToEdge);
@@ -145,17 +201,56 @@ HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> b
 		return g_textureMap[id];
 	}
 	ASSERT(false, "Failed to load texture!");
-	return g_nullTexture;
+	return g_blankTex1px;
 }
 
-HTexture& resources::getTexture(const std::string& id)
+template <>
+HTexture& resources::get<HTexture>(const std::string& id)
 {
-	ASSERT(isTextureLoaded(id), "Texture not loaded!");
-	if (isTextureLoaded(id))
+	ASSERT(isLoaded<HTexture>(id), "Texture not loaded!");
+	if (isLoaded<HTexture>(id))
 	{
 		return g_textureMap[id];
 	}
-	return g_nullTexture;
+	return g_blankTex1px;
+}
+
+template <>
+bool resources::isLoaded<HTexture>(const std::string& id)
+{
+	return g_textureMap.find(id) != g_textureMap.end();
+}
+
+template <>
+bool resources::unload<HTexture>(HTexture& texture)
+{
+	auto search = g_textureMap.find(texture.id);
+	if (search != g_textureMap.end())
+	{
+		gfx::gl::releaseTexture({&search->second});
+		g_textureMap.erase(search);
+		return true;
+	}
+	return false;
+}
+
+template <>
+void resources::unloadAll<HTexture>()
+{
+	std::vector<HTexture*> toDel;
+	toDel.reserve(g_textureMap.size());
+	for (auto& kvp : g_textureMap)
+	{
+		toDel.push_back(&kvp.second);
+	}
+	gfx::gl::releaseTexture(std::move(toDel));
+	g_textureMap.clear();
+}
+
+template <>
+u32 resources::count<HTexture>()
+{
+	return (u32)g_textureMap.size();
 }
 
 Skybox resources::createSkybox(std::string name, std::array<std::vector<u8>, 6> rludfb)
@@ -176,44 +271,6 @@ void resources::destroySkybox(Skybox& skybox)
 	skybox = Skybox();
 }
 
-bool resources::isTextureLoaded(const std::string& id)
-{
-	return g_textureMap.find(id) != g_textureMap.end();
-}
-
-bool resources::unload(HTexture& texture)
-{
-	auto search = g_textureMap.find(texture.id);
-	if (search != g_textureMap.end())
-	{
-		gfx::gl::releaseTexture({&search->second});
-		g_textureMap.erase(search);
-		return true;
-	}
-	return false;
-}
-
-void resources::unloadTextures(bool bUnloadBlankTex)
-{
-	std::vector<HTexture*> toDel;
-	toDel.reserve(g_textureMap.size());
-	for (auto& kvp : g_textureMap)
-	{
-		toDel.push_back(&kvp.second);
-	}
-	if (bUnloadBlankTex && g_blankTex1px.glID > 0)
-	{
-		toDel.push_back(&g_blankTex1px);
-	}
-	gfx::gl::releaseTexture(std::move(toDel));
-	g_textureMap.clear();
-}
-
-u32 resources::textureCount()
-{
-	return (u32)g_textureMap.size();
-}
-
 HFont& resources::loadFont(std::string id, FontAtlasData atlas)
 {
 	ASSERT(g_fontMap.find(id) == g_fontMap.end(), "Font already loaded!");
@@ -229,7 +286,8 @@ HFont& resources::loadFont(std::string id, FontAtlasData atlas)
 	return g_nullFont;
 }
 
-HFont& resources::getFont(const std::string& id)
+template <>
+HFont& resources::get<HFont>(const std::string& id)
 {
 	auto search = g_fontMap.find(id);
 	if (search != g_fontMap.end())
@@ -239,12 +297,14 @@ HFont& resources::getFont(const std::string& id)
 	return g_nullFont;
 }
 
-bool resources::isFontLoaded(const std::string& id)
+template <>
+bool resources::isLoaded<HFont>(const std::string& id)
 {
 	return g_fontMap.find(id) != g_fontMap.end();
 }
 
-bool resources::unload(HFont& font)
+template <>
+bool resources::unload<HFont>(HFont& font)
 {
 	auto search = g_fontMap.find(font.name);
 	if (search != g_fontMap.end())
@@ -256,7 +316,8 @@ bool resources::unload(HFont& font)
 	return false;
 }
 
-void resources::unloadFonts()
+template <>
+void resources::unloadAll<HFont>()
 {
 	std::vector<HFont*> fonts;
 	for (auto& kvp : g_fontMap)
@@ -267,7 +328,8 @@ void resources::unloadFonts()
 	g_fontMap.clear();
 }
 
-u32 resources::fontCount()
+template <>
+u32 resources::count<HFont>()
 {
 	return (u32)g_fontMap.size();
 }
@@ -275,14 +337,13 @@ u32 resources::fontCount()
 void resources::unloadAll()
 {
 	debug::unloadAll();
-	unloadFonts();
-	unloadTextures(true);
-	for (auto& kvp : g_uboMap)
+	unloadAll<HFont>();
+	unloadAll<HTexture>();
+	if (g_blankTex1px.glID > 0)
 	{
-		LOG_I("-- [%s] UBO (%d) destroyed", kvp.first.data(), kvp.second.bindingPoint);
-		gfx::gl::releaseUBO(kvp.second);
+		gfx::gl::releaseTexture({&g_blankTex1px});
 	}
-	g_uboMap.clear();
-	unloadShaders();
+	unloadAll<HUBO>();
+	unloadAll<HShader>();
 }
 } // namespace le

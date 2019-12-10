@@ -14,6 +14,8 @@ enum class Draw
 	Static
 };
 
+extern GLObj g_blankTexID;
+
 namespace gl
 {
 HTexture genTexture(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge);

@@ -126,19 +126,18 @@ void runTest()
 		ModelMats mats;
 		mats.model = glm::translate(mats.model, pos);
 		mats.oNormals = mats.model = glm::scale(mats.model, glm::vec3(0.1f));
-		const auto& tinted = resources::getShader("unlit/tinted");
+		const auto& tinted = resources::get<HShader>("unlit/tinted");
 		gfx::shading::setV4(tinted, env::g_config.uniforms.tint, Colour::White);
 		gfx::shading::setModelMats(tinted, mats);
 		gfx::gl::draw(light);
 	};
 
-	HTexture bad;
 	auto& cubeMesh = debug::debugCube();
 	auto& quadMesh = debug::debugQuad();
-	quadMesh.textures = {resources::getTexture("awesomeface")};
-	// quad.m_textures = {bad};
-	cubeMesh.textures = {resources::getTexture("container2"), resources::getTexture("container2_specular")};
-	//cubeMesh.textures = {resources::getTexture("container2")};
+	quadMesh.textures = {resources::get<HTexture>("awesomeface")};
+	// quadMesh.textures = {bad};
+	cubeMesh.textures = {resources::get<HTexture>("container2"), resources::get<HTexture>("container2_specular")};
+	// cubeMesh.textures = {resources::getTexture("container2")};
 	HMesh blankCubeMesh = cubeMesh;
 	blankCubeMesh.textures.clear();
 	Model cube;
@@ -167,7 +166,7 @@ void runTest()
 	prop0.addModel(cubeStack);
 	prop0.m_transform.setPosition({2.0f, 2.5f, -2.0f});
 	prop0.m_transform.setScale(2.0f);
-	prop0.setShader(resources::getShader("lit/textured"));
+	prop0.setShader(resources::get<HShader>("lit/textured"));
 
 	Prop prop1;
 	prop1.setup("prop1");
@@ -175,13 +174,13 @@ void runTest()
 	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
 	prop1.m_transform.setScale(0.25f);
 	prop0.m_transform.setParent(&prop1.m_transform);
-	prop1.setShader(resources::getShader("lit/tinted"));
+	prop1.setShader(resources::get<HShader>("lit/tinted"));
 	prop1.m_oTintOverride = Colour::Yellow;
 
 	Prop quadProp;
 	quadProp.setup("quad");
 	quadProp.addModel(quad);
-	quadProp.setShader(resources::getShader("unlit/textured"));
+	quadProp.setShader(resources::get<HShader>("unlit/textured"));
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
 	HVerts light0 = gfx::tutorial::newLight(cubeMesh.hVerts);
@@ -195,7 +194,7 @@ void runTest()
 		Model& m = i < 3 ? cube : blankCube;
 		prop.addModel(m);
 		std::string s = i < 3 ? "lit/textured" : "lit/tinted";
-		prop.setShader(resources::getShader(s));
+		prop.setShader(resources::get<HShader>(s));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -249,7 +248,7 @@ void runTest()
 		uboData::Matrices mats{camera.view(), camera.perspectiveProj(), glm::vec4(camera.m_position, 0.0f)};
 		gfx::shading::setUBO<uboData::Matrices>(hMatricesUBO, mats);
 
-		renderSkybox(skybox, resources::getShader("unlit/skybox"));
+		renderSkybox(skybox, resources::get<HShader>("unlit/skybox"));
 
 		prop0.render();
 		prop1.render();
@@ -257,7 +256,7 @@ void runTest()
 		for (size_t i = 0; i < 3; ++i)
 		{
 			const auto& prop = props[i];
-			// prop.setShader(resources::getShader("lit/textured"));
+			// prop.setShader(resources::get<HShader>("lit/textured"));
 			m[i].model = prop.m_transform.model();
 			m[i].oNormals = prop.m_transform.normalModel();
 			// prop.render();

@@ -18,8 +18,8 @@ Text2D g_fpsStyle;
 
 void debug::draw2DQuads(std::vector<Quad2D> quads)
 {
-	const HShader& textured = resources::getShader("ui/textured");
-	const HShader& tinted = resources::getShader("ui/tinted");
+	const HShader& textured = resources::get<HShader>("ui/textured");
+	const HShader& tinted = resources::get<HShader>("ui/tinted");
 	const glm::vec2 s = context::size();
 	const f32 ar = s.x / s.y;
 	std::vector<HTexture> orgTex;
@@ -44,7 +44,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads)
 		{
 			quadMesh.textures = {*quad.pTexture};
 		}
-		gfx::shading::setUBO<uboData::UI>(resources::getUBO("UI"), ui);
+		gfx::shading::setUBO<uboData::UI>(resources::get<HUBO>("UI"), ui);
 		gfx::shading::setModelMats(shader, mats);
 		gfx::shading::setV4(shader, env::g_config.uniforms.tint, quad.tint);
 		if (quad.oTexCoords)
@@ -74,7 +74,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads)
 void debug::renderString(const Text2D& text, const HFont& hFont)
 {
 	ASSERT(hFont.sheet.glID.handle > 0, "Font has no texture!");
-	const auto& shader = resources::getShader("ui/textured");
+	const auto& shader = resources::get<HShader>("ui/textured");
 	f32 cellAR = (f32)hFont.cellSize.x / hFont.cellSize.y;
 	glm::vec2 cell(text.height * cellAR, text.height);
 	glm::vec2 duv = {(f32)hFont.cellSize.x / hFont.sheet.size.x, (f32)hFont.cellSize.y / hFont.sheet.size.y};
@@ -103,7 +103,7 @@ void debug::renderString(const Text2D& text, const HFont& hFont)
 	}
 	uboData::UI ui;
 	ui.projection = glm::ortho(-uiw * 0.5f, uiw * 0.5f, -uih * 0.5f, uih * 0.5f, 0.0f, 2.0f);
-	gfx::shading::setUBO<uboData::UI>(resources::getUBO("UI"), ui);
+	gfx::shading::setUBO<uboData::UI>(resources::get<HUBO>("UI"), ui);
 	const auto& u = env::g_config.uniforms;
 	std::string matID;
 	matID.reserve(128);

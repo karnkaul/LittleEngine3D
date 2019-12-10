@@ -53,6 +53,7 @@ struct HVerts final
 	GLObj vao;
 	GLObj vbo;
 	GLObj ebo;
+	u32 bytes = 0;
 	u16 iCount = 0;
 	u16 vCount = 0;
 };
@@ -61,6 +62,7 @@ struct HUBO final
 {
 	GLObj ubo;
 	u32 bindingPoint = 0;
+	u32 bytes = 0;
 };
 
 struct HMesh final

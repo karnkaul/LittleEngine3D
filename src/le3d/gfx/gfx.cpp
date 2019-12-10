@@ -16,6 +16,11 @@
 
 namespace le
 {
+namespace gfx
+{
+GLObj g_blankTexID = GLObj(1);
+} // namespace gfx
+
 namespace
 {
 s32 g_maxTexIdx = 0;
@@ -28,7 +33,7 @@ void setBlankTex(const HShader& shader, s32 txID, bool bMagenta, bool& bResetTin
 		bResetTint = true;
 	}
 	glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-	glChk(glBindTexture(GL_TEXTURE_2D, 1));
+	glChk(glBindTexture(GL_TEXTURE_2D, gfx::g_blankTexID.handle));
 }
 
 void setTextures(const HShader& shader, const std::vector<HTexture>& textures, bool& bResetTint)
@@ -146,7 +151,7 @@ HTexture gfx::gl::genTexture(std::string name, TexType type, std::vector<u8> byt
 			ret = {std::move(name), glm::ivec2(w, h), (u32)bytes.size(), type, std::move(hTex)};
 			std::string typeStr = ret.type == TexType::Diffuse ? "Diffuse" : "Specular";
 			auto size = utils::friendlySize((u64)bytes.size());
-			LOG_I("== [%s] [%.2f%s] (%s) Texture created", ret.id.data(), size.first, size.second.data(), typeStr.data());
+			LOG_I("== [%s] [%.1f%s] (%s) Texture created", ret.id.data(), size.first, size.second.data(), typeStr.data());
 		}
 		else
 		{
@@ -176,14 +181,18 @@ void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
 #if defined(DEBUGGING)
 				bytes += pTexture->bytes;
 #endif
-				LOG_I("-- [%s] Texture destroyed", pTexture->id.data());
+				auto size = utils::friendlySize(pTexture->bytes);
+				LOG_I("-- [%s] [%.1f%s] Texture destroyed", pTexture->id.data(), size.first, size.second.data());
 			}
 			*pTexture = HTexture();
 		}
 		glChk(glDeleteTextures((GLsizei)texIDs.size(), texIDs.data()));
 #if defined(DEBUGGING)
-		auto size = utils::friendlySize(bytes);
-		LOG_D("[%.2f%s] texture memory released", size.first, size.second.data());
+		if (textures.size() > 1)
+		{
+			auto size = utils::friendlySize(bytes);
+			LOG_D("[%.1f%s] Texture VRAM released", size.first, size.second.data());
+		}
 #endif
 	}
 }
@@ -223,7 +232,7 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rl
 		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
 		ret.id = std::move(name);
 		auto size = utils::friendlySize(ret.bytes);
-		LOG_I("== [%s] [%.2f%s] Cubemap created", ret.id.data(), size.first, size.second.data());
+		LOG_I("== [%s] [%.1f%s] Cubemap created", ret.id.data(), size.first, size.second.data());
 	}
 	return ret;
 }
@@ -236,7 +245,7 @@ void gfx::gl::releaseCubemap(HCubemap& cube)
 		GLuint texID[] = {cube.glID.handle};
 		glChk(glDeleteTextures(1, texID));
 		auto size = utils::friendlySize(cube.bytes);
-		LOG_I("-- [%s] [%.2f%s] Cubemap destroyed", cube.id.data(), size.first, size.second.data());
+		LOG_I("-- [%s] [%.1f%s] Cubemap destroyed", cube.id.data(), size.first, size.second.data());
 	}
 	cube = HCubemap();
 }
@@ -353,6 +362,8 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 			glChk(glBufferData(GL_ELEMENT_ARRAY_BUFFER, (s64)vertices.indices.size() * (s64)sizeof(u32), vertices.indices.data(), type));
 			hVerts.iCount = (u16)vertices.indices.size();
 		}
+		hVerts.bytes = (u32)((vertices.points.size() + vertices.normals.size() + vertices.texCoords.size()) * sizeof(f32))
+					   + (u32)(vertices.indices.size() * sizeof(u32));
 		// Position
 		GLint loc = 0;
 		if (pShader)
@@ -419,6 +430,7 @@ HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
 		glChk(glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ret.ubo.handle));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 		ret.bindingPoint = bindingPoint;
+		ret.bytes = (u32)size;
 	}
 	return ret;
 }
@@ -459,7 +471,8 @@ HMesh gfx::newMesh(std::string name, Vertices vertices, Draw type, const HShader
 	{
 		mesh.name = std::move(name);
 		mesh.hVerts = gl::genVertices(std::move(vertices), type, pShader);
-		LOGIF_I(!mesh.name.empty(), "== [%s] Mesh set up", mesh.name.data());
+		auto size = utils::friendlySize(mesh.hVerts.bytes);
+		LOGIF_I(!mesh.name.empty(), "== [%s] [%.1f%s] Mesh set up", mesh.name.data(), size.first, size.second.data());
 	}
 	return mesh;
 }
@@ -468,9 +481,11 @@ void gfx::releaseMeshes(const std::vector<HMesh*>& meshes)
 {
 	for (auto pMesh : meshes)
 	{
-		LOGIF_I(pMesh->hVerts.vao > 0, "-- [%s] Mesh destroyed", pMesh->name.data());
-		if (context::exists())
+		if (pMesh->hVerts.vao > 0 && context::exists())
 		{
+			
+			auto size = utils::friendlySize(pMesh->hVerts.bytes);
+			LOG_I("-- [%s] [%.1f%s] Mesh destroyed", pMesh->name.data(), size.first, size.second.data());
 			gl::releaseVerts(pMesh->hVerts);
 		}
 		*pMesh = HMesh();
