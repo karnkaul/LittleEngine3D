@@ -59,7 +59,7 @@ void runTest()
 
 	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::bindingPoint, gfx::Draw::Dynamic);
 	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::bindingPoint, gfx::Draw::Dynamic);
-	resources::addUBO("UI", sizeof(uboData::UI), uboData::UI::bindingPoint, gfx::Draw::Dynamic);
+	auto& hUIUBO = resources::addUBO("UI", sizeof(uboData::UI), uboData::UI::bindingPoint, gfx::Draw::Dynamic);
 
 	Flags<HShader::MAX_FLAGS> noTex;
 	noTex.set((s32)gfx::shading::Flag::Untextured, true);
@@ -228,6 +228,9 @@ void runTest()
 	Time::reset();
 	Time dt;
 	Time t = Time::now();
+	
+	const glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
+	const f32 uiAR = uiSpace.x / uiSpace.y;
 
 	while (!context::isClosing())
 	{
@@ -247,6 +250,8 @@ void runTest()
 		gfx::shading::setUBO<uboData::Lights>(hLightsUBO, lights);
 		uboData::Matrices mats{camera.view(), camera.perspectiveProj(), glm::vec4(camera.m_position, 0.0f)};
 		gfx::shading::setUBO<uboData::Matrices>(hMatricesUBO, mats);
+		uboData::UI ui{camera.uiProj(uiSpace)};
+		gfx::shading::setUBO<uboData::UI>(hUIUBO, ui);
 
 		renderSkybox(skybox, resources::get<HShader>("unlit/skybox"));
 
@@ -276,26 +281,23 @@ void runTest()
 		drawLight(pl1Pos, light1);
 		quadProp.render();
 
-		// Quad2D tl, tr, bl, br;
-		//// glm::vec2 uiSpace = {1920.0f, 1080.0f};
-		// glm::vec2 uiSpace = {1280.0f, 720.0f};
-		// tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::getTexture("awesomeface");
-		// tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
-		// tl.space = tr.space = bl.space = br.space = uiSpace;
-		// tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
-		// tl.pos = {-tr.pos.x + 200.0f, tr.pos.y - 200.0f};
-		// bl.pos = {-tr.pos.x, -tr.pos.y};
-		// br.pos = {tr.pos.x, -tr.pos.y};
-		// debug::draw2DQuads({tl, tr, bl, br});
+		 Quad2D tl, tr, bl, br;
+		 tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::get<HTexture>("awesomeface");
+		 tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
+		 tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
+		 tl.pos = {-tr.pos.x + 200.0f, tr.pos.y - 200.0f};
+		 bl.pos = {-tr.pos.x, -tr.pos.y};
+		 br.pos = {tr.pos.x, -tr.pos.y};
+		 debug::draw2DQuads({tl, tr, bl, br}, uiAR);
 
 		Text2D text;
 		text.text = "Hello World!";
 		text.align = Align::Centre;
 		text.height = 100.0f;
 		text.pos = glm::vec2(0.0f, 300.0f);
-		debug::renderString(text, hFont);
+		debug::renderString(text, hFont, uiAR);
 
-		debug::renderFPS(hFont);
+		debug::renderFPS(hFont, uiAR);
 
 		context::swapBuffers();
 		context::pollEvents();

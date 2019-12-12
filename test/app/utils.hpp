@@ -10,7 +10,6 @@ struct Quad2D
 {
 	std::optional<glm::vec4> oTexCoords;
 	std::optional<HMesh> oMesh;
-	glm::vec2 space = glm::vec2(1920.0f, 1080.0f);
 	glm::vec2 pos = glm::vec2(0.0f);
 	glm::vec2 size = glm::vec2(1.0f);
 	Colour tint = Colour::White;
@@ -27,7 +26,6 @@ enum class Align
 struct Text2D
 {
 	std::string text;
-	glm::vec2 space = glm::vec2(1920.0f, 1080.0f);
 	glm::vec2 pos = glm::vec2(0.0f);
 	f32 height = 40.0f;
 	Align align = Align::Centre;
@@ -36,10 +34,10 @@ struct Text2D
 
 namespace debug
 {
-void draw2DQuads(std::vector<Quad2D> quads);
-void renderString(const Text2D& text, const HFont& hFont);
+void draw2DQuads(std::vector<Quad2D> quads, const f32 uiAR = 0.0f);
+void renderString(const Text2D& text, const HFont& hFont, const f32 uiAR = 0.0f);
 
 extern Text2D g_fpsStyle;
-void renderFPS(const HFont& font);
+void renderFPS(const HFont& font, const f32 uiAR = 0.0f);
 } // namespace debug
 } // namespace le

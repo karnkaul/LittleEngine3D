@@ -38,6 +38,10 @@ void setBlankTex(const HShader& shader, s32 txID, bool bMagenta, bool& bResetTin
 
 void setTextures(const HShader& shader, const std::vector<HTexture>& textures, bool& bResetTint)
 {
+	if (textures.empty())
+	{
+		return;
+	}
 	s32 txID = 0;
 	s32 diffuse = 0;
 	s32 specular = 0;

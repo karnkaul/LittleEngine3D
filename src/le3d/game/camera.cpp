@@ -43,6 +43,13 @@ glm::mat4 Camera::orthographicProj(f32 zoom, f32 near, f32 far) const
 	return glm::ortho(-w / zoom, w / zoom, -h / zoom, h / zoom, near, far);
 }
 
+glm::mat4 Camera::uiProj(const glm::vec3& uiSpace) const
+{
+	const f32 w = uiSpace.x * 0.5f;
+	const f32 h = uiSpace.y * 0.5f;
+	return glm::ortho(-w, w, -h, h, 0.0f, uiSpace.z);
+}
+
 FreeCam::FreeCam()
 {
 	m_tMove = input::registerInput([this](s32 key, s32 action, s32 /*mods*/) {
