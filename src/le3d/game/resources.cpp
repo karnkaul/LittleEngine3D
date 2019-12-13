@@ -9,14 +9,10 @@
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/shading.hpp"
 #include "le3d/game/resources.hpp"
+#include "le3d/game/utils.hpp"
 
 namespace le
 {
-namespace debug
-{
-extern void unloadAll();
-}
-
 namespace
 {
 static const std::vector<u8> blank_1pxBytes = {

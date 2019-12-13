@@ -29,7 +29,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const f32 uiAR)
 		auto& quadMesh = quad.oMesh ? *quad.oMesh : dQuad;
 		std::vector<HTexture> orgTex;
 		std::swap(quadMesh.textures, orgTex);
-		
+
 		glm::mat4 world(1.0f);
 		const HShader& shader = quad.pTexture ? textured : tinted;
 		ModelMats mats;

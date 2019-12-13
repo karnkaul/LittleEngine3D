@@ -12,10 +12,12 @@ s32 g_nextID = 0;
 std::unordered_map<s32, std::unique_ptr<std::thread>> g_threadMap;
 } // namespace
 
-namespace threads
+namespace threadsImpl
 {
 u32 g_maxThreads = 0;
 }
+
+using namespace threadsImpl;
 
 HThread threads::newThread(Task task)
 {

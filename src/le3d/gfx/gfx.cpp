@@ -130,7 +130,7 @@ HTexture gfx::gl::genTexture(std::string name, TexType type, std::vector<u8> byt
 		if (pData)
 		{
 			bool bAlpha = ch > 3;
-			Lock lock(context::g_glMutex);
+			Lock lock(contextImpl::g_glMutex);
 			GLObj hTex;
 			glChk(glGenTextures(1, &hTex.handle));
 			glChk(glActiveTexture(GL_TEXTURE0));
@@ -172,7 +172,7 @@ void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
 	{
 		std::vector<GLuint> texIDs;
 		texIDs.reserve(textures.size());
-		Lock lock(context::g_glMutex);
+		Lock lock(contextImpl::g_glMutex);
 #if defined(DEBUGGING)
 		u32 bytes = 0;
 #endif
@@ -206,7 +206,7 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rl
 	HCubemap ret;
 	if (context::exists())
 	{
-		Lock lock(context::g_glMutex);
+		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenTextures(1, &ret.glID.handle));
 		glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, ret.glID.handle));
 		s32 w, h, ch;
@@ -245,7 +245,7 @@ void gfx::gl::releaseCubemap(HCubemap& cube)
 {
 	if (context::exists())
 	{
-		Lock lock(context::g_glMutex);
+		Lock lock(contextImpl::g_glMutex);
 		GLuint texID[] = {cube.glID.handle};
 		glChk(glDeleteTextures(1, texID));
 		auto size = utils::friendlySize(cube.bytes);
@@ -278,7 +278,7 @@ HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::strin
 #else
 	static const std::string_view VERSION = "#version 330 core\n";
 #endif
-	Lock lock(context::g_glMutex);
+	Lock lock(contextImpl::g_glMutex);
 	u32 vsh = glCreateShader(GL_VERTEX_SHADER);
 	const GLchar* files[] = {VERSION.data(), vertCode.data()};
 	glShaderSource(vsh, (GLsizei)ARR_SIZE(files), files, nullptr);
@@ -342,7 +342,7 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 		ASSERT(vertices.normals.empty() || vertices.normals.size() == vertices.points.size(), "Point/normal count mismatch!");
 		ASSERT(vertices.texCoords.empty() || 3 * vertices.texCoords.size() == 2 * vertices.points.size(), "Point/UV count mismatch!");
 		GLenum type = drawType == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-		Lock lock(context::g_glMutex);
+		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenVertexArrays(1, &hVerts.vao.handle));
 		glChk(glGenBuffers(1, &hVerts.vbo.handle));
 		if (!vertices.indices.empty())
@@ -413,7 +413,7 @@ void gfx::gl::releaseVerts(HVerts& hVerts)
 {
 	if (context::exists() && hVerts.vao > 0)
 	{
-		Lock lock(context::g_glMutex);
+		Lock lock(contextImpl::g_glMutex);
 		glChk(glDeleteVertexArrays(1, &hVerts.vao.handle));
 		glDeleteBuffers(1, &hVerts.vbo.handle);
 		glChk(glDeleteBuffers(1, &hVerts.ebo.handle));
@@ -426,7 +426,7 @@ HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
 	HUBO ret;
 	if (context::exists())
 	{
-		Lock lock(context::g_glMutex);
+		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenBuffers(1, &ret.ubo.handle));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, ret.ubo.handle));
 		GLenum drawType = type == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
@@ -443,7 +443,7 @@ void gfx::gl::releaseUBO(HUBO& ubo)
 {
 	if (context::exists() && ubo.ubo > 0)
 	{
-		Lock lock(context::g_glMutex);
+		Lock lock(contextImpl::g_glMutex);
 		glChk(glDeleteBuffers(1, &ubo.ubo.handle));
 	}
 	ubo = HUBO();
@@ -453,7 +453,7 @@ void gfx::gl::draw(const HVerts& hVerts)
 {
 	if (context::exists())
 	{
-		Lock lock(context::g_glMutex);
+		Lock lock(contextImpl::g_glMutex);
 		glChk(glBindVertexArray(hVerts.vao.handle));
 		if (hVerts.ebo.handle > 0)
 		{
@@ -487,7 +487,6 @@ void gfx::releaseMeshes(const std::vector<HMesh*>& meshes)
 	{
 		if (pMesh->hVerts.vao > 0 && context::exists())
 		{
-			
 			auto size = utils::friendlySize(pMesh->hVerts.bytes);
 			LOG_I("-- [%s] [%.1f%s] Mesh destroyed", pMesh->name.data(), size.first, size.second.data());
 			gl::releaseVerts(pMesh->hVerts);
@@ -504,7 +503,7 @@ void gfx::drawMesh(const HMesh& mesh, const HShader& shader)
 		const auto& u = env::g_config.uniforms;
 		ASSERT(shader.glID.handle > 0, "shader is null!");
 		{
-			Lock lock(context::g_glMutex);
+			Lock lock(contextImpl::g_glMutex);
 			gfx::shading::use(shader);
 			gfx::shading::setF32(shader, u.shininess, mesh.shininess);
 #if defined(DEBUGGING)
@@ -537,7 +536,7 @@ void gfx::drawMeshes(const HMesh& mesh, const std::vector<HTexture>& textures, c
 		const auto& u = env::g_config.uniforms;
 		ASSERT(shader.glID.handle > 0, "shader is null!");
 		{
-			Lock lock(context::g_glMutex);
+			Lock lock(contextImpl::g_glMutex);
 			gfx::shading::use(shader);
 			gfx::shading::setF32(shader, u.shininess, mesh.shininess);
 #if defined(DEBUGGING)
@@ -614,7 +613,7 @@ HVerts gfx::tutorial::newLight(const HVerts& hVBO)
 	{
 		ret.vbo = hVBO.vbo;
 		ret.vCount = hVBO.vCount;
-		Lock lock(context::g_glMutex);
+		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenVertexArrays(1, &ret.vao.handle));
 		glChk(glBindVertexArray(ret.vao));
 		glChk(glBindBuffer(GL_ARRAY_BUFFER, ret.vbo));

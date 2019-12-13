@@ -7,21 +7,16 @@
 
 namespace le
 {
-namespace
+namespace inputImpl
 {
-struct Callbacks
-{
-	OnText onText;
-	OnInput onInput;
-	OnMouse onMouse;
-	OnMouse onScroll;
-	OnFiledrop onFiledrop;
-	OnFocus onFocus;
-};
-
 Callbacks g_callbacks;
 GLFWwindow* g_pRenderWindow = nullptr;
+} // namespace inputImpl
 
+using namespace inputImpl;
+
+namespace
+{
 void onKey(GLFWwindow* pWindow, s32 key, s32 /*scancode*/, s32 action, s32 mods)
 {
 	if (pWindow == g_pRenderWindow)
@@ -135,6 +130,11 @@ OnFiledrop::Token input::registerFiledrop(OnFiledrop::Callback callback)
 OnFocus::Token input::registerFocus(OnFocus::Callback callback)
 {
 	return g_callbacks.onFocus.subscribe(callback);
+}
+
+OnResize::Token input::registerResize(OnResize::Callback callback)
+{
+	return g_callbacks.onResize.subscribe(callback);
 }
 
 void input::setCursorMode(CursorMode mode)

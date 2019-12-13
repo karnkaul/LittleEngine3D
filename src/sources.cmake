@@ -20,6 +20,7 @@ set(SUB_SOURCES
 	le3d/core/utils.cpp
 
 	le3d/env/env.cpp
+	le3d/env/threadsImpl.hpp
 	le3d/env/threads.cpp
 
 	le3d/game/camera.cpp

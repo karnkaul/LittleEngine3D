@@ -6,7 +6,7 @@
 #include "le3d/core/log.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/env/env.hpp"
-#include "le3d/env/threads.hpp"
+#include "le3d/env/threadsImpl.hpp"
 
 namespace le
 {
@@ -40,11 +40,6 @@ void SetConfigStrIfPresent(const std::string& id, const GData& data, std::string
 //}
 } // namespace
 
-namespace threads
-{
-extern u32 g_maxThreads;
-}
-
 void env::init(s32 argc, char** argv)
 {
 #if defined(__linux__)
@@ -52,7 +47,7 @@ void env::init(s32 argc, char** argv)
 	if (threadStatus == 0)
 	{
 		LOG_E("[OS] ERROR calling XInitThreads()! UB follows.");
-		threads::g_maxThreads = 1;
+		threadsImpl::g_maxThreads = 1;
 	}
 #endif
 	if (argc > 0)

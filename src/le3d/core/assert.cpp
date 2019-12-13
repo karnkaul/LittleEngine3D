@@ -23,7 +23,7 @@ bool IsDebuggerAttached()
 {
 	bool ret = false;
 #if _WIN64
-	ret = IsDebuggerPresent();
+	ret = IsDebuggerPresent() != 0;
 #elif __linux__
 	char buf[4096];
 
@@ -70,8 +70,6 @@ void debugBreak()
 #elif __linux__ || __MINGW32__
 #ifdef SIGTRAP
 	raise(SIGTRAP);
-#else
-	raise(SIGILL);
 #endif
 #endif
 }

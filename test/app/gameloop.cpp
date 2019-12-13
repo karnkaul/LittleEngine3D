@@ -228,9 +228,18 @@ void runTest()
 	Time::reset();
 	Time dt;
 	Time t = Time::now();
-	
-	const glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
-	const f32 uiAR = uiSpace.x / uiSpace.y;
+
+	glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
+	f32 uiAR = uiSpace.x / uiSpace.y;
+
+	auto onResize = [&](s32, s32) {
+		// uiSpace = glm::vec3(context::size(), 2.0f);
+		uiAR = (f32)uiSpace.x / uiSpace.y;
+		uboData::UI ui{camera.uiProj(uiSpace)};
+		gfx::shading::setUBO<uboData::UI>(hUIUBO, ui);
+	};
+	onResize(0, 0);
+	auto resizeToken = input::registerResize(onResize);
 
 	while (!context::isClosing())
 	{
@@ -250,8 +259,6 @@ void runTest()
 		gfx::shading::setUBO<uboData::Lights>(hLightsUBO, lights);
 		uboData::Matrices mats{camera.view(), camera.perspectiveProj(), glm::vec4(camera.m_position, 0.0f)};
 		gfx::shading::setUBO<uboData::Matrices>(hMatricesUBO, mats);
-		uboData::UI ui{camera.uiProj(uiSpace)};
-		gfx::shading::setUBO<uboData::UI>(hUIUBO, ui);
 
 		renderSkybox(skybox, resources::get<HShader>("unlit/skybox"));
 
@@ -281,14 +288,14 @@ void runTest()
 		drawLight(pl1Pos, light1);
 		quadProp.render();
 
-		 Quad2D tl, tr, bl, br;
-		 tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::get<HTexture>("awesomeface");
-		 tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
-		 tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
-		 tl.pos = {-tr.pos.x + 200.0f, tr.pos.y - 200.0f};
-		 bl.pos = {-tr.pos.x, -tr.pos.y};
-		 br.pos = {tr.pos.x, -tr.pos.y};
-		 debug::draw2DQuads({tl, tr, bl, br}, uiAR);
+		Quad2D tl, tr, bl, br;
+		tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::get<HTexture>("awesomeface");
+		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
+		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
+		tl.pos = {-tr.pos.x + 200.0f, tr.pos.y - 200.0f};
+		bl.pos = {-tr.pos.x, -tr.pos.y};
+		br.pos = {tr.pos.x, -tr.pos.y};
+		debug::draw2DQuads({tl, tr, bl, br}, uiAR);
 
 		Text2D text;
 		text.text = "Hello World!";

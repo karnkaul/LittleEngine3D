@@ -48,7 +48,7 @@ template <>
 bool unload<HUBO>(HUBO& hUBO);
 template <>
 void unloadAll<HUBO>();
-template<>
+template <>
 u32 count<HUBO>();
 
 HShader& loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);

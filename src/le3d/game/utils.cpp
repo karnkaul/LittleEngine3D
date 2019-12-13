@@ -21,11 +21,6 @@ HMesh g_debugCylinder;
 Model g_debugArrow;
 } // namespace
 
-namespace debug
-{
-void unloadAll();
-} // namespace debug
-
 void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)
 {
 	glChk(glDepthMask(GL_FALSE));

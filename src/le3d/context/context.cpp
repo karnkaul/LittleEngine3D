@@ -10,15 +10,20 @@
 
 namespace le
 {
-namespace context
+namespace contextImpl
 {
 std::thread::id g_contextThreadID;
 std::mutex g_glMutex;
+} // namespace contextImpl
 
+namespace context
+{
 #if defined(DEBUGGING)
 bool g_bVSYNC = true;
 #endif
 } // namespace context
+
+using namespace contextImpl;
 
 namespace
 {
@@ -28,12 +33,13 @@ GLFWwindow* g_pRenderWindow = nullptr;
 
 void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 {
-	Lock lock(context::g_glMutex);
+	Lock lock(g_glMutex);
 	if (pWindow == g_pRenderWindow)
 	{
 		g_windowSize = {width, height};
 		g_nativeAR = (f32)width / height;
 		glViewport(0, 0, width, height);
+		inputImpl::g_callbacks.onResize(width, height);
 	}
 }
 

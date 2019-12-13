@@ -20,5 +20,7 @@ HMesh& debugCone();
 HMesh& debugCylinder();
 
 Model& debugArrow(const glm::quat& orientation);
+
+void unloadAll();
 } // namespace debug
 } // namespace le
