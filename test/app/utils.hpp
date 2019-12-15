@@ -13,7 +13,6 @@ struct Quad2D
 	glm::vec2 pos = glm::vec2(0.0f);
 	glm::vec2 size = glm::vec2(1.0f);
 	Colour tint = Colour::White;
-	HTexture* pTexture = nullptr;
 };
 
 enum class Align
@@ -34,7 +33,7 @@ struct Text2D
 
 namespace debug
 {
-void draw2DQuads(std::vector<Quad2D> quads, const f32 uiAR = 0.0f);
+void draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, const f32 uiAR = 0.0f);
 void renderString(const Text2D& text, const HFont& hFont, const f32 uiAR = 0.0f);
 
 extern Text2D g_fpsStyle;

@@ -10,5 +10,5 @@ namespace contextImpl
 {
 extern std::thread::id g_contextThreadID;
 extern std::mutex g_glMutex;
-} // namespace context
+} // namespace contextImpl
 } // namespace le

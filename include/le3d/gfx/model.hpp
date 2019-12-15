@@ -7,10 +7,18 @@
 
 namespace le
 {
+enum class DrawFlag
+{
+	Blank,
+	BlankMagenta,
+	_COUNT
+};
+
 class Model final
 {
 #if defined(DEBUGGING)
 public:
+	Flags<(s32)DrawFlag::_COUNT> m_renderFlags;
 	bool m_bDEBUG = false;
 #endif
 
@@ -25,9 +33,6 @@ public:
 	std::string m_name;
 	std::string_view m_type;
 	Colour m_tint = Colour::White;
-#if defined(DEBUGGING)
-	Flags<(s32)DrawFlag::_COUNT> m_renderFlags;
-#endif
 
 private:
 	std::vector<Fixture> m_fixtures;

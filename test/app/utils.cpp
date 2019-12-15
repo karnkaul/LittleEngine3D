@@ -16,29 +16,20 @@ namespace debug
 Text2D g_fpsStyle;
 }
 
-void debug::draw2DQuads(std::vector<Quad2D> quads, const f32 uiAR)
+void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, const f32 uiAR)
 {
-	const HShader& textured = resources::get<HShader>("ui/textured");
-	const HShader& tinted = resources::get<HShader>("ui/tinted");
-	const glm::vec2 vpSize = context::size();
-	const glm::ivec4 glvp = viewportDxDyXY(vpSize, uiAR);
+	const HShader& shader = resources::get<HShader>("ui/textured");
+	bool bResetTint = false;
 	auto& dQuad = debugQuad();
-	glViewport(glvp.s, glvp.t, glvp.p, glvp.q);
+	gfx::cropViewport(uiAR);
+	bResetTint |= gfx::setTextures(shader, {texture});
 	for (auto& quad : quads)
 	{
 		auto& quadMesh = quad.oMesh ? *quad.oMesh : dQuad;
-		std::vector<HTexture> orgTex;
-		std::swap(quadMesh.textures, orgTex);
-
 		glm::mat4 world(1.0f);
-		const HShader& shader = quad.pTexture ? textured : tinted;
 		ModelMats mats;
 		world = glm::translate(world, glm::vec3(quad.pos.x, quad.pos.y, 0.0f));
 		mats.model = glm::scale(world, glm::vec3(quad.size.x, quad.size.y, 1.0f));
-		if (quad.pTexture)
-		{
-			quadMesh.textures = {*quad.pTexture};
-		}
 		gfx::shading::setModelMats(shader, mats);
 		gfx::shading::setV4(shader, env::g_config.uniforms.tint, quad.tint);
 		if (quad.oTexCoords)
@@ -59,9 +50,13 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const f32 uiAR)
 			glChk(glBindBuffer(GL_ARRAY_BUFFER, quadMesh.hVerts.vbo));
 			glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data));
 		}
-		std::swap(quadMesh.textures, orgTex);
 	}
-	glViewport(0, 0, (s32)vpSize.x, (s32)vpSize.y);
+	if (bResetTint)
+	{
+		gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::White);
+	}
+	gfx::unsetTextures(0);
+	gfx::resetViewport();
 }
 
 void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
@@ -94,6 +89,7 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
 	}
 	const auto& u = env::g_config.uniforms;
 	std::string matID;
+	bool bResetTint = false;
 	matID.reserve(128);
 	matID += u.material;
 	matID += ".";
@@ -101,13 +97,10 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
 	matID += "[0]";
 	gfx::shading::setS32(shader, matID, 0);
 	gfx::shading::setV4(shader, env::g_config.uniforms.tint, text.colour);
-	glChk(glActiveTexture(GL_TEXTURE0));
-	glChk(glBindTexture(GL_TEXTURE_2D, hFont.sheet.glID.handle));
+	bResetTint |= gfx::setTextures(shader, {hFont.sheet});
 	glBindVertexArray(hFont.quad.hVerts.vao.handle);
 	glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.hVerts.vbo.handle);
-	const glm::vec2 vpSize = context::size();
-	const glm::ivec4 glvp = viewportDxDyXY(vpSize, uiAR);
-	glViewport(glvp.s, glvp.t, glvp.p, glvp.q);
+	gfx::cropViewport(uiAR);
 	s32 idx = 0;
 	for (auto c : text.text)
 	{
@@ -133,14 +126,19 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
 			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.p, uv.q, uv.s, uv.q, uv.s, uv.t};
 			auto sf = sizeof(f32);
 			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data);
-			gfx::gl::draw(hFont.quad.hVerts);
+			gfx::drawMesh(hFont.quad, shader);
 		}
 		++idx;
 	}
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glChk(glBindTexture(GL_TEXTURE_2D, 0));
-	glViewport(0, 0, (s32)vpSize.x, (s32)vpSize.y);
+	if (bResetTint)
+	{
+		gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::White);
+	}
+	gfx::unsetTextures(0);
+	gfx::resetViewport();
 }
 
 void debug::renderFPS(const HFont& font, const f32 uiAR)

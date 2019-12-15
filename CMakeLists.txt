@@ -39,6 +39,10 @@ if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
 	endif()
 endif()
 
+# Variables
+set(EXECUTABLE_PATH "" CACHE STRING "Force executable to build here")
+set(LIBRARIES_PATH "" CACHE STRING "Force libraries to build here")
+
 # Test
 option(BUILD_LE_TEST "Build Test executable" ON)
 if(BUILD_LE_TEST)
@@ -100,3 +104,6 @@ target_link_libraries(${PROJECT_NAME}
 	glm
 	stb-image
 )
+
+message("Executable path\t: ${EXECUTABLE_PATH}")
+message("Libraries path\t: ${LIBRARIES_PATH}")

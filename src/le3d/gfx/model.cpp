@@ -31,12 +31,22 @@ void Model::setupModel(std::string name)
 void Model::render(const HShader& shader, const ModelMats& mats)
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
+#if defined(DEBUGGING)
+	bool bResetTint = false;
+	bool bSkipTextures = false;
+#endif
 	for (auto& fixture : m_fixtures)
 	{
 		ASSERT(fixture.pMesh, "Mesh is null!");
 		gfx::shading::setV4(shader, env::g_config.uniforms.tint, m_tint);
 #if defined(DEBUGGING)
-		fixture.pMesh->drawFlags = m_renderFlags;
+		m_renderFlags.set((s32)DrawFlag::BlankMagenta, m_bDEBUG);
+		if (m_renderFlags.isSet((s32)DrawFlag::Blank) || m_renderFlags.isSet((s32)DrawFlag::BlankMagenta))
+		{
+			bResetTint = m_renderFlags.isSet((s32)DrawFlag::BlankMagenta);
+			bSkipTextures = true;
+			gfx::setBlankTex(shader, 0, bResetTint);
+		}
 #endif
 		if (fixture.oWorld)
 		{
@@ -52,11 +62,24 @@ void Model::render(const HShader& shader, const ModelMats& mats)
 		{
 			gfx::shading::setModelMats(shader, mats);
 		}
+#if defined(DEBUGGING)
+		if (!bSkipTextures)
+		{
+#endif
+			gfx::setTextures(shader, fixture.pMesh->textures);
+#if defined(DEBUGGING)
+		}
+#endif
 		gfx::drawMesh(*fixture.pMesh, shader);
 #if defined(DEBUGGING)
 		m_renderFlags.flags.reset();
+		if (bResetTint)
+		{
+			gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::White);
+		}
 #endif
 	}
+	gfx::unsetTextures(-1);
 }
 
 u32 Model::meshCount() const

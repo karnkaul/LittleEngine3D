@@ -21,36 +21,36 @@ HMesh gfx::createCube(f32 side, std::string name)
 	const f32 s = side * 0.5f;
 	Vertices vertices;
 	vertices.points = {
-		-s, -s, -s, s,  -s, -s, s,  s,  -s, s,  s,  -s, -s, s,  -s, -s, -s, -s, // front
+		-s, -s, -s, s,	-s, -s, s,	s,	-s, s,	s,	-s, -s, s,	-s, -s, -s, -s, // front
 
-		-s, -s, s,  s,  -s, s,  s,  s,  s,  s,  s,  s,  -s, s,  s,  -s, -s, s, // back
+		-s, -s, s,	s,	-s, s,	s,	s,	s,	s,	s,	s,	-s, s,	s,	-s, -s, s, // back
 
-		-s, s,  s,  -s, s,  -s, -s, -s, -s, -s, -s, -s, -s, -s, s,  -s, s,  s, // left
+		-s, s,	s,	-s, s,	-s, -s, -s, -s, -s, -s, -s, -s, -s, s,	-s, s,	s, // left
 
-		s,  s,  s,  s,  s,  -s, s,  -s, -s, s,  -s, -s, s,  -s, s,  s,  s,  s, // right
+		s,	s,	s,	s,	s,	-s, s,	-s, -s, s,	-s, -s, s,	-s, s,	s,	s,	s, // right
 
-		-s, -s, -s, s,  -s, -s, s,  -s, s,  s,  -s, s,  -s, -s, s,  -s, -s, -s, // down
+		-s, -s, -s, s,	-s, -s, s,	-s, s,	s,	-s, s,	-s, -s, s,	-s, -s, -s, // down
 
-		-s, s,  -s, s,  s,  -s, s,  s,  s,  s,  s,  s,  -s, s,  s,  -s, s,  -s, // up
+		-s, s,	-s, s,	s,	-s, s,	s,	s,	s,	s,	s,	-s, s,	s,	-s, s,	-s, // up
 	};
 	vertices.normals = {
-		0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f,
-		0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, // front
+		0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f,
+		0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, // front
 
-		0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-		0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f, // back
+		0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,
+		0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f,	1.0f, // back
 
-		-1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,
-		-1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f, // left
+		-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,
+		-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,	0.0f, // left
 
-		1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-		1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f, // right
+		1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,
+		1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f,	0.0f, // right
 
-		0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,
-		0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f, // down
+		0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,
+		0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f, // down
 
-		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f, // up
+		0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,
+		0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f,	0.0f, // up
 	};
 	vertices.texCoords = {
 		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
@@ -80,15 +80,15 @@ HMesh gfx::create4Pyramid(f32 side, std::string name)
 	const glm::vec3 nD = -g_nUp;
 	Vertices vertices;
 	vertices.points = {
-		-s, -s, -s, s,  -s, -s, 0.0f, s,  0.0f, // front
+		-s, -s, -s, s,	-s, -s, 0.0f, s,  0.0f, // front
 
-		-s, -s, s,  s,  -s, s,  0.0f, s,  0.0f, // back
+		-s, -s, s,	s,	-s, s,	0.0f, s,  0.0f, // back
 
-		-s, -s, -s, -s, -s, s,  0.0f, s,  0.0f, // left
+		-s, -s, -s, -s, -s, s,	0.0f, s,  0.0f, // left
 
-		s,  -s, -s, s,  -s, s,  0.0f, s,  0.0f, // right
+		s,	-s, -s, s,	-s, s,	0.0f, s,  0.0f, // right
 
-		-s, -s, -s, s,  -s, -s, s,	-s, s,	s, -s, s, -s, -s, s, -s, -s, -s, // down
+		-s, -s, -s, s,	-s, -s, s,	  -s, s,	s, -s, s, -s, -s, s, -s, -s, -s, // down
 	};
 	vertices.normals = {
 		nF.x, nF.y, nF.z, nF.x, nF.y, nF.z, nF.x, nF.y, nF.z, // front

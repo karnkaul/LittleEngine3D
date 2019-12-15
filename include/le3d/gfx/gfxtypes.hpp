@@ -9,13 +9,6 @@ namespace le
 {
 using GLObj = TZero<u32>;
 
-enum class DrawFlag
-{
-	Blank,
-	BlankMagenta,
-	_COUNT
-};
-
 enum class TexType
 {
 	Diffuse = 0,
@@ -71,9 +64,6 @@ struct HMesh final
 	std::vector<HTexture> textures;
 	f32 shininess = 32.0f;
 	HVerts hVerts;
-#if defined(DEBUGGING)
-	mutable Flags<(s32)DrawFlag::_COUNT> drawFlags;
-#endif
 };
 
 struct HFont final

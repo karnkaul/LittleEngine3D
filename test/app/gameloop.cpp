@@ -239,7 +239,7 @@ void runTest()
 		gfx::shading::setUBO<uboData::UI>(hUIUBO, ui);
 	};
 	onResize(0, 0);
-	auto resizeToken = input::registerResize(onResize);
+	// auto resizeToken = input::registerResize(onResize);
 
 	while (!context::isClosing())
 	{
@@ -275,7 +275,7 @@ void runTest()
 		}
 		gfx::shading::setV4(litTextured, env::g_config.uniforms.tint, Colour::White);
 		const auto& cube = debug::debugCube();
-		gfx::drawMeshes(cube, cube.textures, m, litTextured);
+		renderMeshes(cube, m, litTextured);
 		m = std::vector<ModelMats>(props.size() - 3, ModelMats());
 		for (size_t i = 3; i < props.size(); ++i)
 		{
@@ -283,19 +283,19 @@ void runTest()
 			m[i - 3].model = prop.m_transform.model();
 			m[i - 3].oNormals = prop.m_transform.normalModel();
 		}
-		gfx::drawMeshes(cube, cube.textures, m, litTinted);
+		renderMeshes(cube, m, litTinted);
 		drawLight(pl0Pos, light0);
 		drawLight(pl1Pos, light1);
 		quadProp.render();
 
 		Quad2D tl, tr, bl, br;
-		tl.pTexture = tr.pTexture = bl.pTexture = br.pTexture = &resources::get<HTexture>("awesomeface");
+		HTexture& quadTex = resources::get<HTexture>("awesomeface");
 		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
 		tl.pos = {-tr.pos.x + 200.0f, tr.pos.y - 200.0f};
 		bl.pos = {-tr.pos.x, -tr.pos.y};
 		br.pos = {tr.pos.x, -tr.pos.y};
-		debug::draw2DQuads({tl, tr, bl, br}, uiAR);
+		debug::draw2DQuads({tl, tr, bl, br}, quadTex, uiAR);
 
 		Text2D text;
 		text.text = "Hello World!";

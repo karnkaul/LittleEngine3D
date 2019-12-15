@@ -1,11 +1,12 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
+#include "le3d/context/context.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/core/log.hpp"
 
 namespace le
 {
-s32 glCheckError(const char* szFile, s32 line)
+s32 gfx::glCheckError(const char* szFile, s32 line)
 {
 	GLenum errorCode = 0;
 	errorCode = glGetError();
@@ -70,5 +71,21 @@ s32 glCheckError(const char* szFile, s32 line)
 		LOG_E("[GLError] %s | %s | %s (%d)", error.data(), description.data(), szFile, line);
 	}
 	return (s32)errorCode;
+}
+
+void gfx::cropViewport(f32 spaceAR)
+{
+	const glm::vec2 vpSize = context::size();
+	const f32 vpAR = vpSize.x / vpSize.y;
+	spaceAR = spaceAR <= 0.0f ? vpAR : spaceAR;
+	const f32 uiW = vpAR > spaceAR ? vpSize.x * spaceAR / vpAR : vpSize.x;
+	const f32 uiH = vpAR < spaceAR ? vpSize.y * vpAR / spaceAR : vpSize.y;
+	glViewport((s32)((vpSize.x - uiW) * 0.5f), (s32)((vpSize.y - uiH) * 0.5f), (s32)uiW, (s32)uiH);
+}
+
+void gfx::resetViewport()
+{
+	const glm::vec2 vpSize = context::size();
+	glViewport(0, 0, (s32)vpSize.x, (s32)vpSize.y);
 }
 } // namespace le

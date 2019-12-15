@@ -125,6 +125,7 @@ function(set_target_link_options TARGET_NAME)
 					/OPT:REF
 					/OPT:ICF
 					/INCREMENTAL:NO
+					/LTCG
 				>
 				$<$<CONFIG:RelWithDebinfo>:
 					/DEBUG:FULL

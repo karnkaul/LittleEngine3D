@@ -36,7 +36,13 @@ void renderMeshes(const HMesh& mesh, const std::vector<ModelMats>& mats, const H
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
 	gfx::shading::setV4(shader, env::g_config.uniforms.tint, tint);
-	gfx::drawMeshes(mesh, mesh.textures, mats, shader);
+	bool bResetTint = gfx::setTextures(shader, mesh.textures);
+	gfx::drawMeshes(mesh, mats, shader);
+	if (bResetTint)
+	{
+		gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::White);
+	}
+	gfx::unsetTextures((s32)mesh.textures.size());
 }
 
 HMesh& debug::debugCube()

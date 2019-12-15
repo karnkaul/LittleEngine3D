@@ -7,10 +7,9 @@ if(PLATFORM STREQUAL "Linux")
 	endif()
 endif()
 
-set(EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build")
-set(LIBRARIES_PATH "${EXECUTABLE_PATH}/lib")
+set(EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build" CACHE STRING "" FORCE)
 
-set(SOURCES 
+set(SOURCES
 	app/gameloop.hpp
 	app/gameloop.cpp
 	app/ubotypes.hpp
