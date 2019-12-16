@@ -35,9 +35,9 @@ set(SUB_SOURCES
 
 	le3d/gfx/colour.cpp
 	le3d/gfx/gfx.cpp
+	le3d/gfx/gfxtypes.cpp
 	le3d/gfx/model.cpp
 	le3d/gfx/primitives.cpp
-	le3d/gfx/shading.cpp
 	le3d/gfx/utils.cpp
 )
 

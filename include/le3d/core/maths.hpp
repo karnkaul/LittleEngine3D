@@ -1,11 +1,10 @@
 #pragma once
 #include <random>
-#include "fixed.hpp"
+#include "le3d/stdtypes.hpp"
 #include "time.hpp"
 
-namespace Maths
+namespace maths
 {
-using Fixed = le::Fixed;
 using Time = le::Time;
 
 constexpr f32 EPSILON = 0.001f;
@@ -35,36 +34,35 @@ template <typename T>
 T transformRange(T value, T oldMin, T oldMax, T newMin, T newMax);
 
 template <typename T>
-T lerp(T min, T max, Fixed alpha);
+T lerp(T min, T max, T alpha);
 
 template <typename T>
 T scale(T val, f32 coeff);
 
 bool IsNearlyEqual(f32 lhs, f32 rhs, f32 epsilon = EPSILON);
 
-Fixed ComputeAlpha(Time dt, Time totalTime);
-
-class Random
+class RandomGen
 {
-private:
-	std::mt19937 m_detMt;
-	std::mt19937 m_NDetMt;
-	std::random_device m_randomDevice;
-	std::uniform_int_distribution<s32> m_distribution;
+public:
+	std::pair<s32, s32> m_s32Range;
+
+protected:
+	std::mt19937 m_intGen;
+	std::mt19937 m_realGen;
+	std::uniform_int_distribution<s32> m_intDist;
+	std::uniform_real_distribution<f32> m_realDist;
 
 public:
-	static s32 range(s32 min, s32 max);
-	static size_t range(size_t min, size_t max);
-	static Fixed range(Fixed min, Fixed max, u32 precision = 1000);
+	RandomGen(s32 minS32, s32 maxS32, f32 minF32 = 0.0f, f32 maxF32 = 1.0f);
 
 public:
-	Random(s32 min, s32 max);
-
 	void seed(s32 seed);
-	s32 nextDet();
-	s32 nextNDet();
-	s32 next(bool bDeterministic);
+	s32 nextS32();
+	f32 nextF32();
 };
+
+s32 randomNDet(s32 min, s32 max);
+f32 randomNDet(f32 min, f32 max);
 
 template <typename T>
 inline T clamp(T val, T min, T max)
@@ -121,4 +119,4 @@ inline T scale(T val, f32 coeff)
 {
 	return static_cast<T>(static_cast<f32>(val) * coeff);
 }
-} // namespace Maths
+} // namespace maths

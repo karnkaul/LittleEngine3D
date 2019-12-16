@@ -3,7 +3,6 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/gfx/gfx.hpp"
-#include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
@@ -54,11 +53,11 @@ void Prop::render()
 			pModel->m_renderFlags.set((s32)DrawFlag::BlankMagenta, true);
 		}
 #endif
-		if (!m_shader.flags.isSet((s32)gfx::shading::Flag::Unlit) && m_shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
+		if (!m_shader.flags.isSet((s32)HShader::Flag::Unlit) && m_shader.flags.isSet((s32)HShader::Flag::Untextured))
 		{
-			gfx::shading::setV3(m_shader, "material.ambient", m_untexturedTint.ambient);
-			gfx::shading::setV3(m_shader, "material.diffuse", m_untexturedTint.diffuse);
-			gfx::shading::setV3(m_shader, "material.specular", m_untexturedTint.specular);
+			m_shader.setV3("material.ambient", m_untexturedTint.ambient);
+			m_shader.setV3("material.diffuse", m_untexturedTint.diffuse);
+			m_shader.setV3("material.specular", m_untexturedTint.specular);
 		}
 		Colour tint;
 		if (m_oTintOverride)

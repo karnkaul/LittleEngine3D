@@ -4,6 +4,7 @@
 #include "le3d/context/context.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/core/jobs.hpp"
+#include "le3d/core/maths.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
 #include "le3d/env/env.hpp"
@@ -62,12 +63,12 @@ void runTest()
 	auto& hUIUBO = resources::addUBO("UI", sizeof(uboData::UI), uboData::UI::bindingPoint, gfx::Draw::Dynamic);
 
 	Flags<HShader::MAX_FLAGS> noTex;
-	noTex.set((s32)gfx::shading::Flag::Untextured, true);
+	noTex.set((s32)HShader::Flag::Untextured, true);
 	Flags<HShader::MAX_FLAGS> noLit;
-	noLit.set((s32)gfx::shading::Flag::Unlit, true);
+	noLit.set((s32)HShader::Flag::Unlit, true);
 	Flags<HShader::MAX_FLAGS> noTexNoLit;
-	noTexNoLit.set((s32)gfx::shading::Flag::Unlit, true);
-	noTexNoLit.set((s32)gfx::shading::Flag::Untextured, true);
+	noTexNoLit.set((s32)HShader::Flag::Unlit, true);
+	noTexNoLit.set((s32)HShader::Flag::Untextured, true);
 
 	auto def = readFile(resourcePath("shaders/default.vsh"));
 	auto ui = readFile(resourcePath("shaders/ui.vsh"));
@@ -79,7 +80,7 @@ void runTest()
 	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")), noTexNoLit);
 	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")), noLit);
 	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")), noLit);
-	gfx::shading::setV4(litTinted, env::g_config.uniforms.tint, Colour::Yellow);
+	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
 
 #if defined(DEBUGGING)
 	Time _t = Time::now();
@@ -127,8 +128,8 @@ void runTest()
 		mats.model = glm::translate(mats.model, pos);
 		mats.oNormals = mats.model = glm::scale(mats.model, glm::vec3(0.1f));
 		const auto& tinted = resources::get<HShader>("unlit/tinted");
-		gfx::shading::setV4(tinted, env::g_config.uniforms.tint, Colour::White);
-		gfx::shading::setModelMats(tinted, mats);
+		tinted.setV4(env::g_config.uniforms.tint, Colour::White);
+		tinted.setModelMats(mats);
 		gfx::gl::draw(light);
 	};
 
@@ -236,7 +237,7 @@ void runTest()
 		// uiSpace = glm::vec3(context::size(), 2.0f);
 		uiAR = (f32)uiSpace.x / uiSpace.y;
 		uboData::UI ui{camera.uiProj(uiSpace)};
-		gfx::shading::setUBO<uboData::UI>(hUIUBO, ui);
+		gfx::setUBO<uboData::UI>(hUIUBO, ui);
 	};
 	onResize(0, 0);
 	// auto resizeToken = input::registerResize(onResize);
@@ -256,9 +257,9 @@ void runTest()
 		quadProp.m_transform.setOrientation(
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 
-		gfx::shading::setUBO<uboData::Lights>(hLightsUBO, lights);
+		gfx::setUBO<uboData::Lights>(hLightsUBO, lights);
 		uboData::Matrices mats{camera.view(), camera.perspectiveProj(), glm::vec4(camera.m_position, 0.0f)};
-		gfx::shading::setUBO<uboData::Matrices>(hMatricesUBO, mats);
+		gfx::setUBO<uboData::Matrices>(hMatricesUBO, mats);
 
 		renderSkybox(skybox, resources::get<HShader>("unlit/skybox"));
 
@@ -273,7 +274,7 @@ void runTest()
 			m[i].oNormals = prop.m_transform.normalModel();
 			// prop.render();
 		}
-		gfx::shading::setV4(litTextured, env::g_config.uniforms.tint, Colour::White);
+		litTextured.setV4(env::g_config.uniforms.tint, Colour::White);
 		const auto& cube = debug::debugCube();
 		renderMeshes(cube, m, litTextured);
 		m = std::vector<ModelMats>(props.size() - 3, ModelMats());

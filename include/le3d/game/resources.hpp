@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "le3d/stdtypes.hpp"
-#include "le3d/gfx/shading.hpp"
+#include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/model.hpp"
 
 namespace le

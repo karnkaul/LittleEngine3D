@@ -4,6 +4,7 @@
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
 #include "le3d/core/tZero.hpp"
+#include "colour.hpp"
 
 namespace le
 {
@@ -35,10 +36,29 @@ struct HCubemap final
 
 struct HShader final
 {
+	enum class Flag
+	{
+		Untextured = 0,
+		Unlit,
+	};
+
 	static const size_t MAX_FLAGS = 8;
 	std::string id;
 	Flags<MAX_FLAGS> flags;
 	GLObj glID;
+
+	void use() const;
+	bool setBool(std::string_view id, bool bVal) const;
+	bool setS32(std::string_view id, s32 val) const;
+	bool setF32(std::string_view id, f32 val) const;
+	bool setV2(std::string_view id, const glm::vec2& val) const;
+	bool setV3(std::string_view id, const glm::vec3& val) const;
+	bool setV4(std::string_view id, const glm::vec4& val) const;
+	bool setV4(std::string_view id, Colour colour) const;
+
+	void setModelMats(const struct ModelMats& mats) const;
+
+	void bindUBO(std::string_view id, const struct HUBO& ubo) const;
 };
 
 struct HVerts final
@@ -86,36 +106,11 @@ struct Vertices final
 	std::vector<f32> texCoords;
 	std::vector<u32> indices;
 
-	inline u32 bytes() const
-	{
-		u32 total = (u32)(points.size() * sizeof(f32));
-		total += (u32)(normals.size() * sizeof(f32));
-		total += (u32)(texCoords.size() * sizeof(f32));
-		return total;
-	}
+	u32 bytes() const;
 
-	inline void addPoint(glm::vec3 point)
-	{
-		points.push_back(point.x);
-		points.push_back(point.y);
-		points.push_back(point.z);
-	}
-
-	inline void addNormals(glm::vec3 normal, u16 count = 1)
-	{
-		for (u16 i = 0; i < count; ++i)
-		{
-			normals.push_back(normal.x);
-			normals.push_back(normal.y);
-			normals.push_back(normal.z);
-		}
-	}
-
-	inline void addTexCoord(glm::vec2 texCoord)
-	{
-		texCoords.push_back(texCoord.x);
-		texCoords.push_back(texCoord.y);
-	}
+	void addPoint(glm::vec3 point);
+	void addNormals(glm::vec3 normal, u16 count = 1);
+	void addTexCoord(glm::vec2 texCoord);
 };
 
 struct LitTint final

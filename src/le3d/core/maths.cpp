@@ -1,60 +1,49 @@
 #include "le3d/core/maths.hpp"
 
-namespace Maths
+namespace maths
 {
+namespace
+{
+static std::random_device rd;
+}
+
 bool IsNearlyEqual(f32 lhs, f32 rhs, f32 epsilon)
 {
 	return abs(lhs - rhs) < epsilon;
 }
 
-Fixed ComputeAlpha(Time dt, Time totalTime)
+RandomGen::RandomGen(s32 minS32, s32 maxS32, f32 minF32, f32 maxF32) : m_intGen(1729), m_intDist(minS32, maxS32), m_realDist(minF32, maxF32)
 {
-	return Fixed(clamp01(dt.assecs() / totalTime.assecs()));
 }
 
-Random::Random(s32 min, s32 max) : m_detMt(1729), m_distribution(min, max)
+void RandomGen::seed(s32 seed)
 {
-	m_NDetMt = std::mt19937(m_randomDevice());
+	m_intGen = std::mt19937(u32(seed));
+	m_realGen = std::mt19937(u32(seed));
 }
 
-void Random::seed(s32 seed)
+s32 RandomGen::nextS32()
 {
-	m_detMt = std::mt19937(static_cast<u32>(seed));
+	return m_intDist(m_intGen);
 }
 
-s32 Random::range(s32 min, s32 max)
+f32 RandomGen::nextF32()
 {
-	static std::random_device device;
-	static std::mt19937 nDetMt(device());
+	return m_realDist(m_realGen);
+}
+
+s32 randomNDet(s32 min, s32 max)
+{
+	static std::mt19937 nDetMt(rd());
 	std::uniform_int_distribution<s32> distribution(min, max);
 	return distribution(nDetMt);
 }
 
-size_t Random::range(size_t min, size_t max)
+f32 randomNDet(f32 min, f32 max)
 {
-	return static_cast<size_t>(range((s32)min, (s32)max));
+	static std::mt19937 nDetMt(rd());
+	std::uniform_real_distribution<f32> distribution(min, max);
+	return distribution(nDetMt);
 }
 
-Fixed Random::range(Fixed min, Fixed max, u32 precision)
-{
-	s32 sMin = s32(min.toF32() * precision);
-	s32 sMax = s32(max.toF32() * precision);
-	s32 random = range(sMin, sMax);
-	return Fixed(random, s32(precision));
-}
-
-s32 Random::nextDet()
-{
-	return m_distribution(m_detMt);
-}
-
-s32 Random::nextNDet()
-{
-	return m_distribution(m_NDetMt);
-}
-
-s32 Random::next(bool bDeterministic)
-{
-	return bDeterministic ? nextDet() : nextNDet();
-}
-} // namespace Maths
+} // namespace maths

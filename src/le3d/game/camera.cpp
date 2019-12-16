@@ -123,8 +123,8 @@ void FreeCam::tick(Time dt)
 		}
 		if (m_dSpeed * m_dSpeed > 0.0f)
 		{
-			m_speed = Maths::clamp(m_speed + (m_dSpeed * dt.assecs() * 100), m_minSpeed, m_maxSpeed);
-			m_dSpeed = Maths::lerp(m_dSpeed, 0.0f, 0.75f);
+			m_speed = maths::clamp(m_speed + (m_dSpeed * dt.assecs() * 100), m_minSpeed, m_maxSpeed);
+			m_dSpeed = maths::lerp(m_dSpeed, 0.0f, 0.75f);
 			if (m_dSpeed * m_dSpeed < 0.01f)
 			{
 				m_dSpeed = 0.0f;

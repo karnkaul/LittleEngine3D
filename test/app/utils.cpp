@@ -30,8 +30,8 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 		ModelMats mats;
 		world = glm::translate(world, glm::vec3(quad.pos.x, quad.pos.y, 0.0f));
 		mats.model = glm::scale(world, glm::vec3(quad.size.x, quad.size.y, 1.0f));
-		gfx::shading::setModelMats(shader, mats);
-		gfx::shading::setV4(shader, env::g_config.uniforms.tint, quad.tint);
+		shader.setModelMats(mats);
+		shader.setV4(env::g_config.uniforms.tint, quad.tint);
 		if (quad.oTexCoords)
 		{
 			const glm::vec4& uv = *quad.oTexCoords;
@@ -53,7 +53,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 	}
 	if (bResetTint)
 	{
-		gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::White);
+		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
 	gfx::unsetTextures(0);
 	gfx::resetViewport();
@@ -95,8 +95,8 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
 	matID += ".";
 	matID += u.diffuseTexPrefix;
 	matID += "[0]";
-	gfx::shading::setS32(shader, matID, 0);
-	gfx::shading::setV4(shader, env::g_config.uniforms.tint, text.colour);
+	shader.setS32(matID, 0);
+	shader.setV4(env::g_config.uniforms.tint, text.colour);
 	bResetTint |= gfx::setTextures(shader, {hFont.sheet});
 	glBindVertexArray(hFont.quad.hVerts.vao.handle);
 	glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.hVerts.vbo.handle);
@@ -122,7 +122,7 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
 			ModelMats mats;
 			world = glm::translate(world, p);
 			mats.model = glm::scale(world, glm::vec3(text.height, text.height, 1.0f));
-			gfx::shading::setModelMats(shader, mats);
+			shader.setModelMats(mats);
 			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.p, uv.q, uv.s, uv.q, uv.s, uv.t};
 			auto sf = sizeof(f32);
 			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data);
@@ -135,7 +135,7 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
 	glChk(glBindTexture(GL_TEXTURE_2D, 0));
 	if (bResetTint)
 	{
-		gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::White);
+		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
 	gfx::unsetTextures(0);
 	gfx::resetViewport();

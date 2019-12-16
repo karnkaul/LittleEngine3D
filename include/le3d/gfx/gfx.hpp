@@ -36,6 +36,13 @@ void releaseUBO(HUBO& ubo);
 void draw(const HVerts& hVerts);
 } // namespace gl
 
+void setUBO(const HUBO& hUBO, s64 offset, s64 size, const void* pData);
+template <typename T>
+static void setUBO(const HUBO& hUBO, const T& data)
+{
+	setUBO(hUBO, 0, sizeof(data), &data);
+}
+
 HMesh newMesh(std::string name, Vertices vertices, Draw type, const HShader* pShader = nullptr);
 void releaseMeshes(const std::vector<HMesh*>& meshes);
 

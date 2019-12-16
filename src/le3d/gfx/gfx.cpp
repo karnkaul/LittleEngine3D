@@ -10,7 +10,6 @@
 #include "le3d/env/env.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/primitives.hpp"
-#include "le3d/gfx/shading.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/core/log.hpp"
 
@@ -33,8 +32,8 @@ void preDraw(const HMesh& mesh, const HShader& shader)
 		ASSERT(shader.glID.handle > 0, "shader is null!");
 		{
 			Lock lock(contextImpl::g_glMutex);
-			gfx::shading::use(shader);
-			gfx::shading::setF32(shader, u.shininess, mesh.shininess);
+			shader.use();
+			shader.setF32(u.shininess, mesh.shininess);
 		}
 	}
 }
@@ -389,6 +388,16 @@ void gfx::gl::draw(const HVerts& hVerts)
 	}
 }
 
+void gfx::setUBO(const HUBO& hUBO, s64 offset, s64 size, const void* pData)
+{
+	if (hUBO.ubo.handle > 0)
+	{
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, hUBO.ubo.handle));
+		glChk(glBufferSubData(GL_UNIFORM_BUFFER, offset, size, pData));
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
+	}
+}
+
 HMesh gfx::newMesh(std::string name, Vertices vertices, Draw type, const HShader* pShader /* = nullptr */)
 {
 	HMesh mesh;
@@ -428,7 +437,7 @@ bool gfx::setTextures(const HShader& shader, const std::vector<HTexture>& textur
 	bool bResetTint = false;
 	glChk(glBindTexture(GL_TEXTURE_2D, 0));
 	const auto& u = env::g_config.uniforms;
-	if (!shader.flags.isSet((s32)gfx::shading::Flag::Untextured))
+	if (!shader.flags.isSet((s32)HShader::Flag::Untextured))
 	{
 		if (textures.empty())
 		{
@@ -487,7 +496,7 @@ bool gfx::setTextures(const HShader& shader, const std::vector<HTexture>& textur
 		{
 			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
 			glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
-			gfx::shading::setS32(shader, id, txID++);
+			shader.setS32(id, txID++);
 		}
 		else
 		{
@@ -507,7 +516,7 @@ void gfx::setBlankTex(const HShader& shader, s32 txID, bool bMagenta)
 {
 	if (bMagenta)
 	{
-		gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::Magenta);
+		shader.setV4(env::g_config.uniforms.tint, Colour::Magenta);
 	}
 	glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
 	glChk(glBindTexture(GL_TEXTURE_2D, gfx::g_blankTexID.handle));
@@ -540,7 +549,7 @@ void gfx::drawMeshes(const HMesh& mesh, const std::vector<ModelMats>& mats, cons
 	preDraw(mesh, shader);
 	for (const auto& mat : mats)
 	{
-		gfx::shading::setModelMats(shader, mat);
+		shader.setModelMats(mat);
 		gl::draw(mesh.hVerts);
 	}
 }

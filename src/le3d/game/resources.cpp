@@ -7,7 +7,6 @@
 #include "le3d/core/utils.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/primitives.hpp"
-#include "le3d/gfx/shading.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
 
@@ -128,7 +127,7 @@ HShader& resources::loadShader(std::string id, std::string_view vertCode, std::s
 	{
 		for (const auto& kvp : g_uboMap)
 		{
-			gfx::shading::bindUBO(shader, kvp.first, kvp.second);
+			shader.bindUBO(kvp.first, kvp.second);
 		}
 		g_shaderMap.emplace(id, std::move(shader));
 		return g_shaderMap[id];

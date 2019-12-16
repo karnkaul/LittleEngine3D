@@ -2,7 +2,6 @@
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
 #include "le3d/gfx/model.hpp"
-#include "le3d/gfx/shading.hpp"
 #include "le3d/game/resources.hpp"
 
 namespace le
@@ -38,7 +37,7 @@ void Model::render(const HShader& shader, const ModelMats& mats)
 	for (auto& fixture : m_fixtures)
 	{
 		ASSERT(fixture.pMesh, "Mesh is null!");
-		gfx::shading::setV4(shader, env::g_config.uniforms.tint, m_tint);
+		shader.setV4(env::g_config.uniforms.tint, m_tint);
 #if defined(DEBUGGING)
 		m_renderFlags.set((s32)DrawFlag::BlankMagenta, m_bDEBUG);
 		if (m_renderFlags.isSet((s32)DrawFlag::Blank) || m_renderFlags.isSet((s32)DrawFlag::BlankMagenta))
@@ -56,11 +55,11 @@ void Model::render(const HShader& shader, const ModelMats& mats)
 			{
 				*matsCopy.oNormals *= *fixture.oWorld;
 			}
-			gfx::shading::setModelMats(shader, matsCopy);
+			shader.setModelMats(matsCopy);
 		}
 		else
 		{
-			gfx::shading::setModelMats(shader, mats);
+			shader.setModelMats(mats);
 		}
 #if defined(DEBUGGING)
 		if (!bSkipTextures)
@@ -75,7 +74,7 @@ void Model::render(const HShader& shader, const ModelMats& mats)
 		m_renderFlags.flags.reset();
 		if (bResetTint)
 		{
-			gfx::shading::setV4(shader, env::g_config.uniforms.tint, Colour::White);
+			shader.setV4(env::g_config.uniforms.tint, Colour::White);
 		}
 #endif
 	}
