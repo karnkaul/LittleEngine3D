@@ -7,7 +7,7 @@ if(PLATFORM STREQUAL "Linux")
 	endif()
 endif()
 
-set(EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build" CACHE STRING "" FORCE)
+set(LE3D_EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build" CACHE STRING "" FORCE)
 
 set(SOURCES
 	app/gameloop.hpp

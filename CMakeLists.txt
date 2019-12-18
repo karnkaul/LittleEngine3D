@@ -4,48 +4,51 @@ set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "")
 
 project(le3d)
 
+# Includes
 include(tools/.cmake/platform.cmake)
 include(tools/.cmake/utils.cmake)
+
+# Header text
 set(BUILD_CONFIG ${CMAKE_BUILD_TYPE})
 if(CMAKE_CONFIGURATION_TYPES)
 	set(BUILD_CONFIG "Multi-config")
 endif()
 message(STATUS "[${CMAKE_SYSTEM_PROCESSOR}] [${PLATFORM}] [${CMAKE_GENERATOR}] [${CMAKE_CXX_COMPILER_ID}] [${BUILD_CONFIG}]")
 
-set(COMMIT_HASH "[unknown]" CACHE STRING "Commit hash" FORCE)
-execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-	OUTPUT_VARIABLE COMMIT_HASH
-	ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-set(CMAKE_VS_PLATFORM_NAME "x64" CACHE STRING "" FORCE)
-if(NOT CMAKE_VS_PLATFORM_NAME STREQUAL "x64")
-	message(FATAL_ERROR "Only x64 builds are supported!")
-endif()
-
+# Git operations
+set(COMMIT_HASH_VAR "[unknown]")
 find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
-	option(UPDATE_SUBMODULES "Init/Update submodules during generation" ON)
-	if(UPDATE_SUBMODULES)
-		message(STATUS "Updating git submodules...")
-		execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-			RESULT_VARIABLE UPDATE_SUBMODULES_RESULT
-		)
-		if(NOT UPDATE_SUBMODULES_RESULT EQUAL "0")
-			message(FATAL_ERROR "git submodule update failed!")
+if(GIT_FOUND)
+	execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+		OUTPUT_VARIABLE COMMIT_HASH_VAR
+		ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+	if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+		option(LE3D_UPDATE_SUBMODULES "Init/Update submodules during generation" ON)
+		if(LE3D_UPDATE_SUBMODULES)
+			message(STATUS "Updating git submodules...")
+			execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+				WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+				RESULT_VARIABLE UPDATE_SUBMODULES_RESULT
+			)
+			if(NOT UPDATE_SUBMODULES_RESULT EQUAL "0")
+				message(FATAL_ERROR "git submodule update failed!")
+			endif()
 		endif()
 	endif()
 endif()
 
+# Constants
+set(LE3D_COMMIT_HASH ${COMMIT_HASH_VAR} CACHE STRING "Commit hash" FORCE)
+
 # Variables
-set(EXECUTABLE_PATH "" CACHE STRING "Force executable to build here")
-set(LIBRARIES_PATH "" CACHE STRING "Force libraries to build here")
+set(LE3D_EXECUTABLE_PATH "" CACHE STRING "Force executable to build here")
+set(LE3D_LIBRARIES_PATH "" CACHE STRING "Force libraries to build here")
 
 # Test
-option(BUILD_LE_TEST "Build Test executable" ON)
-if(BUILD_LE_TEST)
+option(LE3D_BUILD_TEST "Build Test executable" ON)
+if(LE3D_BUILD_TEST)
 	add_subdirectory(test)
 endif()
 
@@ -68,17 +71,13 @@ add_subdirectory(lib/glad)
 # stb_image
 add_subdirectory(lib/stb)
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
-	find_library(GL GL)
-	if(GL STREQUAL "GL_NOTFOUND")
-		message("Fatal error: cannot build without OpenGL!" FATAL_ERROR)
-	endif()
-	message("Warning: Unsupported platform; ensure xorg-dev etc is installed!")
-endif()
-
-file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.*pp")
+# include
+file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
+# src
 include(src/sources.cmake)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
+
+# Target
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME}-$<CONFIG>)
@@ -105,5 +104,6 @@ target_link_libraries(${PROJECT_NAME}
 	stb-image
 )
 
-message("Executable path\t: ${EXECUTABLE_PATH}")
-message("Libraries path\t: ${LIBRARIES_PATH}")
+# Footer text
+message(STATUS "Executable path\t: ${LE3D_EXECUTABLE_PATH}")
+message(STATUS "Libraries path\t: ${LE3D_LIBRARIES_PATH}")
