@@ -1,44 +1,44 @@
 set(SUB_SOURCES
-	le3d/context/contextImpl.hpp
-	le3d/context/context.cpp
+	context/contextImpl.hpp
+	context/context.cpp
 
-	le3d/core/assert.cpp
-	le3d/core/fixed.cpp
-	le3d/core/gdata.cpp
-	le3d/core/jobs.cpp
-	le3d/core/jobs/jobCatalogue.cpp
-	le3d/core/jobs/jobHandle.cpp
-	le3d/core/jobs/jobManager.hpp
-	le3d/core/jobs/jobManager.cpp
-	le3d/core/jobs/jobWorker.hpp
-	le3d/core/jobs/jobWorker.cpp
-	le3d/core/log.cpp
-	le3d/core/maths.cpp
-	le3d/core/time.cpp
-	le3d/core/transform.cpp
-	le3d/core/ubyte.cpp
-	le3d/core/utils.cpp
+	core/assert.cpp
+	core/fixed.cpp
+	core/gdata.cpp
+	core/jobs.cpp
+	core/jobs/jobCatalogue.cpp
+	core/jobs/jobHandle.cpp
+	core/jobs/jobManager.hpp
+	core/jobs/jobManager.cpp
+	core/jobs/jobWorker.hpp
+	core/jobs/jobWorker.cpp
+	core/log.cpp
+	core/maths.cpp
+	core/time.cpp
+	core/transform.cpp
+	core/ubyte.cpp
+	core/utils.cpp
 
-	le3d/env/env.cpp
-	le3d/env/threadsImpl.hpp
-	le3d/env/threads.cpp
+	env/env.cpp
+	env/threadsImpl.hpp
+	env/threads.cpp
 
-	le3d/game/camera.cpp
-	le3d/game/entity.cpp
-	le3d/game/fileLogger.cpp
-	le3d/game/object.cpp
-	le3d/game/resources.cpp
-	le3d/game/utils.cpp
+	game/camera.cpp
+	game/entity.cpp
+	game/fileLogger.cpp
+	game/object.cpp
+	game/resources.cpp
+	game/utils.cpp
 
-	le3d/input/inputImpl.hpp
-	le3d/input/input.cpp
+	input/inputImpl.hpp
+	input/input.cpp
 
-	le3d/gfx/colour.cpp
-	le3d/gfx/gfx.cpp
-	le3d/gfx/gfxtypes.cpp
-	le3d/gfx/model.cpp
-	le3d/gfx/primitives.cpp
-	le3d/gfx/utils.cpp
+	gfx/colour.cpp
+	gfx/gfx.cpp
+	gfx/gfxtypes.cpp
+	gfx/model.cpp
+	gfx/primitives.cpp
+	gfx/utils.cpp
 )
 
 list(TRANSFORM SUB_SOURCES PREPEND "${CMAKE_CURRENT_LIST_DIR}/")

@@ -16,31 +16,18 @@ endif()
 message(STATUS "[${CMAKE_SYSTEM_PROCESSOR}] [${PLATFORM}] [${CMAKE_GENERATOR}] [${CMAKE_CXX_COMPILER_ID}] [${BUILD_CONFIG}]")
 
 # Git operations
-set(COMMIT_HASH_VAR "[unknown]")
+set(GIT_COMMIT_HASH "[unknown]")
 find_package(Git QUIET)
-if(GIT_FOUND)
-	execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-		OUTPUT_VARIABLE COMMIT_HASH_VAR
-		ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
-	if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-		option(LE3D_UPDATE_SUBMODULES "Init/Update submodules during generation" ON)
-		if(LE3D_UPDATE_SUBMODULES)
-			message(STATUS "Updating git submodules...")
-			execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-				WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-				RESULT_VARIABLE UPDATE_SUBMODULES_RESULT
-			)
-			if(NOT UPDATE_SUBMODULES_RESULT EQUAL "0")
-				message(FATAL_ERROR "git submodule update failed!")
-			endif()
-		endif()
+if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+	get_git_commit_hash(GIT_COMMIT_HASH)
+	option(LE3D_UPDATE_SUBMODULES "Init/Update submodules during generation" ON)
+	if(LE3D_UPDATE_SUBMODULES)
+		update_git_submodules(1)
 	endif()
 endif()
 
 # Constants
-set(LE3D_COMMIT_HASH ${COMMIT_HASH_VAR} CACHE STRING "Commit hash" FORCE)
+set(LE3D_COMMIT_HASH ${GIT_COMMIT_HASH} CACHE STRING "Commit hash" FORCE)
 
 # Variables
 set(LE3D_EXECUTABLE_PATH "" CACHE STRING "Force executable to build here")
@@ -52,6 +39,7 @@ if(LE3D_BUILD_TEST)
 	add_subdirectory(test)
 endif()
 
+## Dependencies
 # GLFW
 set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
@@ -71,6 +59,7 @@ add_subdirectory(lib/glad)
 # stb_image
 add_subdirectory(lib/stb)
 
+## LittleEngine3D
 # include
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 # src

@@ -39,7 +39,7 @@ T lerp(T min, T max, T alpha);
 template <typename T>
 T scale(T val, f32 coeff);
 
-bool IsNearlyEqual(f32 lhs, f32 rhs, f32 epsilon = EPSILON);
+bool isNearlyEqual(f32 lhs, f32 rhs, f32 epsilon = EPSILON);
 
 class RandomGen
 {

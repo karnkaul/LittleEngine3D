@@ -6,7 +6,7 @@
 #include "le3d/core/log.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/env/env.hpp"
-#include "le3d/env/threadsImpl.hpp"
+#include "env/threadsImpl.hpp"
 
 namespace le
 {

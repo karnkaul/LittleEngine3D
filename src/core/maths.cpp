@@ -7,7 +7,7 @@ namespace
 static std::random_device rd;
 }
 
-bool IsNearlyEqual(f32 lhs, f32 rhs, f32 epsilon)
+bool isNearlyEqual(f32 lhs, f32 rhs, f32 epsilon)
 {
 	return abs(lhs - rhs) < epsilon;
 }

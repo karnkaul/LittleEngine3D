@@ -3,10 +3,10 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/context/context.hpp"
-#include "le3d/input/inputImpl.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "contextImpl.hpp"
+#include "input/inputImpl.hpp"
 
 namespace le
 {
