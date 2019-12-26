@@ -33,7 +33,7 @@ void preDraw(const HMesh& mesh, const HShader& shader)
 		{
 			Lock lock(contextImpl::g_glMutex);
 			shader.use();
-			shader.setF32(u.shininess, mesh.shininess);
+			shader.setF32(u.shininess, mesh.material.shininess);
 		}
 	}
 }

@@ -16,6 +16,36 @@ enum class TexType
 	Specular
 };
 
+#pragma region Data
+struct Vertices final
+{
+	std::vector<f32> points;
+	std::vector<f32> normals;
+	std::vector<f32> texCoords;
+	std::vector<u32> indices;
+
+	u32 bytes() const;
+	u32 vertexCount() const;
+
+	void addPoint(glm::vec3 point);
+	void addNormals(glm::vec3 normal, u16 count = 1);
+	void addTexCoord(glm::vec2 texCoord);
+};
+
+struct LitTint final
+{
+	glm::vec3 ambient = glm::vec3(1.0f);
+	glm::vec3 diffuse = glm::vec3(1.0f);
+	glm::vec3 specular = glm::vec3(1.0f);
+};
+
+struct ModelMats final
+{
+	glm::mat4 model = glm::mat4(1.0f);
+	std::optional<glm::mat4> oNormals = std::nullopt;
+};
+#pragma endregion
+
 #pragma region Handles
 struct HTexture final
 {
@@ -80,9 +110,15 @@ struct HUBO final
 
 struct HMesh final
 {
+	struct Material
+	{
+		LitTint noTexTint;
+		std::vector<HTexture> textures;
+		f32 shininess = 32.0f;
+	};
+
+	Material material;
 	std::string name;
-	std::vector<HTexture> textures;
-	f32 shininess = 32.0f;
 	HVerts hVerts;
 };
 
@@ -95,35 +131,6 @@ struct HFont final
 	glm::ivec2 colsRows = glm::ivec2(0);
 	glm::ivec2 offset = glm::ivec2(0);
 	u8 startCode = 0;
-};
-#pragma endregion
-
-#pragma region Data
-struct Vertices final
-{
-	std::vector<f32> points;
-	std::vector<f32> normals;
-	std::vector<f32> texCoords;
-	std::vector<u32> indices;
-
-	u32 bytes() const;
-
-	void addPoint(glm::vec3 point);
-	void addNormals(glm::vec3 normal, u16 count = 1);
-	void addTexCoord(glm::vec2 texCoord);
-};
-
-struct LitTint final
-{
-	glm::vec3 ambient = glm::vec3(1.0f);
-	glm::vec3 diffuse = glm::vec3(1.0f);
-	glm::vec3 specular = glm::vec3(1.0f);
-};
-
-struct ModelMats final
-{
-	glm::mat4 model = glm::mat4(1.0f);
-	std::optional<glm::mat4> oNormals = std::nullopt;
 };
 #pragma endregion
 } // namespace le

@@ -2,6 +2,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/glm.hpp>
 #include "le3d/context/context.hpp"
+#include "le3d/core/assert.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/maths.hpp"
@@ -55,7 +56,7 @@ void runTest()
 
 	FontAtlasData scpSheet;
 	scpSheet.bytes = readBytes(resourcePath("fonts/scp_1024x512.png"));
-	scpSheet.deserialise(readFile(resourcePath("fonts/scp_1024x512.json")));
+	scpSheet.deserialise(readFile(resourcePath("fonts/scp_1024x512.json")).str());
 	auto& hFont = resources::loadFont("default", std::move(scpSheet));
 
 	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::bindingPoint, gfx::Draw::Dynamic);
@@ -70,16 +71,17 @@ void runTest()
 	noTexNoLit.set((s32)HShader::Flag::Unlit, true);
 	noTexNoLit.set((s32)HShader::Flag::Untextured, true);
 
-	auto def = readFile(resourcePath("shaders/default.vsh"));
-	auto ui = readFile(resourcePath("shaders/ui.vsh"));
-	auto sb = readFile(resourcePath("shaders/skybox.vsh"));
-	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")), noTexNoLit);
-	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")), noLit);
-	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")), noTex);
-	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")), {});
-	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")), noTexNoLit);
-	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")), noLit);
-	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")), noLit);
+	auto def = readFile(resourcePath("shaders/default.vsh")).str();
+	auto ui = readFile(resourcePath("shaders/ui.vsh")).str();
+	auto sb = readFile(resourcePath("shaders/skybox.vsh")).str();
+	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(), noTexNoLit);
+	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")).str(), noLit);
+	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")).str(), noTex);
+	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")).str(), {});
+	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")).str(),
+												  noTexNoLit);
+	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(), noLit);
+	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")).str(), noLit);
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
 
 #if defined(DEBUGGING)
@@ -133,20 +135,41 @@ void runTest()
 		gfx::gl::draw(light);
 	};
 
+	Model objModel;
+	std::string modelPath = "models/plant";
+	std::stringstream objBuf = utils::readFile(resourcePath(modelPath + "/eb_house_plant_01.obj"));
+	std::stringstream mtlBuf = utils::readFile(resourcePath(modelPath + "/eb_house_plant_01.mtl"));
+	ModelData objData = Model::loadOBJ(objBuf, mtlBuf, modelPath, 0.05f);
+	jobHandles.clear();
+	for (size_t i = 0; i < objData.textures.size(); ++i)
+	{
+		jobHandles.push_back(jobs::enqueue(
+			[i, &objData, modelPath]() {
+				objData.textures[i].bytes = utils::readBytes(resourcePath(modelPath + "/" + objData.textures[i].filename));
+			},
+			objData.textures[i].id));
+	}
+	for (auto& jobHandle : jobHandles)
+	{
+		jobHandle->wait();
+	}
+	bool bTexturedObj = true;
+	objModel.setupModel("objModel", objData);
+
 	auto& cubeMesh = debug::debugCube();
 	auto& quadMesh = debug::debugQuad();
-	quadMesh.textures = {resources::get<HTexture>("awesomeface")};
+	quadMesh.material.textures = {resources::get<HTexture>("awesomeface")};
 	// quadMesh.textures = {bad};
-	cubeMesh.textures = {resources::get<HTexture>("container2"), resources::get<HTexture>("container2_specular")};
+	cubeMesh.material.textures = {resources::get<HTexture>("container2"), resources::get<HTexture>("container2_specular")};
 	// cubeMesh.textures = {resources::getTexture("container2")};
 	HMesh blankCubeMesh = cubeMesh;
-	blankCubeMesh.textures.clear();
+	blankCubeMesh.material.textures.clear();
 	Model cube;
 	Model blankCube;
 	Model cubeStack;
-	cube.setupModel("cube");
-	cubeStack.setupModel("cubeStack");
-	blankCube.setupModel("blankCube");
+	cube.setupModel("cube", {});
+	cubeStack.setupModel("cubeStack", {});
+	blankCube.setupModel("blankCube", {});
 	cube.addFixture(cubeMesh);
 	cubeStack.addFixture(cubeMesh);
 	blankCube.addFixture(blankCubeMesh);
@@ -154,7 +177,7 @@ void runTest()
 	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
 	cubeStack.addFixture(cubeMesh, offset);
 	Model quad;
-	quad.setupModel("quad");
+	quad.setupModel("quad", {});
 	quad.addFixture(quadMesh);
 
 	// mesh.m_textures = {bad};
@@ -192,10 +215,10 @@ void runTest()
 	{
 		Prop prop;
 		prop.setup("prop_" + std::to_string(i));
-		Model& m = i < 3 ? cube : blankCube;
+		Model& m = i < 3 ? cube : objModel;
 		prop.addModel(m);
-		std::string s = i < 3 ? "lit/textured" : "lit/tinted";
-		prop.setShader(resources::get<HShader>(s));
+		std::string shader = bTexturedObj ? "lit/textured" : "lit/tinted";
+		prop.setShader(resources::get<HShader>(shader));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -211,6 +234,7 @@ void runTest()
 			{
 				bWireframe = !bWireframe;
 				prop0.m_flags.set((s32)Entity::Flag::Wireframe, bWireframe);
+				props[3].m_flags.set((s32)Entity::Flag::Wireframe, bWireframe);
 			}
 			if (key == GLFW_KEY_P && mods & GLFW_MOD_CONTROL)
 			{
@@ -268,23 +292,25 @@ void runTest()
 		std::vector<ModelMats> m(3, ModelMats());
 		for (size_t i = 0; i < 3; ++i)
 		{
-			const auto& prop = props[i];
+			auto& prop = props[i];
 			// prop.setShader(resources::get<HShader>("lit/textured"));
 			m[i].model = prop.m_transform.model();
 			m[i].oNormals = prop.m_transform.normalModel();
-			// prop.render();
+			prop.render();
 		}
 		litTextured.setV4(env::g_config.uniforms.tint, Colour::White);
-		const auto& cube = debug::debugCube();
-		renderMeshes(cube, m, litTextured);
+		// const auto& cube = debug::debugCube();
+		// renderMeshes(cube, m, litTextured);
 		m = std::vector<ModelMats>(props.size() - 3, ModelMats());
 		for (size_t i = 3; i < props.size(); ++i)
 		{
-			const auto& prop = props[i];
+			auto& prop = props[i];
 			m[i - 3].model = prop.m_transform.model();
 			m[i - 3].oNormals = prop.m_transform.normalModel();
+			prop.render();
 		}
-		renderMeshes(cube, m, litTinted);
+		// renderMeshes(cube, m, litTinted);
+
 		drawLight(pl0Pos, light0);
 		drawLight(pl1Pos, light1);
 		quadProp.render();

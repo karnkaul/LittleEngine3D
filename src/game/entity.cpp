@@ -45,7 +45,7 @@ void Prop::render()
 		ASSERT(m_shader.glID.handle > 0, "null shader!");
 #if defined(__arm__)
 		// Compensate for lack of uniform initialisation in GLES
-		gfx::shading::setV4(m_shader, env::g_config.uniforms.tint, Colour::White);
+		m_shader.setV4(env::g_config.uniforms.tint, Colour::White);
 #endif
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
@@ -53,12 +53,6 @@ void Prop::render()
 			pModel->m_renderFlags.set((s32)DrawFlag::BlankMagenta, true);
 		}
 #endif
-		if (!m_shader.flags.isSet((s32)HShader::Flag::Unlit) && m_shader.flags.isSet((s32)HShader::Flag::Untextured))
-		{
-			m_shader.setV3("material.ambient", m_untexturedTint.ambient);
-			m_shader.setV3("material.diffuse", m_untexturedTint.diffuse);
-			m_shader.setV3("material.specular", m_untexturedTint.specular);
-		}
 		Colour tint;
 		if (m_oTintOverride)
 		{
@@ -84,6 +78,8 @@ void Prop::render()
 		glDisable(GL_DEPTH_TEST);
 		HShader tinted = resources::get<HShader>("unlit/tinted");
 		glm::mat4 mZ = m_transform.model();
+		glm::vec3 scale = m_transform.worldScl();
+		mZ = glm::scale(mZ, {1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z});
 		glm::mat4 mX = glm::rotate(mZ, glm::radians(90.0f), g_nUp);
 		glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);
 		ModelMats mats;

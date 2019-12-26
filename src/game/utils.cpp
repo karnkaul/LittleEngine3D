@@ -35,13 +35,13 @@ void renderMeshes(const HMesh& mesh, const std::vector<ModelMats>& mats, const H
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
 	shader.setV4(env::g_config.uniforms.tint, tint);
-	bool bResetTint = gfx::setTextures(shader, mesh.textures);
+	bool bResetTint = gfx::setTextures(shader, mesh.material.textures);
 	gfx::drawMeshes(mesh, mats, shader);
 	if (bResetTint)
 	{
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
-	gfx::unsetTextures((s32)mesh.textures.size());
+	gfx::unsetTextures((s32)mesh.material.textures.size());
 }
 
 HMesh& debug::debugCube()
@@ -102,7 +102,7 @@ Model& debug::debugArrow(const glm::quat& orientation)
 {
 	if (g_debugArrow.meshCount() == 0)
 	{
-		g_debugArrow.setupModel("dArrow");
+		g_debugArrow.setupModel("dArrow", {});
 		glm::mat4 m = glm::toMat4(orientation);
 		m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.5f));
 		m = glm::rotate(m, glm::radians(90.0f), g_nRight);

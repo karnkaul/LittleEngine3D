@@ -3,6 +3,7 @@
 #include "le3d/context/context.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/gdata.hpp"
+#include "le3d/core/jobs.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
 #include "le3d/gfx/gfx.hpp"

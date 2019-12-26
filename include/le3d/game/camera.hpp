@@ -44,7 +44,7 @@ public:
 	f32 m_speed = m_defaultSpeed;
 	f32 m_minSpeed = 1.0f;
 	f32 m_maxSpeed = 1000.0f;
-	f32 m_mouseLookSens = 20.0f;
+	f32 m_mouseLookSens = 0.1f;
 	f32 m_joyLookSens = 50.0f;
 
 protected:

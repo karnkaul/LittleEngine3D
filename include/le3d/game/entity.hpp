@@ -40,7 +40,6 @@ public:
 class Prop : public Entity
 {
 public:
-	LitTint m_untexturedTint;
 	std::optional<Colour> m_oTintOverride;
 
 protected:

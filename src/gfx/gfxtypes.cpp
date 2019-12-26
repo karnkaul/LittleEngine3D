@@ -141,6 +141,11 @@ u32 Vertices::bytes() const
 	return total;
 }
 
+u32 Vertices::vertexCount() const
+{
+	return (u32)points.size() / 3;
+}
+
 void Vertices::addPoint(glm::vec3 point)
 {
 	points.push_back(point.x);

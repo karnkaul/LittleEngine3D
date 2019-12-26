@@ -149,7 +149,7 @@ void FreeCam::tick(Time dt)
 		m_yaw += (padRight.x * dLook);
 	}
 
-	dLook = m_mouseLookSens * dt.assecs();
+	dLook = m_mouseLookSens;
 	glm::vec2 dCursorPos = m_nextCursorPos - m_cursorPos;
 	if (glm::length2(dCursorPos) > m_minCursorDPosSqr)
 	{

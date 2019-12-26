@@ -6,7 +6,7 @@
 
 namespace le
 {
-std::string utils::readFile(std::string_view path)
+std::stringstream utils::readFile(std::string_view path)
 {
 	std::ifstream file(path.data());
 	std::stringstream buf;
@@ -14,7 +14,16 @@ std::string utils::readFile(std::string_view path)
 	{
 		buf << file.rdbuf();
 	}
-	return buf.str();
+	return buf;
+}
+
+std::vector<std::string> utils::readLines(std::string_view path)
+{
+	std::ifstream file(path.data());
+	std::vector<std::string> ret;
+	for (std::string line; std::getline(file, line); ret.emplace_back(std::move(line)))
+		;
+	return ret;
 }
 
 std::vector<u8> utils::readBytes(std::string_view path)

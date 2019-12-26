@@ -1,6 +1,8 @@
 #pragma once
 #include <optional>
+#include <sstream>
 #include <vector>
+#include <unordered_map>
 #include "colour.hpp"
 #include "gfxtypes.hpp"
 #include "utils.hpp"
@@ -14,6 +16,28 @@ enum class DrawFlag
 	_COUNT
 };
 
+struct ModelData
+{
+	struct Tex
+	{
+		std::string id;
+		std::string filename;
+		std::vector<u8> bytes;
+		TexType type;
+	};
+	struct Mesh
+	{
+		Vertices vertices;
+		LitTint noTexTint;
+		std::string id;
+		std::vector<size_t> texIndices;
+		f32 shininess = 32.0f;
+	};
+
+	std::vector<Tex> textures;
+	std::vector<Mesh> meshes;
+};
+
 class Model final
 {
 #if defined(DEBUGGING)
@@ -25,7 +49,7 @@ public:
 public:
 	struct Fixture
 	{
-		const HMesh* pMesh = nullptr;
+		HMesh mesh;
 		std::optional<glm::mat4> oWorld;
 	};
 
@@ -37,6 +61,10 @@ public:
 private:
 	std::vector<Fixture> m_fixtures;
 	std::vector<HMesh> m_loadedMeshes;
+	std::unordered_map<std::string, HTexture> m_loadedTextures;
+
+public:
+	static ModelData loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, std::string_view meshPrefix, f32 scale = 1.0f);
 
 public:
 	Model();
@@ -45,7 +73,7 @@ public:
 	Model& operator=(Model&&);
 
 public:
-	void setupModel(std::string name);
+	void setupModel(std::string name, const ModelData& data);
 	void addFixture(const HMesh& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void render(const HShader& shader, const ModelMats& mats);
 

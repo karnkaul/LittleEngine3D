@@ -59,6 +59,9 @@ add_subdirectory(lib/glad)
 # stb_image
 add_subdirectory(lib/stb)
 
+# Tiny Obj Loader
+add_subdirectory(lib/tinyobjloader)
+
 ## LittleEngine3D
 # include
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
@@ -85,12 +88,14 @@ add_dependencies(${PROJECT_NAME}
 	glad
 	glm
 	stb-image
+	tinyobjloader
 )
 target_link_libraries(${PROJECT_NAME} 
 	glfw
 	glad$<$<CONFIG:Debug>:-d>
 	glm
 	stb-image
+	tinyobjloader
 )
 
 # Footer text

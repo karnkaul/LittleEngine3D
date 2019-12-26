@@ -1,12 +1,12 @@
-project(stb-image)
+project(tinyobjloader)
 
-if("${CMAKE_CURRENT_SOURCE_DIR}/stb.zip" IS_NEWER_THAN "${CMAKE_CURRENT_SOURCE_DIR}/include/stb/stb_image.h")
-	unzip_archive(stb.zip "${CMAKE_CURRENT_SOURCE_DIR}")
+if("${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader.zip" IS_NEWER_THAN "${CMAKE_CURRENT_SOURCE_DIR}/include/tinyobjloader/tiny_obj_loader.h")
+	unzip_archive(tinyobjloader.zip "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 
 set(SOURCES
-	include/stb/stb_image.h
-	src/stb_image.c
+	include/tinyobjloader/tiny_obj_loader.h
+	src/tiny_obj_loader.cpp
 )
 list(TRANSFORM SOURCES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
