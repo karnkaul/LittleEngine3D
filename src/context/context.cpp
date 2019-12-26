@@ -89,10 +89,11 @@ bool context::create(u16 width, u16 height, std::string_view title)
 	{
 		Lock lock(g_glMutex);
 		glfwMakeContextCurrent(g_pRenderWindow);
-		if (!g_bVSYNC)
-		{
-			glfwSwapInterval(0);
-		}
+#if defined(FORCE_NO_VSYNC)
+		g_bVSYNC = false;
+#endif
+		LOGIF_I(!g_bVSYNC, "[Context] Vsync disabled unless overridden by driver");
+		glfwSwapInterval(g_bVSYNC ? 1 : 0);
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		{
 			LOG_E("Failed to initialise GLAD!");

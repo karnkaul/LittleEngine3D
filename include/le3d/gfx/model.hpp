@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 #include <unordered_map>
+#include "le3d/defines.hpp"
 #include "colour.hpp"
 #include "gfxtypes.hpp"
 #include "utils.hpp"
@@ -16,30 +17,35 @@ enum class DrawFlag
 	_COUNT
 };
 
-struct ModelData
-{
-	struct Tex
-	{
-		std::string id;
-		std::string filename;
-		std::vector<u8> bytes;
-		TexType type;
-	};
-	struct Mesh
-	{
-		Vertices vertices;
-		LitTint noTexTint;
-		std::string id;
-		std::vector<size_t> texIndices;
-		f32 shininess = 32.0f;
-	};
-
-	std::vector<Tex> textures;
-	std::vector<Mesh> meshes;
-};
-
 class Model final
 {
+public:
+	struct Data
+	{
+		struct Tex
+		{
+			std::string id;
+			std::string filename;
+			std::vector<u8> bytes;
+			TexType type;
+		};
+		struct Mesh
+		{
+			Vertices vertices;
+			LitTint noTexTint;
+			std::string id;
+			std::vector<size_t> texIndices;
+			f32 shininess = 32.0f;
+		};
+
+		std::string name;
+		std::vector<Tex> textures;
+		std::vector<Mesh> meshes;
+
+		// Callback parameter: string_view filename
+		void setTextureData(std::function<std::vector<u8>(std::string_view)> getTexBytes, bool bUseJobs = true);
+	};
+
 #if defined(DEBUGGING)
 public:
 	Flags<(s32)DrawFlag::_COUNT> m_renderFlags;
@@ -64,7 +70,7 @@ private:
 	std::unordered_map<std::string, HTexture> m_loadedTextures;
 
 public:
-	static ModelData loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, std::string_view meshPrefix, f32 scale = 1.0f);
+	static Data loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, std::string_view meshPrefix, f32 scale = 1.0f);
 
 public:
 	Model();
@@ -73,7 +79,7 @@ public:
 	Model& operator=(Model&&);
 
 public:
-	void setupModel(std::string name, const ModelData& data);
+	void setupModel(std::string name, const Data& data);
 	void addFixture(const HMesh& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void render(const HShader& shader, const ModelMats& mats);
 

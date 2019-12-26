@@ -48,11 +48,11 @@ void JobCatalog::update()
 		const auto& subJob = *iter;
 		if (subJob->hasCompleted())
 		{
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 			auto id = subJob->ID();
 #endif
 			iter = m_pendingJobs.erase(iter);
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 			LOG_D("%s Job %d completed. %d jobs remaining", m_logName.c_str(), id, m_pendingJobs.size());
 #endif
 		}
@@ -70,7 +70,7 @@ void JobCatalog::update()
 			m_onComplete = nullptr;
 		}
 		m_bCompleted = true;
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 		f32 secs = (Time::now() - m_startTime).assecs();
 		LOG_D("%s completed %d jobs in %.2fs", m_logName.c_str(), m_subJobs.size(), secs);
 #endif

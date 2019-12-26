@@ -13,8 +13,6 @@ set(SOURCES
 	app/gameloop.hpp
 	app/gameloop.cpp
 	app/ubotypes.hpp
-	app/utils.hpp
-	app/utils.cpp
 	main.cpp
 )
 list(TRANSFORM SOURCES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")

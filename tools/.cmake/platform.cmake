@@ -62,7 +62,6 @@ function(set_relaxed_compile_options TARGET_NAME)
 			set(FLAGS ${FLAGS} -Wno-implicit-int-conversion -Wno-extra-semi-stmt)
 		endif()
 	endif()
-	list(APPEND FLAGS ${LE3D_COMPILE_FLAGS})
 	target_compile_options(${TARGET_NAME} PRIVATE ${FLAGS})
 endfunction()
 

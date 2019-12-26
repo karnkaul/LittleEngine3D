@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <string>
+#include "le3d/defines.hpp"
 
 namespace le
 {
@@ -22,7 +23,7 @@ namespace le
 	{                                                \
 		log(le::LogLevel::Info, msg, ##__VA_ARGS__); \
 	}
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 #define LOG_D(msg, ...) log(le::LogLevel::Debug, msg, ##__VA_ARGS__)
 #define LOGIF_D(cond, msg, ...)                       \
 	if (cond)                                         \

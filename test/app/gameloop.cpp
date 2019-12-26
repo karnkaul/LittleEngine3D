@@ -22,7 +22,6 @@
 
 #include "ubotypes.hpp"
 #include "gameloop.hpp"
-#include "utils.hpp"
 
 namespace letest
 {
@@ -74,8 +73,10 @@ void runTest()
 	auto def = readFile(resourcePath("shaders/default.vsh")).str();
 	auto ui = readFile(resourcePath("shaders/ui.vsh")).str();
 	auto sb = readFile(resourcePath("shaders/skybox.vsh")).str();
-	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(), noTexNoLit);
-	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")).str(), noLit);
+	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(),
+												   noTexNoLit);
+	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")).str(),
+													 noLit);
 	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")).str(), noTex);
 	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")).str(), {});
 	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")).str(),
@@ -84,7 +85,7 @@ void runTest()
 	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")).str(), noLit);
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
 
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 	Time _t = Time::now();
 #endif
 	std::vector<u8> l, r, u, d, f, b;
@@ -103,13 +104,10 @@ void runTest()
 		jobHandles.push_back(jobs::enqueue([&d]() { d = readBytes(resourcePath("textures/skybox/down.jpg")); }, "skybox_d"));
 		jobHandles.push_back(jobs::enqueue([&f]() { f = readBytes(resourcePath("textures/skybox/front.jpg")); }, "skybox_f"));
 		jobHandles.push_back(jobs::enqueue([&b]() { b = readBytes(resourcePath("textures/skybox/back.jpg")); }, "skybox_b"));
-		for (auto& jh : jobHandles)
-		{
-			jh->wait();
-		}
+		jobs::waitAll(jobHandles);
 		skybox = resources::createSkybox("skybox", {r, l, u, d, f, b});
 	}
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 	Time _dt = Time::now() - _t;
 	LOG_D("Skybox time: %.2fms", _dt.assecs() * 1000);
 #endif
@@ -135,26 +133,20 @@ void runTest()
 		gfx::gl::draw(light);
 	};
 
-	Model objModel;
 	std::string modelPath = "models/plant";
-	std::stringstream objBuf = utils::readFile(resourcePath(modelPath + "/eb_house_plant_01.obj"));
-	std::stringstream mtlBuf = utils::readFile(resourcePath(modelPath + "/eb_house_plant_01.mtl"));
-	ModelData objData = Model::loadOBJ(objBuf, mtlBuf, modelPath, 0.05f);
-	jobHandles.clear();
-	for (size_t i = 0; i < objData.textures.size(); ++i)
-	{
-		jobHandles.push_back(jobs::enqueue(
-			[i, &objData, modelPath]() {
-				objData.textures[i].bytes = utils::readBytes(resourcePath(modelPath + "/" + objData.textures[i].filename));
-			},
-			objData.textures[i].id));
-	}
-	for (auto& jobHandle : jobHandles)
-	{
-		jobHandle->wait();
-	}
+	std::string modelFile = "eb_house_plant_01";
+	std::string materialFile = modelFile;
+	std::stringstream objBuf = utils::readFile(resourcePath(modelPath + "/" + modelFile + ".obj"));
+	std::stringstream mtlBuf = utils::readFile(resourcePath(modelPath + "/" + materialFile + ".mtl"));
+	Model::Data objData = Model::loadOBJ(objBuf, mtlBuf, modelPath, 0.05f);
+	objData.setTextureData([modelPath](std::string_view filename) -> std::vector<u8> {
+		std::string filepath = modelPath;
+		filepath += "/";
+		filepath += filename;
+		return utils::readBytes(resourcePath(filepath));
+	});
 	bool bTexturedObj = true;
-	objModel.setupModel("objModel", objData);
+	Model& objModel = resources::loadModel("objModel", objData);
 
 	auto& cubeMesh = debug::debugCube();
 	auto& quadMesh = debug::debugQuad();
@@ -315,7 +307,7 @@ void runTest()
 		drawLight(pl1Pos, light1);
 		quadProp.render();
 
-		Quad2D tl, tr, bl, br;
+		debug::Quad2D tl, tr, bl, br;
 		HTexture& quadTex = resources::get<HTexture>("awesomeface");
 		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
@@ -324,9 +316,9 @@ void runTest()
 		br.pos = {tr.pos.x, -tr.pos.y};
 		debug::draw2DQuads({tl, tr, bl, br}, quadTex, uiAR);
 
-		Text2D text;
+		debug::Text2D text;
 		text.text = "Hello World!";
-		text.align = Align::Centre;
+		text.align = debug::Text2D::Align::Centre;
 		text.height = 100.0f;
 		text.pos = glm::vec2(0.0f, 300.0f);
 		debug::renderString(text, hFont, uiAR);
@@ -351,9 +343,7 @@ s32 gameloop::run(s32 argc, char** argv)
 	constexpr u16 WIDTH = 1280;
 	constexpr u16 HEIGHT = 720;
 
-#if defined(DEBUGGING)
 	context::g_bVSYNC = false;
-#endif
 	if (!context::create(WIDTH, HEIGHT, "Test"))
 	{
 		return 1;

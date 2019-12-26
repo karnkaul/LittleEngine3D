@@ -27,10 +27,12 @@ std::unordered_map<std::string, HShader> g_shaderMap;
 std::unordered_map<std::string, HTexture> g_textureMap;
 std::unordered_map<std::string, HFont> g_fontMap;
 std::unordered_map<std::string, HUBO> g_uboMap;
+std::unordered_map<std::string, Model> g_modelMap;
 
 HShader g_nullShader;
 HFont g_nullFont;
 HUBO g_nullUBO;
+Model g_nullModel;
 } // namespace
 
 namespace resources
@@ -239,7 +241,7 @@ void resources::unloadAll<HTexture>()
 	{
 		toDel.push_back(&kvp.second);
 	}
-	gfx::gl::releaseTexture(std::move(toDel));
+	gfx::gl::releaseTexture(toDel);
 	g_textureMap.clear();
 }
 
@@ -315,24 +317,70 @@ bool resources::unload<HFont>(HFont& font)
 template <>
 void resources::unloadAll<HFont>()
 {
-	std::vector<HFont*> fonts;
+	std::vector<HFont*> toDel;
+	toDel.reserve(g_fontMap.size());
 	for (auto& kvp : g_fontMap)
 	{
-		fonts.push_back(&kvp.second);
+		toDel.push_back(&kvp.second);
 	}
-	gfx::releaseFonts(fonts);
+	gfx::releaseFonts(toDel);
 	g_fontMap.clear();
 }
 
-template <>
-u32 resources::count<HFont>()
+Model& resources::loadModel(std::string id, const Model::Data& data)
 {
-	return (u32)g_fontMap.size();
+	ASSERT(g_modelMap.find(id) == g_modelMap.end(), "Model already loaded!");
+	Model newModel;
+	newModel.setupModel(id, data);
+	g_modelMap.emplace(id, std::move(newModel));
+	return g_modelMap[id];
+}
+
+template <>
+Model& resources::get<Model>(const std::string& id)
+{
+	auto search = g_modelMap.find(id);
+	if (search != g_modelMap.end())
+	{
+		return search->second;
+	}
+	return g_nullModel;
+}
+
+template <>
+bool resources::isLoaded<Model>(const std::string& id)
+{
+	return g_modelMap.find(id) != g_modelMap.end();
+}
+
+template <>
+bool resources::unload<Model>(Model& model)
+{
+	auto search = g_modelMap.find(model.m_name);
+	if (search != g_modelMap.end())
+	{
+		g_modelMap.erase(search);
+		return true;
+	}
+	return false;
+}
+
+template <>
+void resources::unloadAll<Model>()
+{
+	g_modelMap.clear();
+}
+
+template <>
+u32 resources::count<Model>()
+{
+	return (u32)g_modelMap.size();
 }
 
 void resources::unloadAll()
 {
 	debug::unloadAll();
+	unloadAll<Model>();
 	unloadAll<HFont>();
 	unloadAll<HTexture>();
 	if (g_blankTex1px.glID > 0)

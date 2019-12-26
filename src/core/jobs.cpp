@@ -13,38 +13,47 @@ std::unique_ptr<JobManager> uManager;
 namespace jobs
 {
 JobManager* g_pJobManager = nullptr;
+} // namespace jobs
 
-void init(u32 workerCount)
+void jobs::init(u32 workerCount)
 {
 	uManager = std::make_unique<JobManager>(workerCount, threads::available());
 	g_pJobManager = uManager.get();
 }
 
-void cleanup()
+void jobs::cleanup()
 {
 	uManager = nullptr;
 	g_pJobManager = nullptr;
 }
 
-JobHandle enqueue(Task task, std::string name /* = "" */, bool bSilent /* = false */)
+JobHandle jobs::enqueue(Task task, std::string name /* = "" */, bool bSilent /* = false */)
 {
 	ASSERT(uManager, "JobManager is null!");
 	return uManager->enqueue(std::move(task), name, bSilent);
 }
 
-JobCatalog* createCatalogue(std::string name)
+JobCatalog* jobs::createCatalogue(std::string name)
 {
 	ASSERT(uManager, "JobManager is null!");
 	return uManager->createCatalogue(std::move(name));
 }
 
-void forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, size_t iterationsPerJob, size_t startIdx)
+void jobs::forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, size_t iterationsPerJob, size_t startIdx)
 {
 	ASSERT(uManager, "JobManager is null!");
 	uManager->forEach(indexedTask, iterationCount, iterationsPerJob, startIdx);
 }
 
-void update()
+void jobs::waitAll(const std::vector<JobHandle>& handles)
+{
+	for (auto& handle : handles)
+	{
+		handle->wait();
+	}
+}
+
+void jobs::update()
 {
 	if (uManager)
 	{
@@ -52,9 +61,8 @@ void update()
 	}
 }
 
-bool areWorkersIdle()
+bool jobs::areWorkersIdle()
 {
 	return uManager ? uManager->areWorkersIdle() : true;
 }
-} // namespace jobs
 } // namespace le

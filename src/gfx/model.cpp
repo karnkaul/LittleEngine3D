@@ -1,13 +1,15 @@
 #include <unordered_set>
 #include <tinyobjloader/tiny_obj_loader.h>
 #include "le3d/core/assert.hpp"
+#include "le3d/core/jobs.hpp"
 #include "le3d/core/log.hpp"
-#if defined(DEBUGGING)
-#include "le3d/core/time.hpp"
-#endif
 #include "le3d/env/env.hpp"
 #include "le3d/gfx/model.hpp"
 #include "le3d/game/resources.hpp"
+
+#if defined(PROFILE_MODEL_LOADS)
+#include "le3d/core/time.hpp"
+#endif
 
 namespace le
 {
@@ -20,21 +22,46 @@ Model::~Model()
 	release();
 }
 
-ModelData Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, std::string_view meshPrefix, f32 scale)
+void Model::Data::setTextureData(std::function<std::vector<u8>(std::string_view)> getTexBytes, bool bUseJobs)
 {
-	ModelData ret;
+	std::vector<JobHandle> jobHandles;
+#if defined(PROFILE_MODEL_LOADS)
+	Time pdt = Time::now();
+#endif
+	for (size_t i = 0; i < textures.size(); ++i)
+	{
+		if (bUseJobs)
+		{
+			jobHandles.push_back(
+				jobs::enqueue([this, i, &getTexBytes]() { textures[i].bytes = getTexBytes(textures[i].filename); }, textures[i].id));
+		}
+		else
+		{
+			textures[i].bytes = getTexBytes(textures[i].filename);
+		}
+	}
+	jobs::waitAll(jobHandles);
+#if defined(PROFILE_MODEL_LOADS)
+	pdt = Time::now() - pdt;
+	LOG_I("[Profile] [%s] TexData marshall time: %.2fms", name.data(), pdt.assecs() * 1000);
+#endif
+}
+
+Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, std::string_view meshPrefix, f32 scale)
+{
+	Data ret;
 	tinyobj::MaterialStreamReader reader(mtlBuf);
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 	std::string warn, err;
-#if defined(DEBUGGING)
+#if defined(PROFILE_MODEL_LOADS)
 	Time dt = Time::now();
 #endif
 	bool bOK = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &objBuf, &reader);
-#if defined(DEBUGGING)
+#if defined(PROFILE_MODEL_LOADS)
 	dt = Time::now() - dt;
-	LOG_D("[Profile] [%s] TinyObj load time: %.2fms", meshPrefix.data(), dt.assecs() * 1000);
+	LOG_I("[Profile] [%s] TinyObj load time: %.2fms", meshPrefix.data(), dt.assecs() * 1000);
 #endif
 	if (!warn.empty())
 	{
@@ -46,7 +73,8 @@ ModelData Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, s
 	}
 	if (bOK)
 	{
-#if defined(DEBUGGING)
+		ret.name = meshPrefix;
+#if defined(PROFILE_MODEL_LOADS)
 		dt = Time::now();
 #endif
 		auto getTexIdx = [&](std::string_view texName, std::string id, TexType type) -> size_t {
@@ -57,7 +85,7 @@ ModelData Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, s
 					return idx;
 				}
 			}
-			ModelData::Tex tex;
+			Data::Tex tex;
 			tex.filename = texName;
 			tex.id = std::move(id);
 			tex.type = TexType::Diffuse;
@@ -68,7 +96,7 @@ ModelData Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, s
 		std::unordered_set<std::string> meshIDs;
 		for (const auto& shape : shapes)
 		{
-			ModelData::Mesh meshData;
+			Data::Mesh meshData;
 			for (const auto& idx : shape.mesh.indices)
 			{
 				f32 vx = attrib.vertices[3 * (size_t)idx.vertex_index + 0] * scale;
@@ -157,9 +185,9 @@ ModelData Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, s
 			}
 			ret.meshes.emplace_back(std::move(meshData));
 		}
-#if defined(DEBUGGING)
+#if defined(PROFILE_MODEL_LOADS)
 		dt = Time::now() - dt;
-		LOG_D("[Profile] [%s] MeshData marshall time: %.2fms", meshPrefix.data(), dt.assecs() * 1000);
+		LOG_I("[Profile] [%s] MeshData marshall time: %.2fms", meshPrefix.data(), dt.assecs() * 1000);
 #endif
 	}
 	return ret;
@@ -170,16 +198,19 @@ void Model::addFixture(const HMesh& mesh, std::optional<glm::mat4> model /* = st
 	m_fixtures.emplace_back(Fixture{mesh, model});
 }
 
-void Model::setupModel(std::string name, const ModelData& data)
+void Model::setupModel(std::string name, const Data& data)
 {
 	m_name = std::move(name);
 	m_type = Typename(*this);
+#if defined(PROFILE_MODEL_LOADS)
+	Time dt = Time::now();
+#endif
 	for (const auto& texData : data.textures)
 	{
 		ASSERT(!texData.bytes.empty(), "Texture has no data!");
 		if (texData.bytes.empty())
 		{
-			LOG_E("[Model] [%s] ModelData::Tex has no data!", texData.id.data());
+			LOG_E("[Model] [%s] Data::Tex has no data!", texData.id.data());
 			continue;
 		}
 		auto search = m_loadedTextures.find(texData.id);
@@ -209,6 +240,10 @@ void Model::setupModel(std::string name, const ModelData& data)
 		addFixture(hMesh);
 		m_loadedMeshes.emplace_back(std::move(hMesh));
 	}
+#if defined(PROFILE_MODEL_LOADS)
+	dt = Time::now() - dt;
+	LOGIF_I(dt > Time::Zero, "[Profile] [%s] => [%s] Model setup time: %.2fms", data.name.data(), m_name.data(), dt.assecs() * 1000);
+#endif
 	LOG_D("[%s] %s setup", m_name.data(), m_type.data());
 }
 

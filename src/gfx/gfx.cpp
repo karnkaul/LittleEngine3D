@@ -93,7 +93,7 @@ void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
 		std::vector<GLuint> texIDs;
 		texIDs.reserve(textures.size());
 		Lock lock(contextImpl::g_glMutex);
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 		u32 bytes = 0;
 #endif
 		for (auto pTexture : textures)
@@ -102,7 +102,7 @@ void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
 			if (pTexture->glID > 0)
 			{
 				texIDs.push_back(pTexture->glID);
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 				bytes += pTexture->bytes;
 #endif
 				auto size = utils::friendlySize(pTexture->bytes);
@@ -111,7 +111,7 @@ void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
 			*pTexture = HTexture();
 		}
 		glChk(glDeleteTextures((GLsizei)texIDs.size(), texIDs.data()));
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 		if (textures.size() > 1)
 		{
 			auto size = utils::friendlySize(bytes);

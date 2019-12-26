@@ -1,3 +1,5 @@
+set(LE3D_PREPROCESSOR_FLAGS "" CACHE STRING "Additional preprocessor flags (use with caution)")
+
 macro(get_git_commit_hash OUTPUT_VAR)
 	execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -43,6 +45,7 @@ function(add_target_compile_definitions TARGET_NAME)
 		$<$<CONFIG:Debug>:
 			DEBUGGING
 		>
+		${LE3D_PREPROCESSOR_FLAGS}
 	)
 endfunction()
 

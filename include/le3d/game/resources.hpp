@@ -28,6 +28,13 @@ namespace resources
 {
 extern HTexture g_blankTex1px;
 
+/// Supported types:
+// - HFont
+// - HShader
+// - HTexture
+// - HUBO
+// - Model
+
 template <typename T>
 T& get(const std::string& id);
 template <typename T>
@@ -89,6 +96,18 @@ template <>
 void unloadAll<HFont>();
 template <>
 u32 count<HFont>();
+
+Model& loadModel(std::string id, const Model::Data& data);
+template <>
+Model& get<Model>(const std::string& id);
+template <>
+bool isLoaded<Model>(const std::string& id);
+template <>
+bool unload<Model>(Model& id);
+template <>
+void unloadAll<Model>();
+template <>
+u32 count<Model>();
 
 void unloadAll();
 } // namespace resources
