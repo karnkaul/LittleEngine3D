@@ -117,11 +117,13 @@ void HShader::setModelMats(const ModelMats& mats) const
 	use();
 	auto temp = glGetUniformLocation(glID.handle, env::g_config.uniforms.modelMatrix.data());
 	glChk(glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(mats.model)));
+	auto pNMat = &mats.model;
 	if (mats.oNormals)
 	{
-		temp = glGetUniformLocation(glID.handle, env::g_config.uniforms.normalMatrix.data());
-		glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(*mats.oNormals));
+		pNMat = &(*mats.oNormals);
 	}
+	temp = glGetUniformLocation(glID.handle, env::g_config.uniforms.normalMatrix.data());
+	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(*pNMat));
 }
 
 void HShader::bindUBO(std::string_view id, const HUBO& ubo) const

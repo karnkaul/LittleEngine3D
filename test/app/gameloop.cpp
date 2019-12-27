@@ -302,6 +302,17 @@ void runTest()
 			prop.render();
 		}
 		// renderMeshes(cube, m, litTinted);
+		ModelMats sphereMat;
+		sphereMat.model = glm::translate(sphereMat.model, {2.0f, -0.5f, 0.0f});
+		if (bWireframe)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		renderMeshes(debug::debugSphere(), {sphereMat}, litTinted);
+		if (bWireframe)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 
 		drawLight(pl0Pos, light0);
 		drawLight(pl1Pos, light1);

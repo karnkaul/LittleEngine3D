@@ -43,7 +43,7 @@ void Model::Data::setTextureData(std::function<std::vector<u8>(std::string_view)
 	jobs::waitAll(jobHandles);
 #if defined(PROFILE_MODEL_LOADS)
 	pdt = Time::now() - pdt;
-	LOG_I("[Profile] [%s] TexData marshall time: %.2fms", name.data(), pdt.assecs() * 1000);
+	LOGIF_I(pdt > Time::msecs(1), "[Profile] [%s] TexData marshall time: %.2fms", name.data(), pdt.assecs() * 1000);
 #endif
 }
 
@@ -242,7 +242,8 @@ void Model::setupModel(std::string name, const Data& data)
 	}
 #if defined(PROFILE_MODEL_LOADS)
 	dt = Time::now() - dt;
-	LOGIF_I(dt > Time::Zero, "[Profile] [%s] => [%s] Model setup time: %.2fms", data.name.data(), m_name.data(), dt.assecs() * 1000);
+	LOGIF_I(dt > Time::Zero && !data.name.empty(), "[Profile] [%s] => [%s] Model setup time: %.2fms", data.name.data(), m_name.data(),
+			dt.assecs() * 1000);
 #endif
 	LOG_D("[%s] %s setup", m_name.data(), m_type.data());
 }

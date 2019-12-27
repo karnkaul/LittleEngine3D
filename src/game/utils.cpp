@@ -17,6 +17,7 @@ HMesh g_debugPyramid;
 HMesh g_debugTetrahedron;
 HMesh g_debugCone;
 HMesh g_debugCylinder;
+HMesh g_debugSphere;
 Model g_debugArrow;
 } // namespace
 
@@ -101,6 +102,16 @@ HMesh& debug::debugCylinder()
 		g_debugCylinder = gfx::createCylinder(1.0f, 1.0f, 16, "dCylinder");
 	}
 	return g_debugCylinder;
+}
+
+HMesh& debug::debugSphere()
+{
+	if (g_debugSphere.hVerts.vao <= 0)
+	{
+		g_debugSphere = gfx::createCubedSphere(1.0f, "dSphere");
+		g_debugSphere.material.shininess = 5.0f;
+	}
+	return g_debugSphere;
 }
 
 Model& debug::debugArrow(const glm::quat& orientation)
@@ -270,6 +281,6 @@ void debug::renderFPS(const HFont& font, const f32 uiAR)
 void debug::unloadAll()
 {
 	g_debugArrow.release();
-	gfx::releaseMeshes({&g_debugMesh, &g_debugQuad, &g_debugPyramid, &g_debugTetrahedron, &g_debugCone, &g_debugCylinder});
+	gfx::releaseMeshes({&g_debugMesh, &g_debugQuad, &g_debugPyramid, &g_debugTetrahedron, &g_debugCone, &g_debugCylinder, &g_debugSphere});
 }
 } // namespace le

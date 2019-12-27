@@ -44,6 +44,8 @@ HMesh& debugTetrahedron();
 HMesh& debugCone();
 HMesh& debugCylinder();
 
+HMesh& debugSphere();
+
 Model& debugArrow(const glm::quat& orientation);
 
 void unloadAll();

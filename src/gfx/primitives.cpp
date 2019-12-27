@@ -141,6 +141,7 @@ HMesh gfx::createTetrahedron(f32 side, std::string name)
 
 HMesh gfx::createCircle(f32 diam, s32 points, std::string name)
 {
+	ASSERT(points > 0 && points < 100, "Max points is 100");
 	const f32 r = diam * 0.5f;
 	Vertices vertices;
 	f32 angle = 360.0f / points;
@@ -161,6 +162,7 @@ HMesh gfx::createCircle(f32 diam, s32 points, std::string name)
 
 HMesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name)
 {
+	ASSERT(points > 0 && points < 100, "Max points is 100");
 	const f32 r = diam * 0.5f;
 	Vertices vertices;
 	f32 angle = 360.0f / points;
@@ -191,6 +193,7 @@ HMesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name)
 
 HMesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name)
 {
+	ASSERT(points > 0 && points < 100, "Max points is 100");
 	const f32 r = diam * 0.5f;
 	const glm::vec3 c0(0.0f, -height * 0.5f, 0.0f);
 	const glm::vec3 c1(0.0f, height * 0.5f, 0.0f);
@@ -230,5 +233,54 @@ HMesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name)
 		vertices.addNormals(norm, 6);
 	}
 	return newMesh(std::move(name), std::move(vertices), Draw::Static);
+}
+
+HMesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide /* = 8 */)
+{
+	ASSERT(quadsPerSide > 0 && quadsPerSide < 24, "Max quads per side is 24");
+	Vertices verts;
+	std::vector<glm::vec3> points = {{-1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}, {1.0f, 1.0f, 1.0f},
+									 {1.0f, 1.0f, 1.0f},   {-1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, 1.0f}};
+	f32 offset = quadsPerSide - 1.0f;
+	for (auto& p : points)
+	{
+		p += glm::vec3(-offset, -offset, 0.0f);
+	}
+	size_t end = points.size();
+	auto duplicate = [&points, &end](std::vector<glm::vec3>& target, const glm::vec3& offset) {
+		for (size_t i = 0; i < end; ++i)
+		{
+			target.push_back(points[i] + offset);
+		}
+	};
+	for (s16 row = 0; row < quadsPerSide; ++row)
+	{
+		for (s16 col = 0; col < quadsPerSide; ++col)
+		{
+			if (row == 0 && col == 0)
+			{
+				continue;
+			}
+			f32 dy = row * 2.0f;
+			f32 dx = col * 2.0f;
+			duplicate(points, {dx, dy, 0.0f});
+		}
+	}
+	const glm::vec3 tr(1.0f, 1.0f, (f32)quadsPerSide);
+	auto addSide = [&points, &verts, diam](std::function<glm::vec3(const glm::vec3&)> transform) {
+		for (const auto& p : points)
+		{
+			auto pt = transform(p) * diam * 0.5f;
+			verts.addPoint(pt);
+			verts.addNormals(pt);
+		}
+	};
+	addSide([tr](const auto& p) { return glm::normalize(p * tr); });
+	addSide([tr](const auto& p) { return glm::normalize(glm::rotate(p * tr, glm::radians(180.0f), g_nUp)); });
+	addSide([tr](const auto& p) { return glm::normalize(glm::rotate(p * tr, glm::radians(90.0f), g_nUp)); });
+	addSide([tr](const auto& p) { return glm::normalize(glm::rotate(p * tr, glm::radians(-90.0f), g_nUp)); });
+	addSide([tr](const auto& p) { return glm::normalize(glm::rotate(p * tr, glm::radians(90.0f), g_nRight)); });
+	addSide([tr](const auto& p) { return glm::normalize(glm::rotate(p * tr, glm::radians(-90.0f), g_nRight)); });
+	return gfx::newMesh(std::move(name), std::move(verts), gfx::Draw::Static);
 }
 } // namespace le

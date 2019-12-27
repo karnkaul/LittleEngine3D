@@ -406,7 +406,8 @@ HMesh gfx::newMesh(std::string name, Vertices vertices, Draw type, const HShader
 		mesh.name = std::move(name);
 		mesh.hVerts = gl::genVertices(std::move(vertices), type, pShader);
 		auto size = utils::friendlySize(mesh.hVerts.bytes);
-		LOGIF_I(!mesh.name.empty(), "== [%s] [%.1f%s] Mesh set up", mesh.name.data(), size.first, size.second.data());
+		LOGIF_I(!mesh.name.empty(), "== [%s] [%.1f%s] Mesh set up (%u vertices)", mesh.name.data(), size.first, size.second.data(),
+				mesh.hVerts.vCount);
 	}
 	return mesh;
 }

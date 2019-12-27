@@ -12,4 +12,6 @@ HMesh createTetrahedron(f32 side, std::string name);
 HMesh createCircle(f32 diam, s32 points, std::string name);
 HMesh createCone(f32 diam, f32 height, s32 points, std::string name);
 HMesh createCylinder(f32 diam, f32 height, s32 points, std::string name);
+
+HMesh createCubedSphere(f32 diam, std::string name, s32 quadsPerSide = 8);
 } // namespace le::gfx
