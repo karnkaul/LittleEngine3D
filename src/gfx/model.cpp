@@ -26,7 +26,7 @@ void Model::Data::setTextureData(std::function<std::vector<u8>(std::string_view)
 {
 	std::vector<JobHandle> jobHandles;
 #if defined(PROFILE_MODEL_LOADS)
-	Time pdt = Time::now();
+	Time dt = Time::now();
 #endif
 	for (size_t i = 0; i < textures.size(); ++i)
 	{
@@ -42,8 +42,8 @@ void Model::Data::setTextureData(std::function<std::vector<u8>(std::string_view)
 	}
 	jobs::waitAll(jobHandles);
 #if defined(PROFILE_MODEL_LOADS)
-	pdt = Time::now() - pdt;
-	LOGIF_I(pdt > Time::msecs(1), "[Profile] [%s] TexData marshall time: %.2fms", name.data(), pdt.assecs() * 1000);
+	dt = Time::now() - dt;
+	LOGIF_I(dt > Time::Zero && !name.empty(), "[Profile] [%s] TexData marshall time: %.2fms", name.data(), dt.assecs() * 1000);
 #endif
 }
 

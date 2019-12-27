@@ -36,6 +36,29 @@ struct Text2D
 	Colour colour = Colour::White;
 };
 
+class DArrow final : public Model
+{
+public:
+	enum class Tip
+	{
+		Cone = 0,
+		Sphere,
+		Cube
+	};
+
+public:
+	Tip m_tip = Tip::Cone;
+
+private:
+	Fixture m_cone;
+	Fixture m_cube;
+	Fixture m_sphere;
+
+public:
+	void setupDArrow(const glm::quat& orientation);
+	void setTip(Tip tip, bool bForce = false);
+};
+
 HMesh& debugCube();
 HMesh& debugQuad();
 HMesh& debugPyramid();
@@ -46,7 +69,7 @@ HMesh& debugCylinder();
 
 HMesh& debugSphere();
 
-Model& debugArrow(const glm::quat& orientation);
+DArrow& debugArrow();
 
 void unloadAll();
 

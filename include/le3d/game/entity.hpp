@@ -11,6 +11,11 @@
 
 namespace le
 {
+namespace debug
+{
+class DArrow;
+}
+
 class Entity : public Object
 {
 public:
@@ -44,7 +49,7 @@ public:
 
 protected:
 #if defined(DEBUGGING)
-	Model* m_pArrow = nullptr;
+	debug::DArrow* m_pArrow = nullptr;
 #endif
 
 protected:

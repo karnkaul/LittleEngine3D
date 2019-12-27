@@ -18,7 +18,7 @@ HMesh g_debugTetrahedron;
 HMesh g_debugCone;
 HMesh g_debugCylinder;
 HMesh g_debugSphere;
-Model g_debugArrow;
+debug::DArrow g_debugArrow;
 } // namespace
 
 namespace debug
@@ -48,6 +48,55 @@ void renderMeshes(const HMesh& mesh, const std::vector<ModelMats>& mats, const H
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
 	gfx::unsetTextures((s32)mesh.material.textures.size());
+}
+
+void debug::DArrow::setupDArrow(const glm::quat& orientation)
+{
+	glm::mat4 m = glm::toMat4(orientation);
+	m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.5f));
+	m = glm::rotate(m, glm::radians(90.0f), g_nRight);
+	m = glm::translate(m, g_nUp * 0.5f);
+	addFixture(debugCylinder(), m);
+	m = glm::toMat4(orientation);
+	m = glm::translate(m, g_nFront * 0.5f);
+	m = glm::rotate(m, glm::radians(90.0f), g_nRight);
+	glm::mat4 mCn = glm::scale(m, glm::vec3(0.08f, 0.15f, 0.08f));
+	glm::mat4 mCb = glm::scale(m, glm::vec3(0.08f, 0.08f, 0.08f));
+	glm::mat4 mSp = glm::scale(m, glm::vec3(0.08f, 0.08f, 0.08f));
+	m_cone.mesh = debugCone();
+	m_cone.oWorld = mCn;
+	m_cube.mesh = debugCube();
+	m_cube.oWorld = mCb;
+	m_sphere.mesh = debugSphere();
+	m_sphere.oWorld = mSp;
+	setTip(m_tip, true);
+	setupModel("dArrow", {});
+}
+
+void debug::DArrow::setTip(Tip tip, bool bForce)
+{
+	if (m_tip != tip || bForce)
+	{
+		m_tip = tip;
+		auto search = std::remove_if(m_fixtures.begin(), m_fixtures.end(), [&](const Fixture& f) -> bool {
+			return f.mesh.name == m_cone.mesh.name || f.mesh.name == m_cube.mesh.name || f.mesh.name == m_sphere.mesh.name;
+		});
+		m_fixtures.erase(search, m_fixtures.end());
+		switch (m_tip)
+		{
+		default:
+			break;
+		case Tip::Cone:
+			m_fixtures.push_back(m_cone);
+			break;
+		case Tip::Cube:
+			m_fixtures.push_back(m_cube);
+			break;
+		case Tip::Sphere:
+			m_fixtures.push_back(m_sphere);
+			break;
+		}
+	}
 }
 
 HMesh& debug::debugCube()
@@ -114,21 +163,11 @@ HMesh& debug::debugSphere()
 	return g_debugSphere;
 }
 
-Model& debug::debugArrow(const glm::quat& orientation)
+debug::DArrow& debug::debugArrow()
 {
 	if (g_debugArrow.meshCount() == 0)
 	{
-		g_debugArrow.setupModel("dArrow", {});
-		glm::mat4 m = glm::toMat4(orientation);
-		m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.5f));
-		m = glm::rotate(m, glm::radians(90.0f), g_nRight);
-		m = glm::translate(m, g_nUp * 0.5f);
-		g_debugArrow.addFixture(debugCylinder(), m);
-		m = glm::toMat4(orientation);
-		m = glm::translate(m, g_nFront * 0.5f);
-		m = glm::rotate(m, glm::radians(90.0f), g_nRight);
-		m = glm::scale(m, glm::vec3(0.08f, 0.15f, 0.08f));
-		g_debugArrow.addFixture(debugCone(), m);
+		g_debugArrow.setupDArrow(g_qIdentity);
 	}
 	return g_debugArrow;
 }

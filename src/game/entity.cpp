@@ -30,7 +30,7 @@ void Entity::setEnabled(bool bEnabled)
 Prop::Prop()
 {
 #if defined(DEBUGGING)
-	m_pArrow = &debug::debugArrow(g_qIdentity);
+	m_pArrow = &debug::debugArrow();
 #endif
 }
 

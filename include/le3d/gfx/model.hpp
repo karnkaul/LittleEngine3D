@@ -17,7 +17,7 @@ enum class DrawFlag
 	_COUNT
 };
 
-class Model final
+class Model
 {
 public:
 	struct Data
@@ -64,8 +64,10 @@ public:
 	std::string_view m_type;
 	Colour m_tint = Colour::White;
 
-private:
+protected:
 	std::vector<Fixture> m_fixtures;
+
+private:
 	std::vector<HMesh> m_loadedMeshes;
 	std::unordered_map<std::string, HTexture> m_loadedTextures;
 
@@ -77,6 +79,8 @@ public:
 	~Model();
 	Model(Model&&);
 	Model& operator=(Model&&);
+	Model(const Model&) = delete;
+	Model& operator=(const Model&) = delete;
 
 public:
 	void setupModel(std::string name, const Data& data);

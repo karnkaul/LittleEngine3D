@@ -233,6 +233,28 @@ void runTest()
 				bParented = !bParented;
 				prop0.m_transform.setParent(bParented ? &prop1.m_transform : nullptr);
 			}
+#if defined(DEBUGGING)
+			if (key == GLFW_KEY_G && mods & GLFW_MOD_CONTROL)
+			{
+				auto& ar = debug::debugArrow();
+				auto tip = debug::DArrow::Tip::Sphere;
+				switch (ar.m_tip)
+				{
+				case debug::DArrow::Tip::Cone:
+					tip = debug::DArrow::Tip::Sphere;
+					break;
+
+				case debug::DArrow::Tip::Cube:
+					tip = debug::DArrow::Tip::Cone;
+					break;
+
+				case debug::DArrow::Tip::Sphere:
+					tip = debug::DArrow::Tip::Cube;
+					break;
+				}
+				ar.setTip(tip);
+			}
+#endif
 		}
 		if (key == GLFW_MOUSE_BUTTON_1)
 		{
