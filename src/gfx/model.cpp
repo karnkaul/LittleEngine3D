@@ -116,10 +116,7 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 					const auto& p = meshData.vertices.points;
 					const auto& n = meshData.vertices.normals;
 					const auto& t = meshData.vertices.texCoords;
-					bool bPoint = p[i] == Vertices::V3{vx, vy, vz};
-					bool bNorm = n[i] == Vertices::V3{nx, ny, nz};
-					bool bTex = t[i] == Vertices::V2{tx, ty};
-					if (bPoint && bNorm && bTex)
+					if (p[i] == Vertices::V3{vx, vy, vz} && n[i] == Vertices::V3{nx, ny, nz} && t[i] == Vertices::V2{tx, ty})
 					{
 						bFound = true;
 						meshData.vertices.indices.push_back((u32)i);
@@ -128,10 +125,7 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 				}
 				if (!bFound)
 				{
-					meshData.vertices.addPoint({vx, vy, vz});
-					meshData.vertices.addNormals({nx, ny, nz});
-					meshData.vertices.addTexCoord({tx, ty});
-					meshData.vertices.indices.push_back(meshData.vertices.vertexCount() - 1);
+					meshData.vertices.indices.push_back(meshData.vertices.addVertex({vx, vy, vz}, {nx, ny, nz}, glm::vec2(tx, ty)));
 				}
 			}
 			meshData.id.reserve(meshPrefix.length() + shape.name.length() + 1);

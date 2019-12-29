@@ -140,7 +140,7 @@ bool context::isClosing()
 	return g_pRenderWindow ? glfwWindowShouldClose(g_pRenderWindow) : false;
 }
 
-void context::clearFlags(Colour colour /* = Colour::Black */, u32 flags /* = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT */)
+void context::clearFlags(u32 flags, Colour colour /* = Colour::Black */)
 {
 	Lock lock(g_glMutex);
 	glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));

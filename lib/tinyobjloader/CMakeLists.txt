@@ -1,8 +1,6 @@
 project(tinyobjloader)
 
-if("${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader.zip" IS_NEWER_THAN "${CMAKE_CURRENT_SOURCE_DIR}/include/tinyobjloader/tiny_obj_loader.h")
-	unzip_archive(tinyobjloader.zip "${CMAKE_CURRENT_SOURCE_DIR}")
-endif()
+unzip_archive(tinyobjloader.zip "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(SOURCES
 	include/tinyobjloader/tiny_obj_loader.h

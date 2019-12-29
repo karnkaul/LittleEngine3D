@@ -163,6 +163,14 @@ void Vertices::addTexCoord(const glm::vec2& texCoord)
 	texCoords.push_back({texCoord.x, texCoord.y});
 }
 
+void Vertices::reserve(u32 vCount, u32 iCount)
+{
+	points.reserve(vCount);
+	normals.reserve(vCount);
+	texCoords.reserve(vCount);
+	indices.reserve(iCount);
+}
+
 u32 Vertices::addVertex(const glm::vec3& point, const glm::vec3& normal, std::optional<glm::vec2> oTexCoord)
 {
 	points.push_back({point.x, point.y, point.z});

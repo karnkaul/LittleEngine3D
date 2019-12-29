@@ -63,10 +63,11 @@ add_subdirectory(lib/stb)
 add_subdirectory(lib/tinyobjloader)
 
 ## LittleEngine3D
-# include
-file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
-# src
-include(src/sources.cmake)
+# Sources
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.*pp"
+)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 
 # Target

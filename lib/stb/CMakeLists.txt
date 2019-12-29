@@ -1,8 +1,6 @@
 project(stb-image)
 
-if("${CMAKE_CURRENT_SOURCE_DIR}/stb.zip" IS_NEWER_THAN "${CMAKE_CURRENT_SOURCE_DIR}/include/stb/stb_image.h")
-	unzip_archive(stb.zip "${CMAKE_CURRENT_SOURCE_DIR}")
-endif()
+unzip_archive(stb.zip "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(SOURCES
 	include/stb/stb_image.h

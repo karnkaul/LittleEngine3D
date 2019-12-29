@@ -1,6 +1,10 @@
 #pragma once
 #include <optional>
-#include "le3d/thirdParty.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/flags.hpp"
 #include "le3d/core/tZero.hpp"
@@ -17,6 +21,10 @@ enum class TexType
 };
 
 #pragma region Data
+// Vertex Attribute layout:
+// 0 => vec3 aPos [required]
+// 1 => vec3 aNormal
+// 2 => vec2 aTexCoord
 struct Vertices final
 {
 	struct V3
@@ -42,6 +50,7 @@ struct Vertices final
 	void addNormals(const glm::vec3& normal, u16 count = 1);
 	void addTexCoord(const glm::vec2& texCoord);
 
+	void reserve(u32 vCount, u32 iCount);
 	u32 addVertex(const glm::vec3& point, const glm::vec3& normal, std::optional<glm::vec2> oTexCoord = std::nullopt);
 	void addIndices(const std::vector<u32> indices);
 };

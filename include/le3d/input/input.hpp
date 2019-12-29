@@ -3,9 +3,10 @@
 #include <string>
 #include <set>
 #include <vector>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include "le3d/delegate.hpp"
 #include "le3d/stdtypes.hpp"
-#include "le3d/thirdParty.hpp"
 
 namespace le
 {

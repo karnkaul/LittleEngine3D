@@ -285,8 +285,8 @@ void runTest()
 		dt = Time::now() - t;
 		t = Time::now();
 		camera.tick(dt);
-		// context::glClearFlags(Colour(50, 40, 10));
-		context::clearFlags();
+		// context::glClearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Colour(50, 40, 10));
+		context::clearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
