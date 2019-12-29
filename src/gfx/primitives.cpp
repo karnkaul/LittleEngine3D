@@ -10,9 +10,10 @@ HMesh gfx::createQuad(f32 width, f32 height, std::string name)
 	const f32 w = width * 0.5f;
 	const f32 h = height * 0.5f;
 	Vertices vertices;
-	vertices.points = {-w, -h, 0.0f, w, -h, 0.0f, w, h, 0.0f, w, h, 0.0f, -w, h, 0.0f, -w, -h, 0.0f};
-	vertices.normals = {0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f};
-	vertices.texCoords = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f};
+	vertices.points = {-w, -h, 0.0f, w, -h, 0.0f, w, h, 0.0f, -w, h, 0.0f};
+	vertices.normals = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
+	vertices.texCoords = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
+	vertices.indices = {0, 1, 2, 2, 3, 0};
 	return newMesh(std::move(name), std::move(vertices), Draw::Dynamic);
 }
 
@@ -21,50 +22,46 @@ HMesh gfx::createCube(f32 side, std::string name)
 	const f32 s = side * 0.5f;
 	Vertices vertices;
 	vertices.points = {
-		-s, -s, -s, s,	-s, -s, s,	s,	-s, s,	s,	-s, -s, s,	-s, -s, -s, -s, // front
+		-s, -s, s,	s,	-s, s,	s,	s,	s,	-s, s,	s, // front
 
-		-s, -s, s,	s,	-s, s,	s,	s,	s,	s,	s,	s,	-s, s,	s,	-s, -s, s, // back
+		-s, -s, -s, s,	-s, -s, s,	s,	-s, -s, s,	-s, // back
 
-		-s, s,	s,	-s, s,	-s, -s, -s, -s, -s, -s, -s, -s, -s, s,	-s, s,	s, // left
+		-s, s,	s,	-s, s,	-s, -s, -s, -s, -s, -s, s, // left
 
-		s,	s,	s,	s,	s,	-s, s,	-s, -s, s,	-s, -s, s,	-s, s,	s,	s,	s, // right
+		s,	s,	s,	s,	s,	-s, s,	-s, -s, s,	-s, s, // right
 
-		-s, -s, -s, s,	-s, -s, s,	-s, s,	s,	-s, s,	-s, -s, s,	-s, -s, -s, // down
+		-s, -s, -s, s,	-s, -s, s,	-s, s,	-s, -s, s, // down
 
-		-s, s,	-s, s,	s,	-s, s,	s,	s,	s,	s,	s,	-s, s,	s,	-s, s,	-s, // up
+		-s, s,	-s, s,	s,	-s, s,	s,	s,	-s, s,	s, // up
 	};
 	vertices.normals = {
-		0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f,
-		0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, // front
+		0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f, // front
 
-		0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,
-		0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f,	1.0f, // back
+		0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, // back
 
-		-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,
-		-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,	0.0f, // left
+		-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f,	0.0f,  -1.0f, 0.0f,	 0.0f, // left
 
-		1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,
-		1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f,	0.0f, // right
+		1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f,	0.0f,  1.0f,  0.0f,	 0.0f, // right
 
-		0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,
-		0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f, // down
+		0.0f,  -1.0f, 0.0f,	 0.0f,	-1.0f, 0.0f,  0.0f,	 -1.0f, 0.0f,  0.0f,  -1.0f, 0.0f, // down
 
-		0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,
-		0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f,	0.0f, // up
+		0.0f,  1.0f,  0.0f,	 0.0f,	1.0f,  0.0f,  0.0f,	 1.0f,	0.0f,  0.0f,  1.0f,	 0.0f, // up
 	};
 	vertices.texCoords = {
-		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,	// front
 
-		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,	// back
 
-		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,	// left
 
-		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,	// right
 
-		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,	// down
 
-		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,	// up
 	};
+	vertices.indices = {0,	1,	2,	2,	3,	0,	4,	5,	6,	6,	7,	4,	8,	9,	10, 10, 11, 8,
+						12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
 	ASSERT(3 * vertices.texCoords.size() == 2 * vertices.points.size(), "Vertex size mismatch!");
 	ASSERT(vertices.normals.size() == vertices.points.size(), "Vertex size mismatch!");
 	return newMesh(std::move(name), std::move(vertices), Draw::Static);
@@ -80,9 +77,9 @@ HMesh gfx::create4Pyramid(f32 side, std::string name)
 	const glm::vec3 nD = -g_nUp;
 	Vertices vertices;
 	vertices.points = {
-		-s, -s, -s, s,	-s, -s, 0.0f, s,  0.0f, // front
+		-s, -s, -s, s,	-s, -s, 0.0f, s,  0.0f, // back
 
-		-s, -s, s,	s,	-s, s,	0.0f, s,  0.0f, // back
+		-s, -s, s,	s,	-s, s,	0.0f, s,  0.0f, // front
 
 		-s, -s, -s, -s, -s, s,	0.0f, s,  0.0f, // left
 
@@ -91,9 +88,9 @@ HMesh gfx::create4Pyramid(f32 side, std::string name)
 		-s, -s, -s, s,	-s, -s, s,	  -s, s,	s, -s, s, -s, -s, s, -s, -s, -s, // down
 	};
 	vertices.normals = {
-		nF.x, nF.y, nF.z, nF.x, nF.y, nF.z, nF.x, nF.y, nF.z, // front
+		nF.x, nF.y, nF.z, nF.x, nF.y, nF.z, nF.x, nF.y, nF.z, // back
 
-		nB.x, nB.y, nB.z, nB.x, nB.y, nB.z, nB.x, nB.y, nB.z, // back
+		nB.x, nB.y, nB.z, nB.x, nB.y, nB.z, nB.x, nB.y, nB.z, // front
 
 		nL.x, nL.y, nL.z, nL.x, nL.y, nL.z, nL.x, nL.y, nL.z, // left
 
@@ -146,16 +143,25 @@ HMesh gfx::createCircle(f32 diam, s32 points, std::string name)
 	Vertices vertices;
 	f32 angle = 360.0f / points;
 	glm::vec3 norm(0.0f, 0.0f, 1.0f);
-	for (s32 i = 0; i < points; ++i)
+	vertices.addPoint(glm::vec3(0.0f));
+	for (s32 i = 1; i <= points; ++i)
 	{
-		f32 x0 = r * glm::cos(glm::radians(angle * i));
-		f32 y0 = r * glm::sin(glm::radians(angle * i));
-		f32 x1 = r * glm::cos(glm::radians(angle * (i + 1)));
-		f32 y1 = r * glm::sin(glm::radians(angle * (i + 1)));
-		vertices.addPoint(glm::vec3(0.0f));
-		vertices.addPoint(glm::vec3(x0, y0, 0.0f));
+		if (i == 1)
+		{
+			f32 x0 = r * glm::cos(glm::radians(angle * (i - 1)));
+			f32 y0 = r * glm::sin(glm::radians(angle * (i - 1)));
+			vertices.addPoint(glm::vec3(x0, y0, 0.0f));
+			vertices.addNormals(norm, 2);
+			auto indices = {0, 1, 2};
+			std::copy(indices.begin(), indices.end(), std::back_inserter(vertices.indices));
+		}
+		f32 x1 = r * glm::cos(glm::radians(angle * i));
+		f32 y1 = r * glm::sin(glm::radians(angle * i));
+		const auto c = vertices.vertexCount();
+		std::vector<u32> indices = {0, c - 1, c};
+		std::copy(indices.begin(), indices.end(), std::back_inserter(vertices.indices));
 		vertices.addPoint(glm::vec3(x1, y1, 0.0f));
-		vertices.addNormals(norm, 3);
+		vertices.addNormals(norm, 1);
 	}
 	return newMesh(std::move(name), std::move(vertices), Draw::Static);
 }
@@ -209,6 +215,9 @@ HMesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name)
 		glm::vec3 v01(x1, c0.y, z1);
 		glm::vec3 norm(0.0f, -1.0f, 0.0f);
 
+		auto s = vertices.vertexCount();
+		auto indices = {s + 0, s + 1, s + 2};
+		std::copy(indices.begin(), indices.end(), std::back_inserter(vertices.indices));
 		vertices.addPoint(c0);
 		vertices.addPoint(v00);
 		vertices.addPoint(v01);
@@ -218,19 +227,23 @@ HMesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name)
 		glm::vec3 v11(x1, c1.y, z1);
 		norm = glm::vec3(0.0f, 1.0f, 0.0f);
 
+		s = vertices.vertexCount();
+		indices = {s + 0, s + 1, s + 2};
+		std::copy(indices.begin(), indices.end(), std::back_inserter(vertices.indices));
 		vertices.addPoint(c1);
 		vertices.addPoint(v10);
 		vertices.addPoint(v11);
 		vertices.addNormals(norm, 3);
 
+		s = vertices.vertexCount();
+		indices = {s + 0, s + 1, s + 2, s + 2, s + 3, s + 0};
+		std::copy(indices.begin(), indices.end(), std::back_inserter(vertices.indices));
 		norm = glm::normalize(glm::cross(v10 - v00, v01 - v00));
-		vertices.addPoint(v01);
 		vertices.addPoint(v00);
-		vertices.addPoint(v10);
 		vertices.addPoint(v01);
-		vertices.addPoint(v10);
 		vertices.addPoint(v11);
-		vertices.addNormals(norm, 6);
+		vertices.addPoint(v10);
+		vertices.addNormals(norm, 4);
 	}
 	return newMesh(std::move(name), std::move(vertices), Draw::Static);
 }
@@ -266,7 +279,7 @@ HMesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide /* = 8
 		{
 			if (idx % 4 == 0)
 			{
-				const auto& ps = (u32)verts.points.size() / 3;
+				const auto& ps = verts.vertexCount();
 				std::vector<u32> newIndices = {ps, ps + 1, ps + 2, ps + 2, ps + 3, ps};
 				std::copy(newIndices.begin(), newIndices.end(), std::back_inserter(verts.indices));
 			}

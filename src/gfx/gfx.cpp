@@ -601,8 +601,7 @@ HVerts gfx::tutorial::newLight(const HVerts& hVBO)
 	HVerts ret;
 	if (context::exists())
 	{
-		ret.vbo = hVBO.vbo;
-		ret.vCount = hVBO.vCount;
+		ret = hVBO;
 		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenVertexArrays(1, &ret.vao.handle));
 		glChk(glBindVertexArray(ret.vao));

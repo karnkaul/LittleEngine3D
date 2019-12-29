@@ -32,7 +32,15 @@ void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)
 	shader.setV4(env::g_config.uniforms.tint, tint);
 	glChk(glBindVertexArray(skybox.mesh.hVerts.vao.handle));
 	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemap.glID.handle));
-	glChk(glDrawArrays(GL_TRIANGLES, 0, skybox.mesh.hVerts.vCount));
+	if (skybox.mesh.hVerts.ebo.handle > 0)
+	{
+		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox.mesh.hVerts.ebo.handle));
+		glChk(glDrawElements(GL_TRIANGLES, skybox.mesh.hVerts.iCount, GL_UNSIGNED_INT, 0));
+	}
+	else
+	{
+		glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)skybox.mesh.hVerts.vCount));
+	}
 	glChk(glBindVertexArray(0));
 	glChk(glDepthMask(GL_TRUE));
 }
@@ -191,11 +199,11 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 		if (quad.oTexCoords)
 		{
 			const glm::vec4& uv = *quad.oTexCoords;
-			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.p, uv.q, uv.s, uv.q, uv.s, uv.t};
+			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
 			auto sf = sizeof(f32);
 			glChk(glBindVertexArray(quadMesh.hVerts.vao));
 			glChk(glBindBuffer(GL_ARRAY_BUFFER, quadMesh.hVerts.vbo));
-			glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data));
+			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
 		}
 		gfx::drawMesh(quadMesh, shader);
 		if (quad.oTexCoords)
@@ -204,7 +212,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 			auto sf = sizeof(f32);
 			glChk(glBindVertexArray(quadMesh.hVerts.vao));
 			glChk(glBindBuffer(GL_ARRAY_BUFFER, quadMesh.hVerts.vbo));
-			glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data));
+			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
 		}
 	}
 	if (bResetTint)
@@ -279,9 +287,9 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
 			world = glm::translate(world, p);
 			mats.model = glm::scale(world, glm::vec3(text.height, text.height, 1.0f));
 			shader.setModelMats(mats);
-			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.p, uv.q, uv.s, uv.q, uv.s, uv.t};
+			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
 			auto sf = sizeof(f32);
-			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * 18 * 2), (GLsizeiptr)(sizeof(data)), data);
+			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
 			gfx::drawMesh(hFont.quad, shader);
 		}
 		++idx;
