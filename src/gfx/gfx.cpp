@@ -103,9 +103,9 @@ void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
 			{
 				texIDs.push_back(pTexture->glID);
 #if defined(DEBUG_LOG)
-				bytes += pTexture->bytes;
+				bytes += pTexture->byteCount;
 #endif
-				auto size = utils::friendlySize(pTexture->bytes);
+				auto size = utils::friendlySize(pTexture->byteCount);
 				LOG_I("-- [%s] [%.1f%s] Texture destroyed", pTexture->id.data(), size.first, size.second.data());
 			}
 			*pTexture = HTexture();
@@ -140,7 +140,7 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rl
 				bool bAlpha = ch > 3;
 				s32 channels = bAlpha ? GL_RGBA : GL_RGB;
 				glChk(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, 0, channels, w, h, 0, (u32)channels, GL_UNSIGNED_BYTE, pData));
-				ret.bytes += (u32)side.size();
+				ret.byteCount += (u32)side.size();
 			}
 			else
 			{
@@ -155,7 +155,7 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rl
 		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
 		ret.id = std::move(name);
-		auto size = utils::friendlySize(ret.bytes);
+		auto size = utils::friendlySize(ret.byteCount);
 		LOG_I("== [%s] [%.1f%s] Cubemap created", ret.id.data(), size.first, size.second.data());
 	}
 	return ret;
@@ -168,7 +168,7 @@ void gfx::gl::releaseCubemap(HCubemap& cube)
 		Lock lock(contextImpl::g_glMutex);
 		GLuint texID[] = {cube.glID.handle};
 		glChk(glDeleteTextures(1, texID));
-		auto size = utils::friendlySize(cube.bytes);
+		auto size = utils::friendlySize(cube.byteCount);
 		LOG_I("-- [%s] [%.1f%s] Cubemap destroyed", cube.id.data(), size.first, size.second.data());
 	}
 	cube = HCubemap();
@@ -258,9 +258,8 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 	HVerts hVerts;
 	if (context::exists())
 	{
-		ASSERT(vertices.points.size() % 3 == 0, "Point/normal count mismatch!");
 		ASSERT(vertices.normals.empty() || vertices.normals.size() == vertices.points.size(), "Point/normal count mismatch!");
-		ASSERT(vertices.texCoords.empty() || 3 * vertices.texCoords.size() == 2 * vertices.points.size(), "Point/UV count mismatch!");
+		ASSERT(vertices.texCoords.empty() || vertices.texCoords.size() == vertices.points.size(), "Point/UV count mismatch!");
 		GLenum type = drawType == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenVertexArrays(1, &hVerts.vao.handle));
@@ -271,23 +270,24 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 		}
 		glChk(glBindVertexArray(hVerts.vao));
 		glChk(glBindBuffer(GL_ARRAY_BUFFER, hVerts.vbo));
-		glChk(glBufferData(GL_ARRAY_BUFFER, (s64)vertices.bytes(), nullptr, type));
-		size_t sf = (size_t)sizeof(f32);
+		glChk(glBufferData(GL_ARRAY_BUFFER, (s64)vertices.byteCount(), nullptr, type));
+		auto sf = (size_t)sizeof(f32);
+		auto sv3 = (size_t)sizeof(Vertices::V3);
+		auto sv2 = (size_t)sizeof(Vertices::V2);
 		auto& p = vertices.points;
 		auto& n = vertices.normals;
 		auto& t = vertices.texCoords;
-		glChk(glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sf * p.size()), p.data()));
-		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * p.size()), (GLsizeiptr)(sf * n.size()), n.data()));
-		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * p.size() + sf * n.size()), (GLsizeiptr)(sf * t.size()), t.data()));
-		hVerts.vCount = (u16)vertices.points.size() / 3;
+		glChk(glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sv3 * p.size()), p.data()));
+		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sv3 * p.size()), (GLsizeiptr)(sv3 * n.size()), n.data()));
+		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sv3 * (p.size() + n.size())), (GLsizeiptr)(sv2 * t.size()), t.data()));
+		hVerts.vCount = (u16)vertices.vertexCount();
 		if (!vertices.indices.empty())
 		{
 			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.ebo));
 			glChk(glBufferData(GL_ELEMENT_ARRAY_BUFFER, (s64)vertices.indices.size() * (s64)sizeof(u32), vertices.indices.data(), type));
 			hVerts.iCount = (u16)vertices.indices.size();
 		}
-		hVerts.bytes = (u32)((vertices.points.size() + vertices.normals.size() + vertices.texCoords.size()) * sizeof(f32))
-					   + (u32)(vertices.indices.size() * sizeof(u32));
+		hVerts.byteCount = vertices.byteCount();
 		// Position
 		GLint loc = 0;
 		if (pShader)
@@ -296,7 +296,7 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 		}
 		if (loc >= 0)
 		{
-			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 * sf), 0));
+			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, (GLsizei)(sv3), 0));
 			glChk(glEnableVertexAttribArray((u32)loc));
 		}
 
@@ -308,7 +308,7 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 		}
 		if (loc >= 0)
 		{
-			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 * sf), (void*)(sf * p.size())));
+			glChk(glVertexAttribPointer((u32)loc, 3, GL_FLOAT, GL_FALSE, (GLsizei)(sv3), (void*)(sv3 * p.size())));
 			glChk(glEnableVertexAttribArray((u32)loc));
 		}
 
@@ -320,7 +320,7 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 		}
 		if (loc >= 0)
 		{
-			glChk(glVertexAttribPointer((u32)loc, 2, GL_FLOAT, GL_FALSE, (GLsizei)(2 * sf), (void*)(sf * p.size() + sf * n.size())));
+			glChk(glVertexAttribPointer((u32)loc, 2, GL_FLOAT, GL_FALSE, (GLsizei)(2 * sf), (void*)(sv3 * (p.size() + n.size()))));
 			glChk(glEnableVertexAttribArray((u32)loc));
 		}
 
@@ -354,7 +354,7 @@ HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
 		glChk(glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ret.ubo.handle));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 		ret.bindingPoint = bindingPoint;
-		ret.bytes = (u32)size;
+		ret.byteCount = (u32)size;
 	}
 	return ret;
 }
@@ -405,7 +405,7 @@ HMesh gfx::newMesh(std::string name, Vertices vertices, Draw type, const HShader
 	{
 		mesh.name = std::move(name);
 		mesh.hVerts = gl::genVertices(std::move(vertices), type, pShader);
-		auto size = utils::friendlySize(mesh.hVerts.bytes);
+		auto size = utils::friendlySize(mesh.hVerts.byteCount);
 		LOGIF_I(!mesh.name.empty(), "== [%s] [%.1f%s] Mesh set up (%u vertices)", mesh.name.data(), size.first, size.second.data(),
 				mesh.hVerts.vCount);
 	}
@@ -418,7 +418,7 @@ void gfx::releaseMeshes(const std::vector<HMesh*>& meshes)
 	{
 		if (pMesh->hVerts.vao > 0 && context::exists())
 		{
-			auto size = utils::friendlySize(pMesh->hVerts.bytes);
+			auto size = utils::friendlySize(pMesh->hVerts.byteCount);
 			LOG_I("-- [%s] [%.1f%s] Mesh destroyed", pMesh->name.data(), size.first, size.second.data());
 			gl::releaseVerts(pMesh->hVerts);
 		}

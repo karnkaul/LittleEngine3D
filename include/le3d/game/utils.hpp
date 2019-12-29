@@ -59,17 +59,15 @@ public:
 	void setTip(Tip tip, bool bForce = false);
 };
 
-HMesh& debugCube();
-HMesh& debugQuad();
-HMesh& debugPyramid();
-HMesh& debugTetrahedron();
-
-HMesh& debugCone();
-HMesh& debugCylinder();
-
-HMesh& debugSphere();
-
-DArrow& debugArrow();
+HMesh& Cube();
+HMesh& Quad();
+HMesh& Circle();
+HMesh& Pyramid();
+HMesh& Tetrahedron();
+HMesh& Cone();
+HMesh& Cylinder();
+HMesh& Sphere();
+DArrow& Arrow();
 
 void unloadAll();
 

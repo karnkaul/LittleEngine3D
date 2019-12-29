@@ -135,39 +135,67 @@ void HShader::bindUBO(std::string_view id, const HUBO& ubo) const
 	}
 }
 
-u32 Vertices::bytes() const
+u32 Vertices::byteCount() const
 {
-	u32 total = (u32)(points.size() * sizeof(f32));
-	total += (u32)(normals.size() * sizeof(f32));
-	total += (u32)(texCoords.size() * sizeof(f32));
-	return total;
+	return (u32)((points.size() + normals.size()) * sizeof(V3) + texCoords.size() * sizeof(V2));
 }
 
 u32 Vertices::vertexCount() const
 {
-	return (u32)points.size() / 3;
+	return (u32)points.size();
 }
 
-void Vertices::addPoint(glm::vec3 point)
+void Vertices::addPoint(const glm::vec3& point)
 {
-	points.push_back(point.x);
-	points.push_back(point.y);
-	points.push_back(point.z);
+	points.push_back({point.x, point.y, point.z});
 }
 
-void Vertices::addNormals(glm::vec3 normal, u16 count)
+void Vertices::addNormals(const glm::vec3& normal, u16 count)
 {
 	for (u16 i = 0; i < count; ++i)
 	{
-		normals.push_back(normal.x);
-		normals.push_back(normal.y);
-		normals.push_back(normal.z);
+		normals.push_back({normal.x, normal.y, normal.z});
 	}
 }
 
-void Vertices::addTexCoord(glm::vec2 texCoord)
+void Vertices::addTexCoord(const glm::vec2& texCoord)
 {
-	texCoords.push_back(texCoord.x);
-	texCoords.push_back(texCoord.y);
+	texCoords.push_back({texCoord.x, texCoord.y});
+}
+
+u32 Vertices::addVertex(const glm::vec3& point, const glm::vec3& normal, std::optional<glm::vec2> oTexCoord)
+{
+	points.push_back({point.x, point.y, point.z});
+	normals.push_back({normal.x, normal.y, normal.z});
+	if (oTexCoord)
+	{
+		texCoords.push_back({oTexCoord->x, oTexCoord->y});
+	}
+	return (u32)points.size() - 1;
+}
+
+void Vertices::addIndices(const std::vector<u32> newIndices)
+{
+	std::copy(newIndices.begin(), newIndices.end(), std::back_inserter(indices));
+}
+
+bool operator==(const Vertices::V3& lhs, const Vertices::V3& rhs)
+{
+	return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+}
+
+bool operator==(const Vertices::V2& lhs, const Vertices::V2& rhs)
+{
+	return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+bool operator!=(const Vertices::V3& lhs, const Vertices::V3& rhs)
+{
+	return !(lhs == rhs);
+}
+
+bool operator!=(const Vertices::V2& lhs, const Vertices::V2& rhs)
+{
+	return !(lhs == rhs);
 }
 } // namespace le

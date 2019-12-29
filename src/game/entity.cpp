@@ -15,7 +15,39 @@
 
 namespace le
 {
-void Entity::render() {}
+Entity::Entity()
+{
+#if defined(DEBUGGING)
+	m_pArrow = &debug::Arrow();
+#endif
+}
+
+void Entity::render()
+{
+#if defined(DEBUGGING)
+	if (m_pArrow)
+	{
+		glDisable(GL_DEPTH_TEST);
+		HShader tinted = resources::get<HShader>("unlit/tinted");
+		glm::mat4 mZ = m_transform.model();
+		glm::vec3 scale = m_transform.worldScl();
+		mZ = glm::scale(mZ, {1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z});
+		glm::mat4 mX = glm::rotate(mZ, glm::radians(90.0f), g_nUp);
+		glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);
+		ModelMats mats;
+		mats.model = mX;
+		m_pArrow->m_tint = Colour::Red;
+		m_pArrow->render(tinted, mats);
+		mats.model = mY;
+		m_pArrow->m_tint = Colour::Green;
+		m_pArrow->render(tinted, mats);
+		mats.model = mZ;
+		m_pArrow->m_tint = Colour::Blue;
+		m_pArrow->render(tinted, mats);
+		glEnable(GL_DEPTH_TEST);
+	}
+#endif
+}
 
 bool Entity::isEnabled() const
 {
@@ -25,13 +57,6 @@ bool Entity::isEnabled() const
 void Entity::setEnabled(bool bEnabled)
 {
 	m_flags.set((s32)Flag::Enabled, bEnabled);
-}
-
-Prop::Prop()
-{
-#if defined(DEBUGGING)
-	m_pArrow = &debug::debugArrow();
-#endif
 }
 
 void Prop::render()
@@ -72,29 +97,7 @@ void Prop::render()
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-#if defined(DEBUGGING)
-	if (m_pArrow)
-	{
-		glDisable(GL_DEPTH_TEST);
-		HShader tinted = resources::get<HShader>("unlit/tinted");
-		glm::mat4 mZ = m_transform.model();
-		glm::vec3 scale = m_transform.worldScl();
-		mZ = glm::scale(mZ, {1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z});
-		glm::mat4 mX = glm::rotate(mZ, glm::radians(90.0f), g_nUp);
-		glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);
-		ModelMats mats;
-		mats.model = mX;
-		m_pArrow->m_tint = Colour::Red;
-		m_pArrow->render(tinted, mats);
-		mats.model = mY;
-		m_pArrow->m_tint = Colour::Green;
-		m_pArrow->render(tinted, mats);
-		mats.model = mZ;
-		m_pArrow->m_tint = Colour::Blue;
-		m_pArrow->render(tinted, mats);
-		glEnable(GL_DEPTH_TEST);
-	}
-#endif
+	Entity::render();
 }
 
 void Prop::addModel(Model& model)

@@ -19,18 +19,37 @@ enum class TexType
 #pragma region Data
 struct Vertices final
 {
-	std::vector<f32> points;
-	std::vector<f32> normals;
-	std::vector<f32> texCoords;
+	struct V3
+	{
+		f32 x;
+		f32 y;
+		f32 z;
+	};
+	struct V2
+	{
+		f32 x;
+		f32 y;
+	};
+	std::vector<V3> points;
+	std::vector<V3> normals;
+	std::vector<V2> texCoords;
 	std::vector<u32> indices;
 
-	u32 bytes() const;
+	u32 byteCount() const;
 	u32 vertexCount() const;
 
-	void addPoint(glm::vec3 point);
-	void addNormals(glm::vec3 normal, u16 count = 1);
-	void addTexCoord(glm::vec2 texCoord);
+	void addPoint(const glm::vec3& point);
+	void addNormals(const glm::vec3& normal, u16 count = 1);
+	void addTexCoord(const glm::vec2& texCoord);
+
+	u32 addVertex(const glm::vec3& point, const glm::vec3& normal, std::optional<glm::vec2> oTexCoord = std::nullopt);
+	void addIndices(const std::vector<u32> indices);
 };
+
+bool operator==(const Vertices::V3& lhs, const Vertices::V3& rhs);
+bool operator==(const Vertices::V2& lhs, const Vertices::V2& rhs);
+bool operator!=(const Vertices::V3& lhs, const Vertices::V3& rhs);
+bool operator!=(const Vertices::V2& lhs, const Vertices::V2& rhs);
 
 struct LitTint final
 {
@@ -51,7 +70,7 @@ struct HTexture final
 {
 	std::string id;
 	glm::ivec2 size = glm::ivec2(0);
-	u32 bytes = 0;
+	u32 byteCount = 0;
 	TexType type;
 	GLObj glID;
 };
@@ -60,7 +79,7 @@ struct HCubemap final
 {
 	std::string id;
 	glm::ivec2 size = glm::ivec2(0);
-	u32 bytes = 0;
+	u32 byteCount = 0;
 	GLObj glID;
 };
 
@@ -96,7 +115,7 @@ struct HVerts final
 	GLObj vao;
 	GLObj vbo;
 	GLObj ebo;
-	u32 bytes = 0;
+	u32 byteCount = 0;
 	u16 iCount = 0;
 	u16 vCount = 0;
 };
@@ -105,7 +124,7 @@ struct HUBO final
 {
 	GLObj ubo;
 	u32 bindingPoint = 0;
-	u32 bytes = 0;
+	u32 byteCount = 0;
 };
 
 struct HMesh final

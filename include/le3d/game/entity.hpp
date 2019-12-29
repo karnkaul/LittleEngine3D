@@ -26,12 +26,20 @@ public:
 		_COUNT,
 	};
 
+protected:
+#if defined(DEBUGGING)
+	debug::DArrow* m_pArrow = nullptr;
+#endif
+
 public:
 	Transform m_transform;
 	Flags<(size_t)Flag::_COUNT> m_flags;
 #if defined(DEBUGGING)
 	bool m_bDEBUG = false;
 #endif
+
+public:
+	Entity();
 
 public:
 	virtual void render();
@@ -48,16 +56,8 @@ public:
 	std::optional<Colour> m_oTintOverride;
 
 protected:
-#if defined(DEBUGGING)
-	debug::DArrow* m_pArrow = nullptr;
-#endif
-
-protected:
 	std::vector<Model*> m_models;
 	HShader m_shader;
-
-public:
-	Prop();
 
 public:
 	void render() override;

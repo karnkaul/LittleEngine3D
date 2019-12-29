@@ -16,6 +16,8 @@ namespace le
 Model::Model() = default;
 Model::Model(Model&&) = default;
 Model& Model::operator=(Model&&) = default;
+Model::Model(const Model&) = default;
+Model& Model::operator=(const Model&) = default;
 
 Model::~Model()
 {
@@ -114,9 +116,9 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 					const auto& p = meshData.vertices.points;
 					const auto& n = meshData.vertices.normals;
 					const auto& t = meshData.vertices.texCoords;
-					bool bPoint = p[i * 3] == vx && p[i * 3 + 1] == vy && p[i * 3 + 2] == vz;
-					bool bNorm = n[i * 3] == nx && n[i * 3 + 1] == ny && n[i * 3 + 2] == nz;
-					bool bTex = t[i * 2] == tx && t[i * 2 + 1] == ty;
+					bool bPoint = p[i] == Vertices::V3{vx, vy, vz};
+					bool bNorm = n[i] == Vertices::V3{nx, ny, nz};
+					bool bTex = t[i] == Vertices::V2{tx, ty};
 					if (bPoint && bNorm && bTex)
 					{
 						bFound = true;

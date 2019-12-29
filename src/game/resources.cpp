@@ -56,7 +56,7 @@ HUBO& resources::addUBO(std::string id, s64 size, u32 bindingPoint, gfx::Draw ty
 	if (hUBO.ubo.handle > 0)
 	{
 		g_uboMap.emplace(id, hUBO);
-		auto size = utils::friendlySize(hUBO.bytes);
+		auto size = utils::friendlySize(hUBO.byteCount);
 		LOG_I("== [%s] [%.1f%s] UBO (%d) added for future shaders", id.data(), size.first, size.second.data(), hUBO.bindingPoint);
 		return g_uboMap[id];
 	}
@@ -95,7 +95,7 @@ bool resources::unload<HUBO>(HUBO& hUBO)
 	{
 		std::string id = search->first;
 		g_uboMap.erase(search);
-		auto size = utils::friendlySize(hUBO.bytes);
+		auto size = utils::friendlySize(hUBO.byteCount);
 		LOG_I("-- [%s] [%.1f%s] UBO (%d) destroyed", id.data(), size.first, size.second.data(), hUBO.bindingPoint);
 		gfx::gl::releaseUBO(hUBO);
 		return true;
@@ -109,7 +109,7 @@ void resources::unloadAll<HUBO>()
 	for (auto& kvp : g_uboMap)
 	{
 		auto& hUBO = kvp.second;
-		auto size = utils::friendlySize(hUBO.bytes);
+		auto size = utils::friendlySize(hUBO.byteCount);
 		LOG_I("-- [%s] [%.1f%s] UBO (%d) destroyed", kvp.first.data(), size.first, size.second.data(), hUBO.bindingPoint);
 		gfx::gl::releaseUBO(hUBO);
 	}

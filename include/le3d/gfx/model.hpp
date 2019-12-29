@@ -79,8 +79,8 @@ public:
 	~Model();
 	Model(Model&&);
 	Model& operator=(Model&&);
-	Model(const Model&) = delete;
-	Model& operator=(const Model&) = delete;
+	Model(const Model&);
+	Model& operator=(const Model&);
 
 public:
 	void setupModel(std::string name, const Data& data);

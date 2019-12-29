@@ -148,8 +148,8 @@ void runTest()
 	bool bTexturedObj = true;
 	Model& objModel = resources::loadModel("objModel", objData);
 
-	auto& cubeMesh = debug::debugCube();
-	auto& quadMesh = debug::debugQuad();
+	auto& cubeMesh = debug::Cube();
+	auto& quadMesh = debug::Quad();
 	quadMesh.material.textures = {resources::get<HTexture>("awesomeface")};
 	// quadMesh.textures = {bad};
 	cubeMesh.material.textures = {resources::get<HTexture>("container2"), resources::get<HTexture>("container2_specular")};
@@ -236,7 +236,7 @@ void runTest()
 #if defined(DEBUGGING)
 			if (key == GLFW_KEY_G && mods & GLFW_MOD_CONTROL)
 			{
-				auto& ar = debug::debugArrow();
+				auto& ar = debug::Arrow();
 				auto tip = debug::DArrow::Tip::Sphere;
 				switch (ar.m_tip)
 				{
@@ -330,7 +330,7 @@ void runTest()
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
-		renderMeshes(debug::debugSphere(), {sphereMat}, litTinted);
+		renderMeshes(debug::Sphere(), {sphereMat}, litTinted);
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include <glad/glad.h>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/time.hpp"
@@ -11,13 +12,7 @@ namespace le
 {
 namespace
 {
-HMesh g_debugMesh;
-HMesh g_debugQuad;
-HMesh g_debugPyramid;
-HMesh g_debugTetrahedron;
-HMesh g_debugCone;
-HMesh g_debugCylinder;
-HMesh g_debugSphere;
+std::unordered_map<std::string, HMesh> g_debugMeshes;
 debug::DArrow g_debugArrow;
 } // namespace
 
@@ -64,18 +59,18 @@ void debug::DArrow::setupDArrow(const glm::quat& orientation)
 	m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.5f));
 	m = glm::rotate(m, glm::radians(90.0f), g_nRight);
 	m = glm::translate(m, g_nUp * 0.5f);
-	addFixture(debugCylinder(), m);
+	addFixture(Cylinder(), m);
 	m = glm::toMat4(orientation);
 	m = glm::translate(m, g_nFront * 0.5f);
 	m = glm::rotate(m, glm::radians(90.0f), g_nRight);
 	glm::mat4 mCn = glm::scale(m, glm::vec3(0.08f, 0.15f, 0.08f));
 	glm::mat4 mCb = glm::scale(m, glm::vec3(0.08f, 0.08f, 0.08f));
 	glm::mat4 mSp = glm::scale(m, glm::vec3(0.08f, 0.08f, 0.08f));
-	m_cone.mesh = debugCone();
+	m_cone.mesh = Cone();
 	m_cone.oWorld = mCn;
-	m_cube.mesh = debugCube();
+	m_cube.mesh = Cube();
 	m_cube.oWorld = mCb;
-	m_sphere.mesh = debugSphere();
+	m_sphere.mesh = Sphere();
 	m_sphere.oWorld = mSp;
 	setTip(m_tip, true);
 	setupModel("dArrow", {});
@@ -107,71 +102,88 @@ void debug::DArrow::setTip(Tip tip, bool bForce)
 	}
 }
 
-HMesh& debug::debugCube()
+HMesh& debug::Cube()
 {
-	if (g_debugMesh.hVerts.vao <= 0)
+	auto& cube = g_debugMeshes["dCube"];
+	if (cube.hVerts.vao <= 0)
 	{
-		g_debugMesh = gfx::createCube(1.0f, "dCube");
+		cube = gfx::createCube(1.0f, "dCube");
 	}
-	return g_debugMesh;
+	return cube;
 }
 
-HMesh& debug::debugQuad()
+HMesh& debug::Quad()
 {
-	if (g_debugQuad.hVerts.vao <= 0)
+	auto& quad = g_debugMeshes["dQuad"];
+	if (quad.hVerts.vao <= 0)
 	{
-		g_debugQuad = gfx::createQuad(1.0f, 1.0f, "dQuad");
+		quad = gfx::createQuad(1.0f, 1.0f, "dQuad");
 	}
-	return g_debugQuad;
+	return quad;
 }
 
-HMesh& debug::debugPyramid()
+HMesh& debug::Circle()
 {
-	if (g_debugPyramid.hVerts.vao <= 0)
+	auto& circle = g_debugMeshes["dCircle"];
+	if (circle.hVerts.vao <= 0)
 	{
-		g_debugPyramid = gfx::create4Pyramid(1.0f, "dPyramid");
+		circle = gfx::createCircle(1.0f, 32, "dCircle");
 	}
-	return g_debugPyramid;
+	return circle;
 }
 
-HMesh& debug::debugTetrahedron()
+HMesh& debug::Pyramid()
 {
-	if (g_debugTetrahedron.hVerts.vao <= 0)
+	auto& pyramid = g_debugMeshes["dPyramid"];
+	if (pyramid.hVerts.vao <= 0)
 	{
-		g_debugTetrahedron = gfx::createTetrahedron(1.0f, "dTetrahedron");
+		pyramid = gfx::create4Pyramid(1.0f, "dPyramid");
 	}
-	return g_debugTetrahedron;
+	return pyramid;
 }
 
-HMesh& debug::debugCone()
+HMesh& debug::Tetrahedron()
 {
-	if (g_debugCone.hVerts.vao <= 0)
+	auto& tetrahedron = g_debugMeshes["dTetrahedron"];
+	if (tetrahedron.hVerts.vao <= 0)
 	{
-		g_debugCone = gfx::createCone(1.0f, 1.0f, 16, "dCone");
+		tetrahedron = gfx::createTetrahedron(1.0f, "dTetrahedron");
 	}
-	return g_debugCone;
+	return tetrahedron;
 }
 
-HMesh& debug::debugCylinder()
+HMesh& debug::Cone()
 {
-	if (g_debugCylinder.hVerts.vao <= 0)
+	auto& cone = g_debugMeshes["dCone"];
+	if (cone.hVerts.vao <= 0)
 	{
-		g_debugCylinder = gfx::createCylinder(1.0f, 1.0f, 16, "dCylinder");
+		cone = gfx::createCone(1.0f, 1.0f, 16, "dCone");
 	}
-	return g_debugCylinder;
+	return cone;
 }
 
-HMesh& debug::debugSphere()
+HMesh& debug::Cylinder()
 {
-	if (g_debugSphere.hVerts.vao <= 0)
+	auto& cylinder = g_debugMeshes["dCylinder"];
+	if (cylinder.hVerts.vao <= 0)
 	{
-		g_debugSphere = gfx::createCubedSphere(1.0f, "dSphere");
-		g_debugSphere.material.shininess = 5.0f;
+		cylinder = gfx::createCylinder(1.0f, 1.0f, 16, "dCylinder");
 	}
-	return g_debugSphere;
+	return cylinder;
 }
 
-debug::DArrow& debug::debugArrow()
+HMesh& debug::Sphere()
+{
+	auto& sphere = g_debugMeshes["dSphere"];
+	if (sphere.hVerts.vao <= 0)
+	{
+		sphere = gfx::createCubedSphere(1.0f, "dSphere");
+		sphere.material.shininess = 5.0f;
+	}
+	return sphere;
+}
+
+debug::DArrow& debug::Arrow()
 {
 	if (g_debugArrow.meshCount() == 0)
 	{
@@ -184,7 +196,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 {
 	const HShader& shader = resources::get<HShader>("ui/textured");
 	bool bResetTint = false;
-	auto& dQuad = debugQuad();
+	auto& dQuad = Quad();
 	gfx::cropViewport(uiAR);
 	bResetTint |= gfx::setTextures(shader, {texture});
 	for (auto& quad : quads)
@@ -328,6 +340,12 @@ void debug::renderFPS(const HFont& font, const f32 uiAR)
 void debug::unloadAll()
 {
 	g_debugArrow.release();
-	gfx::releaseMeshes({&g_debugMesh, &g_debugQuad, &g_debugPyramid, &g_debugTetrahedron, &g_debugCone, &g_debugCylinder, &g_debugSphere});
+	std::vector<HMesh*> meshes;
+	for (auto& kvp : g_debugMeshes)
+	{
+		meshes.push_back(&kvp.second);
+	}
+	gfx::releaseMeshes(meshes);
+	g_debugMeshes.clear();
 }
 } // namespace le
