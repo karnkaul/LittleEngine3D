@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/glm.hpp>
+#include "le3d/engineVersion.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/gdata.hpp"
@@ -12,7 +13,6 @@
 #include "le3d/env/threads.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
-#include "le3d/game/fileLogger.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
 #include "le3d/gfx/model.hpp"
@@ -38,7 +38,7 @@ std::string resourcePath(std::string_view id)
 	std::string ret = resourcesPath;
 	ret += "/";
 	ret += id;
-	return env::fullPath(ret);
+	return env::fullPath(ret, env::Dir::Executable);
 }
 
 void runTest()
@@ -363,7 +363,6 @@ void runTest()
 	}
 
 	resources::destroySkybox(skybox);
-	prop0.clearModels();
 }
 } // namespace
 
@@ -371,7 +370,6 @@ s32 gameloop::run(s32 argc, char** argv)
 {
 	env::init(argc, argv);
 	jobs::init(4);
-	FileLogger fileLogger(env::fullPath("debug.log"));
 
 	constexpr u16 WIDTH = 1280;
 	constexpr u16 HEIGHT = 720;

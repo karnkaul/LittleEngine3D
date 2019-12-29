@@ -1,7 +1,7 @@
 #include <fstream>
 #include <thread>
+#include "le3d/core/fileLogger.hpp"
 #include "le3d/core/log.hpp"
-#include "le3d/game/fileLogger.hpp"
 
 namespace le
 {

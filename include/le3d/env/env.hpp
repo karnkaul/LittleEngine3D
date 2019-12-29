@@ -25,10 +25,16 @@ namespace env
 {
 extern EngineConfig g_config;
 
+enum class Dir
+{
+	Working,
+	Executable
+};
+
 void init(s32 argc, char** argv);
 void setConfig(std::string json);
-std::string_view pwd();
-std::string fullPath(std::string_view relative);
+std::string_view dirPath(Dir dir);
+std::string fullPath(std::string_view relative, Dir prefix);
 const std::vector<std::string_view>& args();
 bool isDefined(std::string_view arg);
 } // namespace env

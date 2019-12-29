@@ -1,7 +1,11 @@
 #include <iostream>
+#include <memory>
 #include <glad/glad.h>
+#include "le3d/engineVersion.hpp"
 #include "le3d/core/assert.hpp"
+#include "le3d/core/fileLogger.hpp"
 #include "le3d/core/log.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/context/context.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/gfx/utils.hpp"
@@ -25,6 +29,7 @@ using namespace contextImpl;
 
 namespace
 {
+std::unique_ptr<FileLogger> g_uFileLogger;
 glm::vec2 g_windowSize;
 f32 g_nativeAR = 1.0f;
 GLFWwindow* g_pRenderWindow = nullptr;
@@ -47,8 +52,14 @@ void onError(s32 code, const char* szDesc)
 }
 } // namespace
 
-bool context::create(u16 width, u16 height, std::string_view title)
+bool context::create(u16 width, u16 height, std::string_view title, LogOpts logOpts)
 {
+	if (logOpts.bLogToFile)
+	{
+		std::string path = env::fullPath(logOpts.filename, logOpts.dir);
+		g_uFileLogger = std::make_unique<FileLogger>(std::move(path));
+	}
+	LOG_I("LittleEngine3D v%s", versions::buildVersion.data());
 	glfwSetErrorCallback(&onError);
 	if (!glfwInit())
 	{
@@ -128,6 +139,7 @@ void context::destroy()
 	g_windowSize = glm::vec2(0.0f);
 	g_contextThreadID = std::thread::id();
 	LOG_D("Context destroyed");
+	g_uFileLogger = nullptr;
 }
 
 bool context::exists()
