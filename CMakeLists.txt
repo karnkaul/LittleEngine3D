@@ -86,7 +86,7 @@ target_include_directories(${PROJECT_NAME}
 )
 add_target_compile_definitions(${PROJECT_NAME})
 set_target_compile_options(${PROJECT_NAME})
-add_dependencies(${PROJECT_NAME} 
+add_dependencies(${PROJECT_NAME}
 	glfw
 	glad-d
 	glad
@@ -94,13 +94,16 @@ add_dependencies(${PROJECT_NAME}
 	stb-image
 	tinyobjloader
 )
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME} PUBLIC
 	glfw
 	glad$<$<CONFIG:Debug>:-d>
 	glm
 	stb-image
 	tinyobjloader
 )
+if(PLATFORM STREQUAL "Linux")
+	target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)
+endif()
 
 # Footer text
 message(STATUS "Executable path\t: ${LE3D_EXECUTABLE_PATH}")

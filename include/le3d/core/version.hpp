@@ -2,6 +2,12 @@
 #include <string>
 #include "le3d/stdtypes.hpp"
 
+#if __linux__
+#undef major
+#undef minor
+#undef patch
+#endif
+
 namespace le
 {
 struct Version
@@ -33,4 +39,4 @@ public:
 	bool operator>(const Version& rhs);
 	bool operator>=(const Version& rhs);
 };
-} // namespace Core
+} // namespace le

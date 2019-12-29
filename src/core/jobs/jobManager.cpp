@@ -43,14 +43,14 @@ void JobManager::Job::fulfil()
 	m_promise.set_value();
 }
 
-JobManager::JobManager(u32 workerCount, u32 maxThreads)
+JobManager::JobManager(u32 desiredWorkerCount, u32 maxWorkerCount)
 {
-	workerCount = std::min(workerCount, maxThreads);
-	for (u32 i = 0; i < workerCount; ++i)
+	desiredWorkerCount = std::min(desiredWorkerCount, maxWorkerCount);
+	for (u32 i = 0; i < desiredWorkerCount; ++i)
 	{
 		m_jobWorkers.emplace_back(std::make_unique<JobWorker>(*this, i + 100, false));
 	}
-	LOG_D("[JobManager] Detected [%d] max threads; spawned [%d] JobWorkers", maxThreads, workerCount);
+	LOG_D("[JobManager] Spawned [%u] JobWorkers ([%u] max)", desiredWorkerCount, maxWorkerCount);
 }
 
 JobManager::~JobManager()
@@ -157,5 +157,10 @@ bool JobManager::areWorkersIdle() const
 		}
 	}
 	return m_jobQueue.empty();
+}
+
+u16 JobManager::workerCount() const
+{
+	return (u16)m_jobWorkers.size();
 }
 } // namespace le

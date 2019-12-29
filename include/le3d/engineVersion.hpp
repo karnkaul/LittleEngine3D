@@ -8,4 +8,4 @@ namespace le::versions
 extern const Version engineVersion;
 extern const std::string_view gitCommitHash;
 extern const std::string_view buildVersion;
-}
+} // namespace le::versions

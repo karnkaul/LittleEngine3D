@@ -1,5 +1,6 @@
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/assert.hpp"
+#include "le3d/core/log.hpp"
 #include "le3d/env/threads.hpp"
 #include "jobs/jobManager.hpp"
 
@@ -17,7 +18,12 @@ JobManager* g_pJobManager = nullptr;
 
 void jobs::init(u32 workerCount)
 {
-	uManager = std::make_unique<JobManager>(workerCount, threads::available());
+	if (uManager)
+	{
+		LOG_W("[Jobs] Already initialised ([%u] workers)!", uManager->workerCount());
+		return;
+	}
+	uManager = std::make_unique<JobManager>(workerCount, threads::maxHardwareThreads());
 	g_pJobManager = uManager.get();
 }
 

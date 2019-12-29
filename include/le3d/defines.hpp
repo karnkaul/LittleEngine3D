@@ -21,6 +21,16 @@
 #endif
 
 /**
+ * Variable     : LOG_SOURCE_LOCATION
+ * Description  : Used to append source file and line number to logs
+ */
+#if defined(DEBUGGING)
+#if !defined(LOG_SOURCE_LOCATION)
+#define LOG_SOURCE_LOCATION
+#endif
+#endif
+
+/**
  * Variable     : PROFILE_MODEL_LOADS
  * Description  : Used to log time taken to load meshes, textures, etc from model data
  */

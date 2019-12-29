@@ -14,6 +14,7 @@ namespace le
 namespace env
 {
 EngineConfig g_config;
+std::string g_EOL = "\n";
 } // namespace env
 
 namespace
@@ -55,13 +56,7 @@ void env::init(s32 argc, char** argv)
 	if (argc > 0)
 	{
 		g_exeLocation = argv[0];
-		std::string_view token;
-#if defined(_WIN64)
-		token = "\\";
-#else
-		token = "/";
-#endif
-		g_exePath = g_exeLocation.substr(0, g_exeLocation.find_last_of(token));
+		g_exePath = g_exeLocation.substr(0, g_exeLocation.find_last_of(PATH_SEPARATOR));
 		for (s32 i = 1; i < argc; ++i)
 		{
 			g_args.push_back(argv[i]);

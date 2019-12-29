@@ -14,17 +14,14 @@ std::unordered_map<s32, std::unique_ptr<std::thread>> g_threadMap;
 
 namespace threadsImpl
 {
-u32 g_maxThreads = 0;
+u32 g_maxThreads = std::thread::hardware_concurrency();
 }
 
 using namespace threadsImpl;
 
 HThread threads::newThread(Task task)
 {
-	if (available() > 0)
-	{
-		g_threadMap.emplace(++g_nextID, std::make_unique<std::thread>(task));
-	}
+	g_threadMap.emplace(++g_nextID, std::make_unique<std::thread>(task));
 	return HThread(g_nextID);
 }
 
@@ -63,13 +60,9 @@ void threads::joinAll()
 	}
 }
 
-u32 threads::available()
+u32 threads::maxHardwareThreads()
 {
-	if (g_maxThreads == 0)
-	{
-		g_maxThreads = std::thread::hardware_concurrency();
-	}
-	return g_maxThreads - running() - 1;
+	return g_maxThreads;
 }
 
 u32 threads::running()

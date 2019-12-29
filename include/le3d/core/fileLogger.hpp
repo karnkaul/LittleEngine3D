@@ -6,16 +6,18 @@
 
 namespace le
 {
-class FileLogger
+class FileLogger final
 {
 private:
+	std::string m_path;
 	HThread m_id;
 	std::atomic<bool> m_bLog;
-	std::mutex m_mtBuf;
-	std::string m_buffer;
 
 public:
 	FileLogger(std::string path);
 	~FileLogger();
+
+private:
+	void dumpToFile();
 };
 } // namespace le

@@ -24,12 +24,19 @@ struct EngineConfig
 namespace env
 {
 extern EngineConfig g_config;
+extern std::string g_EOL;
 
 enum class Dir
 {
 	Working,
 	Executable
 };
+
+#if defined(_WIN32) || defined(_WIN64)
+constexpr char PATH_SEPARATOR = '\\';
+#else
+constexpr char PATH_SEPARATOR = '/';
+#endif
 
 void init(s32 argc, char** argv);
 void setConfig(std::string json);

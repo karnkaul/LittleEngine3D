@@ -13,7 +13,7 @@ void join(HThread& id);
 void join(const std::vector<HThread*>& ids);
 void joinAll();
 
-u32 available();
+u32 maxHardwareThreads();
 u32 running();
 } // namespace threads
 } // namespace le

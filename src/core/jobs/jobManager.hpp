@@ -46,7 +46,7 @@ private:
 	s64 m_nextGameJobID = 0;
 
 public:
-	JobManager(u32 workerCount, u32 maxThreads);
+	JobManager(u32 desiredWorkerCount, u32 maxWorkerCount);
 	~JobManager();
 
 public:
@@ -56,6 +56,7 @@ public:
 
 	void update();
 	bool areWorkersIdle() const;
+	u16 workerCount() const;
 
 private:
 	std::optional<Job> lock_PopJob();

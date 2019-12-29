@@ -3,12 +3,6 @@
 #include "le3d/core/version.hpp"
 #include "le3d/core/utils.hpp"
 
-#if __linux__
-#undef major
-#undef minor
-#undef patch
-#endif
-
 namespace le
 {
 namespace
@@ -89,8 +83,7 @@ bool Version::operator!=(const Version& rhs)
 
 bool Version::operator<(const Version& rhs)
 {
-	return (mj < rhs.mj) || (mj == rhs.mj && mn < rhs.mn)
-		   || (mj == rhs.mj && mn == rhs.mn && pa < rhs.pa)
+	return (mj < rhs.mj) || (mj == rhs.mj && mn < rhs.mn) || (mj == rhs.mj && mn == rhs.mn && pa < rhs.pa)
 		   || (mj == rhs.mj && mn == rhs.mn && pa == rhs.pa && tw < rhs.tw);
 }
 
@@ -101,8 +94,7 @@ bool Version::operator<=(const Version& rhs)
 
 bool Version::operator>(const Version& rhs)
 {
-	return (mj > rhs.mj) || (mj == rhs.mj && mn > rhs.mn)
-		   || (mj == rhs.mj && mn == rhs.mn && pa > rhs.pa)
+	return (mj > rhs.mj) || (mj == rhs.mj && mn > rhs.mn) || (mj == rhs.mj && mn == rhs.mn && pa > rhs.pa)
 		   || (mj == rhs.mj && mn == rhs.mn && pa == rhs.pa && tw > rhs.tw);
 }
 
@@ -110,4 +102,4 @@ bool Version::operator>=(const Version& rhs)
 {
 	return (*this == rhs) || (*this > rhs);
 }
-} // namespace Core
+} // namespace le

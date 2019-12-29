@@ -65,27 +65,6 @@ function(set_relaxed_compile_options TARGET_NAME)
 	target_compile_options(${TARGET_NAME} PRIVATE ${FLAGS})
 endfunction()
 
-function(set_target_platform_libraries TARGET_NAME)
-	if("${TARGET_NAME}" STREQUAL "le3d")
-		if(PLATFORM STREQUAL "Linux")
-			set(LIBS
-				dl
-				GL
-				m
-				pthread
-				X11
-				Xrandr
-				Xi
-			)
-		elseif(PLATFORM STREQUAL "Win64")
-			set(LIBS
-				OpenGL32
-			)
-		endif()
-	endif()
-	target_link_libraries(${TARGET_NAME} PRIVATE ${LIBS})
-endfunction()
-
 function(set_target_compile_options TARGET_NAME)
 	set(CLANG_COMMON -Werror=return-type -Wextra -Wconversion -Wunreachable-code -Wdeprecated-declarations -Wtype-limits)
 	if(LX_GCC OR LX_CLANG OR W_GCC OR W_CLANG)
