@@ -1,5 +1,6 @@
 #include <unordered_map>
 #include <glad/glad.h>
+#include "le3d/engineVersion.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/env/env.hpp"
@@ -18,7 +19,8 @@ debug::DArrow g_debugArrow;
 
 namespace debug
 {
-Text2D g_fpsStyle = {"", {-900.0f, 500.0f}, 25.0f, Text2D::Align::Left, Colour(150, 150, 150)};
+Text2D g_fpsStyle = {"", {-900.0f, 500.0f, 0.9f}, 35.0f, Text2D::Align::Left, Colour(150, 150, 150)};
+Text2D g_versionStyle = {std::string(versions::buildVersion()), {-900.0f, -500.0f, 0.9f}, 30.0f, Text2D::Align::Left, Colour(150, 150, 150)};
 } // namespace debug
 
 void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)
@@ -192,42 +194,66 @@ debug::DArrow& debug::Arrow()
 	return g_debugArrow;
 }
 
-void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, const f32 uiAR)
+void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, const f32 uiAR, bool bOneDrawCall)
 {
 	const HShader& shader = resources::get<HShader>("ui/textured");
 	bool bResetTint = false;
 	auto& dQuad = Quad();
+	Vertices verts;
 	gfx::cropViewport(uiAR);
 	bResetTint |= gfx::setTextures(shader, {texture});
 	for (auto& quad : quads)
 	{
-		auto& quadMesh = quad.oMesh ? *quad.oMesh : dQuad;
-		glm::mat4 world(1.0f);
-		ModelMats mats;
-		world = glm::translate(world, glm::vec3(quad.pos.x, quad.pos.y, 0.0f));
-		mats.model = glm::scale(world, glm::vec3(quad.size.x, quad.size.y, 1.0f));
-		shader.setModelMats(mats);
-		shader.setV4(env::g_config.uniforms.tint, quad.tint);
-		if (quad.oTexCoords)
+		if (bOneDrawCall)
 		{
-			const glm::vec4& uv = *quad.oTexCoords;
-			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
-			auto sf = sizeof(f32);
-			glChk(glBindVertexArray(quadMesh.hVerts.vao));
-			glChk(glBindBuffer(GL_ARRAY_BUFFER, quadMesh.hVerts.vbo));
-			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+			const glm::vec2 s = quad.size * glm::vec2(0.5f);
+			const glm::vec3& p = quad.pos;
+			const glm::vec3 n(0.0f, 0.0, 1.0f);
+			const glm::vec4& uv = quad.oTexCoords ? *quad.oTexCoords : glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+			auto v0 = verts.addVertex({p.x - s.x, p.y - s.y, p.z}, n, glm::vec2(uv.s, uv.t));
+			auto v1 = verts.addVertex({p.x + s.x, p.y - s.y, p.z}, n, glm::vec2(uv.p, uv.t));
+			auto v2 = verts.addVertex({p.x + s.x, p.y + s.y, p.z}, n, glm::vec2(uv.p, uv.q));
+			auto v3 = verts.addVertex({p.x - s.x, p.y + s.y, p.z}, n, glm::vec2(uv.s, uv.q));
+			verts.addIndices({v0, v1, v2, v2, v3, v0});
 		}
-		gfx::drawMesh(quadMesh, shader);
-		if (quad.oTexCoords)
+		else
 		{
-			f32 data[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f};
-			auto sf = sizeof(f32);
-			glChk(glBindVertexArray(quadMesh.hVerts.vao));
-			glChk(glBindBuffer(GL_ARRAY_BUFFER, quadMesh.hVerts.vbo));
-			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+			glm::mat4 world(1.0f);
+			ModelMats mats;
+			world = glm::translate(world, quad.pos);
+			mats.model = glm::scale(world, glm::vec3(quad.size.x, quad.size.y, 1.0f));
+			shader.setModelMats(mats);
+			shader.setV4(env::g_config.uniforms.tint, quad.tint);
+			if (quad.oTexCoords)
+			{
+				const glm::vec4& uv = *quad.oTexCoords;
+				f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
+				auto sf = sizeof(f32);
+				glChk(glBindVertexArray(dQuad.hVerts.vao));
+				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.hVerts.vbo));
+				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+			}
+			gfx::drawMesh(dQuad, shader);
+			if (quad.oTexCoords)
+			{
+				f32 data[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
+				auto sf = sizeof(f32);
+				glChk(glBindVertexArray(dQuad.hVerts.vao));
+				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.hVerts.vbo));
+				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+			}
 		}
 	}
-	if (bResetTint)
+	if (bOneDrawCall)
+	{
+		ModelMats mats;
+		shader.setModelMats(mats);
+		shader.setV4(env::g_config.uniforms.tint, Colour::White);
+		HVerts hVerts = gfx::gl::genVertices(verts, gfx::Draw::Static, &shader);
+		gfx::gl::draw(hVerts);
+		gfx::gl::releaseVerts(hVerts);
+	}
+	else if (bResetTint)
 	{
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
@@ -235,7 +261,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 	gfx::resetViewport();
 }
 
-void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
+void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR, bool bOneDrawCall)
 {
 	ASSERT(hFont.sheet.glID.handle > 0, "Font has no texture!");
 	const auto& shader = resources::get<HShader>("ui/textured");
@@ -274,9 +300,13 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
 	shader.setS32(matID, 0);
 	shader.setV4(env::g_config.uniforms.tint, text.colour);
 	bResetTint |= gfx::setTextures(shader, {hFont.sheet});
-	glBindVertexArray(hFont.quad.hVerts.vao.handle);
-	glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.hVerts.vbo.handle);
+	if (!bOneDrawCall)
+	{
+		glBindVertexArray(hFont.quad.hVerts.vao.handle);
+		glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.hVerts.vbo.handle);
+	}
 	gfx::cropViewport(uiAR);
+	Vertices verts;
 	s32 idx = 0;
 	for (auto c : text.text)
 	{
@@ -294,20 +324,44 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR)
 			f32 t = (f32)y / hFont.sheet.size.y;
 			glm::vec4 uv = {s, t, s + duv.x, t + duv.y};
 			glm::mat4 world(1.0f);
-			glm::vec3 p = glm::vec3(topLeft.x, topLeft.y, 0.0f) + glm::vec3(cell.x * idx, 0.0f, 0.0f);
-			ModelMats mats;
-			world = glm::translate(world, p);
-			mats.model = glm::scale(world, glm::vec3(text.height, text.height, 1.0f));
-			shader.setModelMats(mats);
-			f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
-			auto sf = sizeof(f32);
-			glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
-			gfx::drawMesh(hFont.quad, shader);
+			glm::vec3 p = glm::vec3(topLeft.x, topLeft.y, text.pos.z) + glm::vec3(cell.x * idx, 0.0f, text.pos.z);
+			if (bOneDrawCall)
+			{
+				const auto n = glm::vec3(0.0f);
+				const auto w = cell * glm::vec2(0.5f);
+				auto v0 = verts.addVertex(p + glm::vec3(-w.x, -w.y, 0.0f), n, glm::vec2(s, t));
+				auto v1 = verts.addVertex(p + glm::vec3(w.x, -w.y, 0.0f), n, glm::vec2(s + duv.x, t));
+				auto v2 = verts.addVertex(p + glm::vec3(w.x, w.y, 0.0f), n, glm::vec2(s + duv.x, t + duv.y));
+				auto v3 = verts.addVertex(p + glm::vec3(-w.x, w.y, 0.0f), n, glm::vec2(s, t + duv.y));
+				verts.addIndices({v0, v1, v2, v2, v3, v0});
+			}
+			else
+			{
+				ModelMats mats;
+				world = glm::translate(world, p);
+				mats.model = glm::scale(world, glm::vec3(text.height, text.height, 1.0f));
+				shader.setModelMats(mats);
+				f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
+				auto sf = sizeof(f32);
+				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+				gfx::drawMesh(hFont.quad, shader);
+			}
 		}
 		++idx;
 	}
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	if (bOneDrawCall)
+	{
+		ModelMats mats;
+		shader.setModelMats(mats);
+		HVerts hVerts = gfx::gl::genVertices(verts, gfx::Draw::Static, &shader);
+		gfx::gl::draw(hVerts);
+		gfx::gl::releaseVerts(hVerts);
+	}
+	else
+	{
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
 	glChk(glBindTexture(GL_TEXTURE_2D, 0));
 	if (bResetTint)
 	{
@@ -332,9 +386,14 @@ void debug::renderFPS(const HFont& font, const f32 uiAR)
 		frames = 0;
 		frameTime = Time::now();
 	}
-	g_fpsStyle.text = std::to_string(fps == 0 ? frames : fps);
-	g_fpsStyle.text += " FPS";
+	g_fpsStyle.text = "FPS ";
+	g_fpsStyle.text += std::to_string(fps == 0 ? frames : fps);
 	renderString(g_fpsStyle, font, uiAR);
+}
+
+void debug::renderVersion(const HFont& font, const f32 uiAR)
+{
+	renderString(g_versionStyle, font, uiAR);
 }
 
 void debug::unloadAll()

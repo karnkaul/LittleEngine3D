@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 #include <mutex>
 #include <unordered_map>
@@ -52,7 +53,7 @@ void logInternal(const char* szText, const char*, u64, LogLevel level, va_list a
 	logText += cacheStr.data();
 #if defined(LOG_SOURCE_LOCATION)
 	logText += " [";
-	logText += szFile;
+	logText += stdfs::path(szFile).generic_string();
 	logText += "|";
 	logText += std::to_string(line);
 	logText += "]";

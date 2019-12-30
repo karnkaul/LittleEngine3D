@@ -23,7 +23,8 @@ void jobs::init(u32 workerCount)
 		LOG_W("[Jobs] Already initialised ([%u] workers)!", uManager->workerCount());
 		return;
 	}
-	uManager = std::make_unique<JobManager>(workerCount, threads::maxHardwareThreads());
+	s32 maxWorkers = std::max((s32)threads::maxHardwareThreads() - 1, 1);
+	uManager = std::make_unique<JobManager>(workerCount, (u32)maxWorkers);
 	g_pJobManager = uManager.get();
 }
 

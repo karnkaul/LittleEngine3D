@@ -47,7 +47,7 @@ glm::mat4 Camera::uiProj(const glm::vec3& uiSpace) const
 {
 	const f32 w = uiSpace.x * 0.5f;
 	const f32 h = uiSpace.y * 0.5f;
-	return glm::ortho(-w, w, -h, h, 0.0f, uiSpace.z);
+	return glm::ortho(-w, w, -h, h, -uiSpace.z, uiSpace.z);
 }
 
 FreeCam::FreeCam()

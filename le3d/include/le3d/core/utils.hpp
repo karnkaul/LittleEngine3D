@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -6,9 +7,11 @@
 
 namespace le::utils
 {
-std::stringstream readFile(std::string_view path);
-std::vector<std::string> readLines(std::string_view path);
-std::vector<u8> readBytes(std::string_view path);
+namespace stdfs = std::filesystem;
+
+std::stringstream readFile(const stdfs::path& path);
+std::vector<std::string> readLines(const stdfs::path& path);
+std::vector<u8> readBytes(const stdfs::path& path);
 
 std::pair<f32, std::string_view> friendlySize(u64 byteCount);
 

@@ -68,7 +68,7 @@ void onFiledrop(GLFWwindow* pWindow, s32 count, const char** szPaths)
 	{
 		for (s32 idx = 0; idx < count; ++idx)
 		{
-			std::string path(szPaths[idx]);
+			stdfs::path path(szPaths[idx]);
 			g_callbacks.onFiledrop(path);
 		}
 	}

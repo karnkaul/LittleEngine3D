@@ -31,14 +31,11 @@ using namespace le::utils;
 namespace
 {
 OnInput::Token tOnInput;
-const std::string resourcesPath = "../test/resources";
+const stdfs::path resourcesPath = "../test/resources";
 
-std::string resourcePath(std::string_view id)
+stdfs::path resourcePath(const stdfs::path& id)
 {
-	std::string ret = resourcesPath;
-	ret += "/";
-	ret += id;
-	return env::fullPath(ret, env::Dir::Executable);
+	return env::dirPath(env::Dir::Executable) / resourcesPath / id;
 }
 
 void runTest()
@@ -58,9 +55,9 @@ void runTest()
 	scpSheet.deserialise(readFile(resourcePath("fonts/scp_1024x512.json")).str());
 	auto& hFont = resources::loadFont("default", std::move(scpSheet));
 
-	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::bindingPoint, gfx::Draw::Dynamic);
-	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::bindingPoint, gfx::Draw::Dynamic);
-	auto& hUIUBO = resources::addUBO("UI", sizeof(uboData::UI), uboData::UI::bindingPoint, gfx::Draw::Dynamic);
+	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::s_bindingPoint, gfx::Draw::Dynamic);
+	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::s_bindingPoint, gfx::Draw::Dynamic);
+	auto& hUIUBO = resources::addUBO("UI", sizeof(uboData::UI), uboData::UI::s_bindingPoint, gfx::Draw::Dynamic);
 
 	Flags<HShader::MAX_FLAGS> noTex;
 	noTex.set((s32)HShader::Flag::Untextured, true);
@@ -262,7 +259,7 @@ void runTest()
 		}
 	});
 #if defined(DEBUGGING)
-	auto test = input::registerFiledrop([](std::string_view path) { LOG_D("File path: %s", path.data()); });
+	auto test = input::registerFiledrop([](const stdfs::path& path) { LOG_D("File path: %s", path.generic_string().data()); });
 #endif
 	Time::reset();
 	Time dt;
@@ -275,7 +272,7 @@ void runTest()
 		// uiSpace = glm::vec3(context::size(), 2.0f);
 		uiAR = (f32)uiSpace.x / uiSpace.y;
 		uboData::UI ui{camera.uiProj(uiSpace)};
-		gfx::setUBO<uboData::UI>(hUIUBO, ui);
+		gfx::setUBO(hUIUBO, ui);
 	};
 	onResize(0, 0);
 	// auto resizeToken = input::registerResize(onResize);
@@ -295,9 +292,12 @@ void runTest()
 		quadProp.m_transform.setOrientation(
 			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 
-		gfx::setUBO<uboData::Lights>(hLightsUBO, lights);
-		uboData::Matrices mats{camera.view(), camera.perspectiveProj(), glm::vec4(camera.m_position, 0.0f)};
-		gfx::setUBO<uboData::Matrices>(hMatricesUBO, mats);
+		gfx::setUBO(hLightsUBO, lights);
+		glm::mat4 v = camera.view();
+		glm::mat4 p = camera.perspectiveProj();
+		glm::vec4 c(camera.m_position, 0.0f);
+		uboData::Matrices mats{v, p, p * v, c};
+		gfx::setUBO(hMatricesUBO, mats);
 
 		renderSkybox(skybox, resources::get<HShader>("unlit/skybox"));
 
@@ -343,20 +343,21 @@ void runTest()
 		debug::Quad2D tl, tr, bl, br;
 		HTexture& quadTex = resources::get<HTexture>("awesomeface");
 		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
-		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
-		tl.pos = {-tr.pos.x + 200.0f, tr.pos.y - 200.0f};
-		bl.pos = {-tr.pos.x, -tr.pos.y};
-		br.pos = {tr.pos.x, -tr.pos.y};
+		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f, 0.0f};
+		tl.pos = {-tr.pos.x, tr.pos.y, 0.0f};
+		bl.pos = {-tr.pos.x, -tr.pos.y, 0.0f};
+		br.pos = {tr.pos.x, -tr.pos.y, 0.0f};
 		debug::draw2DQuads({tl, tr, bl, br}, quadTex, uiAR);
 
 		debug::Text2D text;
 		text.text = "Hello World!";
 		text.align = debug::Text2D::Align::Centre;
 		text.height = 100.0f;
-		text.pos = glm::vec2(0.0f, 300.0f);
+		text.pos = glm::vec3(0.0f, 300.0f, 0.0f);
 		debug::renderString(text, hFont, uiAR);
 
 		debug::renderFPS(hFont, uiAR);
+		debug::renderVersion(hFont, uiAR);
 
 		context::swapBuffers();
 		context::pollEvents();
@@ -370,12 +371,11 @@ s32 gameloop::run(s32 argc, char** argv)
 {
 	env::init(argc, argv);
 	jobs::init(4);
-
-	constexpr u16 WIDTH = 1280;
-	constexpr u16 HEIGHT = 720;
-
-	context::g_bVSYNC = false;
-	if (!context::create(WIDTH, HEIGHT, "Test"))
+	context::Settings settings;
+	settings.title = "LE3D Test";
+	settings.bVSYNC = false;
+	// settings.type = context::Type::BorderlessFullscreen;
+	if (!context::create(settings))
 	{
 		return 1;
 	}

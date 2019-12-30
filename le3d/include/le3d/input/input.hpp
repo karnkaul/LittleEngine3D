@@ -1,5 +1,6 @@
 #pragma once
 #include <bitset>
+#include <filesystem>
 #include <string>
 #include <set>
 #include <vector>
@@ -10,11 +11,13 @@
 
 namespace le
 {
+namespace stdfs = std::filesystem;
+
 using OnText = Delegate<char>;
 using OnInput = Delegate<s32, s32, s32>;
 using OnMouse = Delegate<f64, f64>;
 using OnFocus = Delegate<bool>;
-using OnFiledrop = Delegate<std::string_view>;
+using OnFiledrop = Delegate<const stdfs::path&>;
 using OnResize = Delegate<s32, s32>;
 
 enum class CursorMode
@@ -53,7 +56,7 @@ OnInput::Token registerInput(OnInput::Callback callback);
 OnMouse::Token registerMouse(OnMouse::Callback callback);
 // Callback parameters: (f32 dx, f32 dy)
 OnMouse::Token registerScroll(OnMouse::Callback callback);
-// Callback parameters: (std::string filepath)
+// Callback parameters: (std::filesystem::path filepath)
 OnFiledrop::Token registerFiledrop(OnFiledrop::Callback callback);
 // Callback parameters: (bool bInFocus)
 OnFocus::Token registerFocus(OnFocus::Callback callback);

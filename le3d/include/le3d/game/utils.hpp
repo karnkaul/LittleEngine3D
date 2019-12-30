@@ -14,8 +14,7 @@ namespace debug
 struct Quad2D
 {
 	std::optional<glm::vec4> oTexCoords;
-	std::optional<HMesh> oMesh;
-	glm::vec2 pos = glm::vec2(0.0f);
+	glm::vec3 pos = glm::vec3(0.0f);
 	glm::vec2 size = glm::vec2(1.0f);
 	Colour tint = Colour::White;
 };
@@ -30,7 +29,7 @@ struct Text2D
 	};
 
 	std::string text;
-	glm::vec2 pos = glm::vec2(0.0f);
+	glm::vec3 pos = glm::vec3(0.0f);
 	f32 height = 40.0f;
 	Align align = Align::Centre;
 	Colour colour = Colour::White;
@@ -71,10 +70,12 @@ DArrow& Arrow();
 
 void unloadAll();
 
-void draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, const f32 uiAR = 0.0f);
-void renderString(const Text2D& text, const HFont& hFont, const f32 uiAR = 0.0f);
+void draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, const f32 uiAR = 0.0f, bool bOneDrawCall = true);
+void renderString(const Text2D& text, const HFont& hFont, const f32 uiAR = 0.0f, bool bOneDrawCall = true);
 
 extern Text2D g_fpsStyle;
+extern Text2D g_versionStyle;
 void renderFPS(const HFont& font, const f32 uiAR = 0.0f);
+void renderVersion(const HFont& font, const f32 uiAR = 0.0f);
 } // namespace debug
 } // namespace le

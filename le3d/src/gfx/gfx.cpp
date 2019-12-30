@@ -253,14 +253,14 @@ void gfx::gl::releaseShader(HShader& shader)
 	shader = HShader();
 }
 
-HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pShader)
+HVerts gfx::gl::genVertices(const Vertices& vertices, Draw drawType, const HShader* pShader)
 {
 	HVerts hVerts;
 	if (context::exists())
 	{
 		ASSERT(vertices.normals.empty() || vertices.normals.size() == vertices.points.size(), "Point/normal count mismatch!");
 		ASSERT(vertices.texCoords.empty() || vertices.texCoords.size() == vertices.points.size(), "Point/UV count mismatch!");
-		GLenum type = drawType == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+		const GLenum type = drawType == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenVertexArrays(1, &hVerts.vao.handle));
 		glChk(glGenBuffers(1, &hVerts.vbo.handle));
@@ -271,12 +271,12 @@ HVerts gfx::gl::genVertices(Vertices vertices, Draw drawType, const HShader* pSh
 		glChk(glBindVertexArray(hVerts.vao));
 		glChk(glBindBuffer(GL_ARRAY_BUFFER, hVerts.vbo));
 		glChk(glBufferData(GL_ARRAY_BUFFER, (s64)vertices.byteCount(), nullptr, type));
-		auto sf = (size_t)sizeof(f32);
-		auto sv3 = (size_t)sizeof(Vertices::V3);
-		auto sv2 = (size_t)sizeof(Vertices::V2);
-		auto& p = vertices.points;
-		auto& n = vertices.normals;
-		auto& t = vertices.texCoords;
+		const auto sf = (size_t)sizeof(f32);
+		const auto sv3 = (size_t)sizeof(Vertices::V3);
+		const auto sv2 = (size_t)sizeof(Vertices::V2);
+		const auto& p = vertices.points;
+		const auto& n = vertices.normals;
+		const auto& t = vertices.texCoords;
 		glChk(glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sv3 * p.size()), p.data()));
 		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sv3 * p.size()), (GLsizeiptr)(sv3 * n.size()), n.data()));
 		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sv3 * (p.size() + n.size())), (GLsizeiptr)(sv2 * t.size()), t.data()));
@@ -398,13 +398,13 @@ void gfx::setUBO(const HUBO& hUBO, s64 offset, s64 size, const void* pData)
 	}
 }
 
-HMesh gfx::newMesh(std::string name, Vertices vertices, Draw type, const HShader* pShader /* = nullptr */)
+HMesh gfx::newMesh(std::string name, const Vertices& vertices, Draw type, const HShader* pShader /* = nullptr */)
 {
 	HMesh mesh;
 	if (le::context::exists())
 	{
 		mesh.name = std::move(name);
-		mesh.hVerts = gl::genVertices(std::move(vertices), type, pShader);
+		mesh.hVerts = gl::genVertices(vertices, type, pShader);
 		auto size = utils::friendlySize(mesh.hVerts.byteCount);
 		LOGIF_I(!mesh.name.empty(), "== [%s] [%.1f%s] Mesh set up (%u vertices)", mesh.name.data(), size.first, size.second.data(),
 				mesh.hVerts.vCount);

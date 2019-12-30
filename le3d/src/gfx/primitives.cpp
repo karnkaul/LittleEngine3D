@@ -16,7 +16,7 @@ HMesh gfx::createQuad(f32 width, f32 height, std::string name)
 	verts.normals = {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}};
 	verts.texCoords = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 	verts.indices = {0, 1, 2, 2, 3, 0};
-	return newMesh(std::move(name), std::move(verts), Draw::Dynamic);
+	return newMesh(std::move(name), verts, Draw::Dynamic);
 }
 
 HMesh gfx::createCube(f32 side, std::string name)
@@ -64,7 +64,7 @@ HMesh gfx::createCube(f32 side, std::string name)
 	};
 	verts.indices = {0,	 1,	 2,	 2,	 3,	 0,	 4,	 5,	 6,	 6,	 7,	 4,	 8,	 9,	 10, 10, 11, 8,
 					 12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
-	return newMesh(std::move(name), std::move(verts), Draw::Static);
+	return newMesh(std::move(name), verts, Draw::Static);
 }
 
 HMesh gfx::create4Pyramid(f32 side, std::string name)
@@ -99,7 +99,7 @@ HMesh gfx::create4Pyramid(f32 side, std::string name)
 		{nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z} // down
 	};
 	verts.indices = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 15, 12};
-	return newMesh(std::move(name), std::move(verts), Draw::Static);
+	return newMesh(std::move(name), verts, Draw::Static);
 }
 
 HMesh gfx::createTetrahedron(f32 side, std::string name)
@@ -134,7 +134,7 @@ HMesh gfx::createTetrahedron(f32 side, std::string name)
 
 		{nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, // down
 	};
-	return newMesh(std::move(name), std::move(verts), Draw::Static);
+	return newMesh(std::move(name), verts, Draw::Static);
 }
 
 HMesh gfx::createCircle(f32 diam, s32 points, std::string name)
@@ -161,7 +161,7 @@ HMesh gfx::createCircle(f32 diam, s32 points, std::string name)
 		const u32 iv1 = verts.addVertex({x1, y1, 0.0f}, norm);
 		verts.addIndices({iCentre, iv1 - 1, iv1});
 	}
-	return newMesh(std::move(name), std::move(verts), Draw::Static);
+	return newMesh(std::move(name), verts, Draw::Static);
 }
 
 HMesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name)
@@ -193,7 +193,7 @@ HMesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name)
 		const u32 i4 = verts.addVertex(v2, nFace);
 		verts.addIndices({i2, i3, i4});
 	}
-	return newMesh(std::move(name), std::move(verts), Draw::Static);
+	return newMesh(std::move(name), verts, Draw::Static);
 }
 
 HMesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name)
@@ -234,7 +234,7 @@ HMesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name)
 		u32 iv3 = verts.addVertex(v10, nF);
 		verts.addIndices({iv0, iv1, iv2, iv2, iv3, iv0});
 	}
-	return newMesh(std::move(name), std::move(verts), Draw::Static);
+	return newMesh(std::move(name), verts, Draw::Static);
 }
 
 HMesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide /* = 8 */)
@@ -284,6 +284,6 @@ HMesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide /* = 8
 	addSide([](const auto& p) { return glm::normalize(glm::rotate(p, glm::radians(-90.0f), g_nUp)); });
 	addSide([](const auto& p) { return glm::normalize(glm::rotate(p, glm::radians(90.0f), g_nRight)); });
 	addSide([](const auto& p) { return glm::normalize(glm::rotate(p, glm::radians(-90.0f), g_nRight)); });
-	return gfx::newMesh(std::move(name), std::move(verts), gfx::Draw::Static);
+	return gfx::newMesh(std::move(name), verts, gfx::Draw::Static);
 }
 } // namespace le

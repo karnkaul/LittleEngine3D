@@ -8,16 +8,17 @@ constexpr u8 MAX_PT_LIGHTS = 4;
 
 struct Matrices final
 {
-	static const s32 bindingPoint = 10;
+	static const s32 s_bindingPoint = 1;
 
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::mat4(1.0f);
+	glm::mat4 viewProj = glm::mat4(1.0f);
 	glm::vec4 viewPos = glm::vec4(0.0f);
 };
 
 struct Lights final
 {
-	static const s32 bindingPoint = 11;
+	static const s32 s_bindingPoint = 11;
 
 	struct Pt
 	{
@@ -42,7 +43,7 @@ struct Lights final
 
 struct UI final
 {
-	static const s32 bindingPoint = 12;
+	static const s32 s_bindingPoint = 12;
 
 	glm::mat4 projection = glm::mat4(1.0f);
 };

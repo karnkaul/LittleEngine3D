@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <filesystem>
 #if defined(__linux__)
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
@@ -19,9 +18,9 @@ std::string g_EOL = "\n";
 
 namespace
 {
-std::string_view g_exeLocation;
-std::string_view g_exePath;
-std::string g_workingDir;
+stdfs::path g_exeLocation;
+stdfs::path g_exePath;
+stdfs::path g_workingDir;
 std::vector<std::string_view> g_args;
 
 void SetConfigStrIfPresent(const std::string& id, const GData& data, std::string& member)
@@ -56,13 +55,13 @@ void env::init(s32 argc, char** argv)
 	if (argc > 0)
 	{
 		g_exeLocation = argv[0];
-		g_exePath = g_exeLocation.substr(0, g_exeLocation.find_last_of(PATH_SEPARATOR));
+		g_exePath = g_exeLocation.parent_path();
 		for (s32 i = 1; i < argc; ++i)
 		{
 			g_args.push_back(argv[i]);
 		}
 	}
-	g_workingDir = std::filesystem::current_path().string();
+	g_workingDir = std::filesystem::current_path();
 }
 
 void env::setConfig(std::string json)
@@ -84,17 +83,9 @@ void env::setConfig(std::string json)
 	}
 }
 
-std::string_view env::dirPath(Dir dir)
+stdfs::path env::dirPath(Dir dir)
 {
 	return dir == Dir::Executable ? g_exePath : g_workingDir;
-}
-
-std::string env::fullPath(std::string_view relative, Dir prefix)
-{
-	std::string ret(dirPath(prefix));
-	ret += "/";
-	ret += relative;
-	return ret;
 }
 
 const std::vector<std::string_view>& env::args()

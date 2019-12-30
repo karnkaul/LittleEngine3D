@@ -6,19 +6,19 @@
 
 namespace le
 {
-FileLogger::FileLogger(std::string path)
+FileLogger::FileLogger(std::filesystem::path path)
 {
 	m_path = std::move(path);
 	m_bLog.store(true, std::memory_order_relaxed);
-	std::ifstream iFile(m_path.data());
+	std::ifstream iFile(m_path);
 	if (iFile.good())
 	{
 		iFile.close();
-		std::string backup(m_path);
+		std::filesystem::path backup(m_path);
 		backup += ".bak";
-		std::rename(m_path.data(), backup.data());
+		std::filesystem::rename(m_path, backup);
 	}
-	std::ofstream oFile(m_path.data());
+	std::ofstream oFile(m_path);
 	if (!oFile.good())
 	{
 		return;
@@ -46,7 +46,7 @@ void FileLogger::dumpToFile()
 	auto cache = logCache();
 	if (!cache.empty())
 	{
-		std::ofstream file(m_path.data(), std::ios_base::app);
+		std::ofstream file(m_path, std::ios_base::app);
 		for (const auto& logStr : cache)
 		{
 			file.write(logStr.data(), (std::streamsize)logStr.size());

@@ -27,7 +27,7 @@ void releaseCubemap(HCubemap& cube);
 HShader genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
 void releaseShader(HShader& shader);
 
-HVerts genVertices(Vertices vertices, Draw drawType = Draw::Dynamic, const HShader* pShader = nullptr);
+HVerts genVertices(const Vertices& vertices, Draw drawType = Draw::Dynamic, const HShader* pShader = nullptr);
 void releaseVerts(HVerts& hVerts);
 
 HUBO genUBO(s64 size, u32 bindingPoint, Draw type);
@@ -43,7 +43,7 @@ static void setUBO(const HUBO& hUBO, const T& data)
 	setUBO(hUBO, 0, sizeof(data), &data);
 }
 
-HMesh newMesh(std::string name, Vertices vertices, Draw type, const HShader* pShader = nullptr);
+HMesh newMesh(std::string name, const Vertices& vertices, Draw type, const HShader* pShader = nullptr);
 void releaseMeshes(const std::vector<HMesh*>& meshes);
 
 // Returns true if shader tint changed (missing texture)

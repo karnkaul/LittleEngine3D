@@ -1,10 +1,13 @@
 #pragma once
+#include <filesystem>
 #include <string>
 #include <vector>
 #include "le3d/stdtypes.hpp"
 
 namespace le
 {
+namespace stdfs = std::filesystem;
+
 struct EngineConfig
 {
 	struct Uniforms
@@ -32,16 +35,9 @@ enum class Dir
 	Executable
 };
 
-#if defined(_WIN32) || defined(_WIN64)
-constexpr char PATH_SEPARATOR = '\\';
-#else
-constexpr char PATH_SEPARATOR = '/';
-#endif
-
 void init(s32 argc, char** argv);
 void setConfig(std::string json);
-std::string_view dirPath(Dir dir);
-std::string fullPath(std::string_view relative, Dir prefix);
+stdfs::path dirPath(Dir dir);
 const std::vector<std::string_view>& args();
 bool isDefined(std::string_view arg);
 } // namespace env

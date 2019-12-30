@@ -6,9 +6,9 @@
 
 namespace le
 {
-std::stringstream utils::readFile(std::string_view path)
+std::stringstream utils::readFile(const stdfs::path& path)
 {
-	std::ifstream file(path.data());
+	std::ifstream file(path);
 	std::stringstream buf;
 	if (file.good())
 	{
@@ -17,19 +17,18 @@ std::stringstream utils::readFile(std::string_view path)
 	return buf;
 }
 
-std::vector<std::string> utils::readLines(std::string_view path)
+std::vector<std::string> utils::readLines(const stdfs::path& path)
 {
-	std::ifstream file(path.data());
+	std::ifstream file(path);
 	std::vector<std::string> ret;
 	for (std::string line; std::getline(file, line); ret.emplace_back(std::move(line)))
 		;
 	return ret;
 }
 
-std::vector<u8> utils::readBytes(std::string_view path)
+std::vector<u8> utils::readBytes(const stdfs::path& path)
 {
-	std::string sPath(path);
-	std::ifstream file(path.data(), std::ios::binary);
+	std::ifstream file(path, std::ios::binary);
 	std::vector<u8> buf;
 	if (file.good())
 	{

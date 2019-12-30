@@ -1,5 +1,5 @@
 #pragma once
-#include <string>
+#include <filesystem>
 #include <glm/glm.hpp>
 #include "le3d/stdtypes.hpp"
 #include "le3d/gfx/colour.hpp"
@@ -9,16 +9,32 @@ namespace le
 {
 namespace context
 {
-extern bool g_bVSYNC;
-
-struct LogOpts
+enum class Type
 {
-	std::string_view filename = "debug.log";
-	env::Dir dir = env::Dir::Working;
-	bool bLogToFile = true;
+	BorderedWindow,
+	BorderlessFullscreen,
+	Dedicated,
 };
 
-bool create(u16 width, u16 height, std::string_view title, LogOpts logOpts = {});
+struct Settings
+{
+	struct LogOpts
+	{
+		std::filesystem::path filename = "debug.log";
+		env::Dir dir = env::Dir::Working;
+		bool bLogToFile = true;
+	};
+
+	LogOpts logOpts;
+	std::string title = "LittleEngine3D";
+	Type type = Type::BorderedWindow;
+	u16 width = 1280;
+	u16 height = 720;
+	u16 screenID = 0;
+	bool bVSYNC = true;
+};
+
+bool create(const Settings& pSettings);
 void destroy();
 
 bool exists();

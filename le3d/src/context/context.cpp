@@ -20,11 +20,6 @@ std::thread::id g_contextThreadID;
 std::mutex g_glMutex;
 } // namespace contextImpl
 
-namespace context
-{
-bool g_bVSYNC = true;
-} // namespace context
-
 using namespace contextImpl;
 
 namespace
@@ -40,7 +35,7 @@ void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 	if (pWindow == g_pRenderWindow)
 	{
 		g_windowSize = {width, height};
-		g_nativeAR = (f32)width / height;
+		g_nativeAR = height > 0 ? (f32)width / height : 0.0f;
 		glViewport(0, 0, width, height);
 		inputImpl::g_callbacks.onResize(width, height);
 	}
@@ -52,14 +47,14 @@ void onError(s32 code, const char* szDesc)
 }
 } // namespace
 
-bool context::create(u16 width, u16 height, std::string_view title, LogOpts logOpts)
+bool context::create(const Settings& settings)
 {
-	if (logOpts.bLogToFile)
+	if (settings.logOpts.bLogToFile)
 	{
-		std::string path = env::fullPath(logOpts.filename, logOpts.dir);
+		auto path = env::dirPath(settings.logOpts.dir) / settings.logOpts.filename;
 		g_uFileLogger = std::make_unique<FileLogger>(std::move(path));
 	}
-	LOG_I("LittleEngine3D v%s", versions::buildVersion.data());
+	LOG_I("LittleEngine3D v%s", versions::buildVersion().data());
 	glfwSetErrorCallback(&onError);
 	if (!glfwInit())
 	{
@@ -68,29 +63,57 @@ bool context::create(u16 width, u16 height, std::string_view title, LogOpts logO
 	}
 
 	s32 screenCount;
-	GLFWmonitor** screens = glfwGetMonitors(&screenCount);
+	GLFWmonitor** ppScreens = glfwGetMonitors(&screenCount);
 	if (screenCount < 1)
 	{
 		LOG_E("Failed to detect output device");
 		return false;
 	}
-	const GLFWvidmode* mode = glfwGetVideoMode(screens[0]);
+	const GLFWvidmode* mode = glfwGetVideoMode(ppScreens[0]);
 	if (!mode)
 	{
 		LOG_E("Failed to get default screen's video mode");
 		return false;
 	}
-	if (mode->width < width || mode->height < height)
+	GLFWmonitor* pTarget = nullptr;
+	u16 height = settings.height;
+	u16 width = settings.width;
+	s32 screenIdx = settings.screenID < screenCount ? (s32)settings.screenID : -1;
+	bool bVSYNC = settings.bVSYNC;
+	switch (settings.type)
 	{
-		LOG_E("Context size [%ux%u] too large for default screen! [%ux%u]", width, height, mode->width, mode->height);
-		return false;
+	case Type::BorderedWindow:
+	{
+		if (mode->width < width || mode->height < height)
+		{
+			LOG_E("Context size [%ux%u] too large for default screen! [%ux%u]", width, height, mode->width, mode->height);
+			return false;
+		}
+		break;
+	}
+	case Type::BorderlessFullscreen:
+	{
+		height = (u16)mode->height;
+		width = (u16)mode->width;
+		pTarget = ppScreens[(size_t)screenIdx];
+		break;
+	}
+	case Type::Dedicated:
+	{
+		pTarget = ppScreens[(size_t)screenIdx];
+		break;
+	}
 	}
 	g_windowSize = glm::vec2(width, height);
 	s32 cX = (mode->width - width) / 2;
 	s32 cY = (mode->height - height) / 2;
-	ASSERT(cX > 0 && cY > 0, "Invalid centre-screen!");
+	ASSERT(cX >= 0 && cY >= 0, "Invalid centre-screen!");
 
-	g_pRenderWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
+	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+	g_pRenderWindow = glfwCreateWindow(width, height, settings.title.data(), pTarget, nullptr);
 	if (!g_pRenderWindow)
 	{
 		LOG_E("Failed to create window!");
@@ -101,10 +124,10 @@ bool context::create(u16 width, u16 height, std::string_view title, LogOpts logO
 		Lock lock(g_glMutex);
 		glfwMakeContextCurrent(g_pRenderWindow);
 #if defined(FORCE_NO_VSYNC)
-		g_bVSYNC = false;
+		bVSYNC = false;
 #endif
-		LOGIF_I(!g_bVSYNC, "[Context] Vsync disabled unless overridden by driver");
-		glfwSwapInterval(g_bVSYNC ? 1 : 0);
+		LOGIF_I(!bVSYNC, "[Context] Vsync disabled unless overridden by driver");
+		glfwSwapInterval(bVSYNC ? 1 : 0);
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		{
 			LOG_E("Failed to initialise GLAD!");
