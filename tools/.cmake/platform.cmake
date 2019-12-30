@@ -5,7 +5,7 @@ set(W_GCC 0 CACHE INTERNAL "" FORCE)
 set(LX_CLANG 0 CACHE INTERNAL "" FORCE)
 set(LX_GCC 0 CACHE INTERNAL "" FORCE)
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	## Enforce x64
+	# Enforce x64
 	set(CMAKE_VS_PLATFORM_NAME "x64" CACHE STRING "" FORCE)
 	if(NOT CMAKE_VS_PLATFORM_NAME STREQUAL "x64")
 		message(FATAL_ERROR "Only x64 builds are supported!")
@@ -33,14 +33,24 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		message("\tWARNING: Unsupported compiler [${CMAKE_CXX_COMPILER_ID}], expect build warnings/errors!")
 	endif()
 else()
-	message(FATAL_ERROR "Unsupported system [${CMAKE_SYSTEM_NAME}]!")
+	message(WARNING "Unsupported system [${CMAKE_SYSTEM_NAME}]!")
 endif()
 
+# Additional compile flags
+set(LE3D_COMPILE_FLAGS "" CACHE STRING "Additional compile flags (use with caution)")
+
 if(PLATFORM STREQUAL "Win64")
+	# Embed debug info in builds
 	string(REPLACE "ZI" "Z7" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
 	string(REPLACE "Zi" "Z7" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
 	string(REPLACE "ZI" "Z7" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
 	string(REPLACE "Zi" "Z7" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+elseif(PLATFORM STREQUAL "Linux")
+	# Ensure OpenGL libs present
+	find_library(GL GL)
+	if(GL STREQUAL "GL_NOTFOUND")
+		message("Fatal error: cannot build without OpenGL!" FATAL_ERROR)
+	endif()
 endif()
 
 function(set_relaxed_compile_options TARGET_NAME)
@@ -53,27 +63,6 @@ function(set_relaxed_compile_options TARGET_NAME)
 		endif()
 	endif()
 	target_compile_options(${TARGET_NAME} PRIVATE ${FLAGS})
-endfunction()
-
-function(set_target_platform_libraries TARGET_NAME)
-	if("${TARGET_NAME}" STREQUAL "le3d")
-		if(PLATFORM STREQUAL "Linux")
-			set(LIBS
-				dl
-				GL
-				m
-				pthread
-				X11
-				Xrandr
-				Xi
-			)
-		elseif(PLATFORM STREQUAL "Win64")
-			set(LIBS
-				OpenGL32
-			)
-		endif()
-	endif()
-	target_link_libraries(${TARGET_NAME} PRIVATE ${LIBS})
 endfunction()
 
 function(set_target_compile_options TARGET_NAME)
@@ -102,6 +91,7 @@ function(set_target_compile_options TARGET_NAME)
 			/MP
 		)
 	endif()
+	list(APPEND FLAGS ${LE3D_COMPILE_FLAGS})
 	target_compile_options(${TARGET_NAME} PRIVATE ${FLAGS})
 endfunction()
 
@@ -112,7 +102,7 @@ function(set_target_link_options TARGET_NAME)
 			-Wl,-z,origin   # Allow $ORIGIN in RUNPATH
 		)
 	elseif(PLATFORM STREQUAL "Win64")
-		if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		if(NOT W_GCC)
 			target_link_options(${TARGET_NAME} PRIVATE
 				$<$<CONFIG:Debug>:
 					/SUBSYSTEM:CONSOLE
@@ -125,7 +115,6 @@ function(set_target_link_options TARGET_NAME)
 					/OPT:REF
 					/OPT:ICF
 					/INCREMENTAL:NO
-					/LTCG
 				>
 				$<$<CONFIG:RelWithDebinfo>:
 					/DEBUG:FULL

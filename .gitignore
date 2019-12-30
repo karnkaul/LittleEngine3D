@@ -8,8 +8,8 @@ out/*
 CMakeSettings.json
 .editorconfig
 
-glad.h
 khrplatform.h
+glad.h
 glad.c
-stb_image.h
-stb_image.c
+stb_image.*
+tiny_obj_loader.*

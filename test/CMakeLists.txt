@@ -7,20 +7,19 @@ if(PLATFORM STREQUAL "Linux")
 	endif()
 endif()
 
-set(EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build" CACHE STRING "" FORCE)
+set(LE3D_EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build" CACHE STRING "" FORCE)
 
 set(SOURCES
 	app/gameloop.hpp
 	app/gameloop.cpp
 	app/ubotypes.hpp
-	app/utils.hpp
-	app/utils.cpp
 	main.cpp
 )
 list(TRANSFORM SOURCES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 set(EXE_NAME ${PROJECT_NAME}-$<CONFIG>${EXE_SUFFIX})
 add_le3d_executable(${PROJECT_NAME} ${EXE_NAME} "${SOURCES}" "${GLOBAL_INCLUDE_PATHS}")
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 add_dependencies(${PROJECT_NAME} le3d)
 target_link_libraries(${PROJECT_NAME} le3d)
 if(W_MSBUILD)

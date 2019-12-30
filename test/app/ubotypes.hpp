@@ -1,5 +1,5 @@
 #pragma once
-#include "le3d/thirdParty.hpp"
+#include "le3d/gfx/gfxtypes.hpp"
 
 namespace le::uboData
 {

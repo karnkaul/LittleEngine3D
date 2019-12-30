@@ -1,7 +1,9 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/glm.hpp>
+#include "le3d/engineVersion.hpp"
 #include "le3d/context/context.hpp"
+#include "le3d/core/assert.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/maths.hpp"
@@ -11,7 +13,6 @@
 #include "le3d/env/threads.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
-#include "le3d/game/fileLogger.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
 #include "le3d/gfx/model.hpp"
@@ -21,7 +22,6 @@
 
 #include "ubotypes.hpp"
 #include "gameloop.hpp"
-#include "utils.hpp"
 
 namespace letest
 {
@@ -38,7 +38,7 @@ std::string resourcePath(std::string_view id)
 	std::string ret = resourcesPath;
 	ret += "/";
 	ret += id;
-	return env::fullPath(ret);
+	return env::fullPath(ret, env::Dir::Executable);
 }
 
 void runTest()
@@ -55,7 +55,7 @@ void runTest()
 
 	FontAtlasData scpSheet;
 	scpSheet.bytes = readBytes(resourcePath("fonts/scp_1024x512.png"));
-	scpSheet.deserialise(readFile(resourcePath("fonts/scp_1024x512.json")));
+	scpSheet.deserialise(readFile(resourcePath("fonts/scp_1024x512.json")).str());
 	auto& hFont = resources::loadFont("default", std::move(scpSheet));
 
 	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::bindingPoint, gfx::Draw::Dynamic);
@@ -70,19 +70,22 @@ void runTest()
 	noTexNoLit.set((s32)HShader::Flag::Unlit, true);
 	noTexNoLit.set((s32)HShader::Flag::Untextured, true);
 
-	auto def = readFile(resourcePath("shaders/default.vsh"));
-	auto ui = readFile(resourcePath("shaders/ui.vsh"));
-	auto sb = readFile(resourcePath("shaders/skybox.vsh"));
-	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")), noTexNoLit);
-	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")), noLit);
-	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")), noTex);
-	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")), {});
-	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")), noTexNoLit);
-	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")), noLit);
-	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")), noLit);
+	auto def = readFile(resourcePath("shaders/default.vsh")).str();
+	auto ui = readFile(resourcePath("shaders/ui.vsh")).str();
+	auto sb = readFile(resourcePath("shaders/skybox.vsh")).str();
+	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(),
+												   noTexNoLit);
+	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")).str(),
+													 noLit);
+	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")).str(), noTex);
+	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")).str(), {});
+	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")).str(),
+												  noTexNoLit);
+	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(), noLit);
+	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")).str(), noLit);
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
 
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 	Time _t = Time::now();
 #endif
 	std::vector<u8> l, r, u, d, f, b;
@@ -101,13 +104,10 @@ void runTest()
 		jobHandles.push_back(jobs::enqueue([&d]() { d = readBytes(resourcePath("textures/skybox/down.jpg")); }, "skybox_d"));
 		jobHandles.push_back(jobs::enqueue([&f]() { f = readBytes(resourcePath("textures/skybox/front.jpg")); }, "skybox_f"));
 		jobHandles.push_back(jobs::enqueue([&b]() { b = readBytes(resourcePath("textures/skybox/back.jpg")); }, "skybox_b"));
-		for (auto& jh : jobHandles)
-		{
-			jh->wait();
-		}
+		jobs::waitAll(jobHandles);
 		skybox = resources::createSkybox("skybox", {r, l, u, d, f, b});
 	}
-#if defined(DEBUGGING)
+#if defined(DEBUG_LOG)
 	Time _dt = Time::now() - _t;
 	LOG_D("Skybox time: %.2fms", _dt.assecs() * 1000);
 #endif
@@ -133,20 +133,35 @@ void runTest()
 		gfx::gl::draw(light);
 	};
 
-	auto& cubeMesh = debug::debugCube();
-	auto& quadMesh = debug::debugQuad();
-	quadMesh.textures = {resources::get<HTexture>("awesomeface")};
+	std::string modelPath = "models/plant";
+	std::string modelFile = "eb_house_plant_01";
+	std::string materialFile = modelFile;
+	std::stringstream objBuf = utils::readFile(resourcePath(modelPath + "/" + modelFile + ".obj"));
+	std::stringstream mtlBuf = utils::readFile(resourcePath(modelPath + "/" + materialFile + ".mtl"));
+	Model::Data objData = Model::loadOBJ(objBuf, mtlBuf, modelPath, 0.05f);
+	objData.setTextureData([modelPath](std::string_view filename) -> std::vector<u8> {
+		std::string filepath = modelPath;
+		filepath += "/";
+		filepath += filename;
+		return utils::readBytes(resourcePath(filepath));
+	});
+	bool bTexturedObj = true;
+	Model& objModel = resources::loadModel("objModel", objData);
+
+	auto& cubeMesh = debug::Cube();
+	auto& quadMesh = debug::Quad();
+	quadMesh.material.textures = {resources::get<HTexture>("awesomeface")};
 	// quadMesh.textures = {bad};
-	cubeMesh.textures = {resources::get<HTexture>("container2"), resources::get<HTexture>("container2_specular")};
+	cubeMesh.material.textures = {resources::get<HTexture>("container2"), resources::get<HTexture>("container2_specular")};
 	// cubeMesh.textures = {resources::getTexture("container2")};
 	HMesh blankCubeMesh = cubeMesh;
-	blankCubeMesh.textures.clear();
+	blankCubeMesh.material.textures.clear();
 	Model cube;
 	Model blankCube;
 	Model cubeStack;
-	cube.setupModel("cube");
-	cubeStack.setupModel("cubeStack");
-	blankCube.setupModel("blankCube");
+	cube.setupModel("cube", {});
+	cubeStack.setupModel("cubeStack", {});
+	blankCube.setupModel("blankCube", {});
 	cube.addFixture(cubeMesh);
 	cubeStack.addFixture(cubeMesh);
 	blankCube.addFixture(blankCubeMesh);
@@ -154,7 +169,7 @@ void runTest()
 	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
 	cubeStack.addFixture(cubeMesh, offset);
 	Model quad;
-	quad.setupModel("quad");
+	quad.setupModel("quad", {});
 	quad.addFixture(quadMesh);
 
 	// mesh.m_textures = {bad};
@@ -192,10 +207,10 @@ void runTest()
 	{
 		Prop prop;
 		prop.setup("prop_" + std::to_string(i));
-		Model& m = i < 3 ? cube : blankCube;
+		Model& m = i < 3 ? cube : objModel;
 		prop.addModel(m);
-		std::string s = i < 3 ? "lit/textured" : "lit/tinted";
-		prop.setShader(resources::get<HShader>(s));
+		std::string shader = bTexturedObj ? "lit/textured" : "lit/tinted";
+		prop.setShader(resources::get<HShader>(shader));
 		props.emplace_back(std::move(prop));
 	}
 	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
@@ -211,12 +226,35 @@ void runTest()
 			{
 				bWireframe = !bWireframe;
 				prop0.m_flags.set((s32)Entity::Flag::Wireframe, bWireframe);
+				props[3].m_flags.set((s32)Entity::Flag::Wireframe, bWireframe);
 			}
 			if (key == GLFW_KEY_P && mods & GLFW_MOD_CONTROL)
 			{
 				bParented = !bParented;
 				prop0.m_transform.setParent(bParented ? &prop1.m_transform : nullptr);
 			}
+#if defined(DEBUGGING)
+			if (key == GLFW_KEY_G && mods & GLFW_MOD_CONTROL)
+			{
+				auto& ar = debug::Arrow();
+				auto tip = debug::DArrow::Tip::Sphere;
+				switch (ar.m_tip)
+				{
+				case debug::DArrow::Tip::Cone:
+					tip = debug::DArrow::Tip::Sphere;
+					break;
+
+				case debug::DArrow::Tip::Cube:
+					tip = debug::DArrow::Tip::Cone;
+					break;
+
+				case debug::DArrow::Tip::Sphere:
+					tip = debug::DArrow::Tip::Cube;
+					break;
+				}
+				ar.setTip(tip);
+			}
+#endif
 		}
 		if (key == GLFW_MOUSE_BUTTON_1)
 		{
@@ -247,8 +285,8 @@ void runTest()
 		dt = Time::now() - t;
 		t = Time::now();
 		camera.tick(dt);
-		// context::glClearFlags(Colour(50, 40, 10));
-		context::clearFlags();
+		// context::glClearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Colour(50, 40, 10));
+		context::clearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
@@ -268,28 +306,41 @@ void runTest()
 		std::vector<ModelMats> m(3, ModelMats());
 		for (size_t i = 0; i < 3; ++i)
 		{
-			const auto& prop = props[i];
+			auto& prop = props[i];
 			// prop.setShader(resources::get<HShader>("lit/textured"));
 			m[i].model = prop.m_transform.model();
 			m[i].oNormals = prop.m_transform.normalModel();
-			// prop.render();
+			prop.render();
 		}
 		litTextured.setV4(env::g_config.uniforms.tint, Colour::White);
-		const auto& cube = debug::debugCube();
-		renderMeshes(cube, m, litTextured);
+		// const auto& cube = debug::debugCube();
+		// renderMeshes(cube, m, litTextured);
 		m = std::vector<ModelMats>(props.size() - 3, ModelMats());
 		for (size_t i = 3; i < props.size(); ++i)
 		{
-			const auto& prop = props[i];
+			auto& prop = props[i];
 			m[i - 3].model = prop.m_transform.model();
 			m[i - 3].oNormals = prop.m_transform.normalModel();
+			prop.render();
 		}
-		renderMeshes(cube, m, litTinted);
+		// renderMeshes(cube, m, litTinted);
+		ModelMats sphereMat;
+		sphereMat.model = glm::translate(sphereMat.model, {2.0f, -0.5f, 0.0f});
+		if (bWireframe)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		renderMeshes(debug::Sphere(), {sphereMat}, litTinted);
+		if (bWireframe)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+
 		drawLight(pl0Pos, light0);
 		drawLight(pl1Pos, light1);
 		quadProp.render();
 
-		Quad2D tl, tr, bl, br;
+		debug::Quad2D tl, tr, bl, br;
 		HTexture& quadTex = resources::get<HTexture>("awesomeface");
 		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f};
@@ -298,9 +349,9 @@ void runTest()
 		br.pos = {tr.pos.x, -tr.pos.y};
 		debug::draw2DQuads({tl, tr, bl, br}, quadTex, uiAR);
 
-		Text2D text;
+		debug::Text2D text;
 		text.text = "Hello World!";
-		text.align = Align::Centre;
+		text.align = debug::Text2D::Align::Centre;
 		text.height = 100.0f;
 		text.pos = glm::vec2(0.0f, 300.0f);
 		debug::renderString(text, hFont, uiAR);
@@ -312,7 +363,6 @@ void runTest()
 	}
 
 	resources::destroySkybox(skybox);
-	prop0.clearModels();
 }
 } // namespace
 
@@ -320,14 +370,11 @@ s32 gameloop::run(s32 argc, char** argv)
 {
 	env::init(argc, argv);
 	jobs::init(4);
-	FileLogger fileLogger(env::fullPath("debug.log"));
 
 	constexpr u16 WIDTH = 1280;
 	constexpr u16 HEIGHT = 720;
 
-#if defined(DEBUGGING)
 	context::g_bVSYNC = false;
-#endif
 	if (!context::create(WIDTH, HEIGHT, "Test"))
 	{
 		return 1;
