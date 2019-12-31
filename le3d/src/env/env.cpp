@@ -42,7 +42,7 @@ void SetConfigStrIfPresent(const std::string& id, const GData& data, std::string
 //}
 } // namespace
 
-void env::init(s32 argc, char** argv)
+void env::init(const Args& args)
 {
 #if defined(__linux__)
 	s32 threadStatus = XInitThreads();
@@ -52,16 +52,16 @@ void env::init(s32 argc, char** argv)
 		threadsImpl::g_maxThreads = 1;
 	}
 #endif
-	if (argc > 0)
+	g_workingDir = std::filesystem::current_path();
+	if (args.argc > 0)
 	{
-		g_exeLocation = argv[0];
+		g_exeLocation = args.argv[0];
 		g_exePath = g_exeLocation.parent_path();
-		for (s32 i = 1; i < argc; ++i)
+		for (s32 i = 1; i < args.argc; ++i)
 		{
-			g_args.push_back(argv[i]);
+			g_args.push_back(args.argv[i]);
 		}
 	}
-	g_workingDir = std::filesystem::current_path();
 }
 
 void env::setConfig(std::string json)
@@ -85,7 +85,22 @@ void env::setConfig(std::string json)
 
 stdfs::path env::dirPath(Dir dir)
 {
-	return dir == Dir::Executable ? g_exePath : g_workingDir;
+	switch (dir)
+	{
+	case env::Dir::Working:
+		if (g_workingDir.empty())
+		{
+			g_workingDir = std::filesystem::current_path();
+		}
+		return g_workingDir;
+	case env::Dir::Executable:
+		if (g_exePath.empty())
+		{
+			LOG_E("[Env] Unknown executable path! Using working directory instead [%s]", g_workingDir.generic_string().data());
+			g_exePath = dirPath(Dir::Working);
+		}
+		return g_exePath;
+	}
 }
 
 const std::vector<std::string_view>& env::args()

@@ -20,7 +20,8 @@ debug::DArrow g_debugArrow;
 namespace debug
 {
 Text2D g_fpsStyle = {"", {-900.0f, 500.0f, 0.9f}, 35.0f, Text2D::Align::Left, Colour(150, 150, 150)};
-Text2D g_versionStyle = {std::string(versions::buildVersion()), {-900.0f, -500.0f, 0.9f}, 30.0f, Text2D::Align::Left, Colour(150, 150, 150)};
+Text2D g_versionStyle = {
+	std::string(versions::buildVersion()), {-900.0f, -500.0f, 0.9f}, 30.0f, Text2D::Align::Left, Colour(150, 150, 150)};
 } // namespace debug
 
 void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)

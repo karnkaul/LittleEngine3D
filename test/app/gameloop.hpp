@@ -3,5 +3,5 @@
 
 namespace letest::gameloop
 {
-s32 run(s32 argc, char** argv);
+s32 run(s32 argc, const char** argv);
 }

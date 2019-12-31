@@ -35,7 +35,13 @@ enum class Dir
 	Executable
 };
 
-void init(s32 argc, char** argv);
+struct Args
+{
+	s32 argc = 0;
+	const char** argv = nullptr;
+};
+
+void init(const Args& args);
 void setConfig(std::string json);
 stdfs::path dirPath(Dir dir);
 const std::vector<std::string_view>& args();

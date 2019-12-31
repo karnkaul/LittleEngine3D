@@ -367,21 +367,19 @@ void runTest()
 }
 } // namespace
 
-s32 gameloop::run(s32 argc, char** argv)
+s32 gameloop::run(s32 argc, const char** argv)
 {
-	env::init(argc, argv);
-	jobs::init(4);
 	context::Settings settings;
 	settings.title = "LE3D Test";
 	settings.bVSYNC = false;
+	settings.env.args = {argc, argv};
+	settings.env.jobWorkerCount = 4;
 	// settings.type = context::Type::BorderlessFullscreen;
-	if (!context::create(settings))
+	if (auto wContext = context::create(settings))
 	{
-		return 1;
+		runTest();
+		return 0;
 	}
-	runTest();
-	context::destroy();
-	jobs::cleanup();
-	return 0;
+	return 1;
 }
 } // namespace letest

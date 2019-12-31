@@ -9,7 +9,18 @@ namespace le
 namespace
 {
 std::unique_ptr<JobManager> uManager;
+
+JobHandle doNow(Task task, std::optional<std::string> oName)
+{
+	LOG_E("[Jobs] Not initialised! Running task on this thread!");
+	task();
+	if (oName)
+	{
+		LOG_D("NOWORKER Completed %s", oName->data());
+	}
+	return {};
 }
+} // namespace
 
 namespace jobs
 {
@@ -36,27 +47,53 @@ void jobs::cleanup()
 
 JobHandle jobs::enqueue(Task task, std::string name /* = "" */, bool bSilent /* = false */)
 {
-	ASSERT(uManager, "JobManager is null!");
-	return uManager->enqueue(std::move(task), name, bSilent);
+	if (uManager)
+	{
+		return uManager->enqueue(std::move(task), name, bSilent);
+	}
+	else
+	{
+		return doNow(std::move(task), bSilent ? std::nullopt : std::optional<std::string>(name));
+	}
 }
 
 JobCatalog* jobs::createCatalogue(std::string name)
 {
 	ASSERT(uManager, "JobManager is null!");
-	return uManager->createCatalogue(std::move(name));
+	if (uManager)
+	{
+		return uManager->createCatalogue(std::move(name));
+	}
+	else
+	{
+		LOG_E("[Jobs] Not initialised! Cannot requisition new JobCatalog!");
+		return nullptr;
+	}
 }
 
 void jobs::forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, size_t iterationsPerJob, size_t startIdx)
 {
-	ASSERT(uManager, "JobManager is null!");
-	uManager->forEach(indexedTask, iterationCount, iterationsPerJob, startIdx);
+	if (uManager)
+	{
+		uManager->forEach(indexedTask, iterationCount, iterationsPerJob, startIdx);
+	}
+	else
+	{
+		for (; startIdx < iterationCount * iterationsPerJob; ++startIdx)
+		{
+			doNow([&indexedTask, startIdx] { indexedTask(startIdx); }, std::nullopt);
+		}
+	}
 }
 
 void jobs::waitAll(const std::vector<JobHandle>& handles)
 {
 	for (auto& handle : handles)
 	{
-		handle->wait();
+		if (handle)
+		{
+			handle->wait();
+		}
 	}
 }
 

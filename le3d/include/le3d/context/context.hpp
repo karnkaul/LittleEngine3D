@@ -24,8 +24,14 @@ struct Settings
 		env::Dir dir = env::Dir::Working;
 		bool bLogToFile = true;
 	};
+	struct EnvOpts
+	{
+		env::Args args;
+		u16 jobWorkerCount = 2;
+	};
 
-	LogOpts logOpts;
+	LogOpts log;
+	EnvOpts env;
 	std::string title = "LittleEngine3D";
 	Type type = Type::BorderedWindow;
 	u16 width = 1280;
@@ -34,7 +40,21 @@ struct Settings
 	bool bVSYNC = true;
 };
 
-bool create(const Settings& pSettings);
+struct Wrapper final
+{
+private:
+	const bool m_bValid = false;
+
+public:
+	Wrapper(bool bValid = false);
+	Wrapper(const Wrapper&) = delete;
+	Wrapper& operator=(const Wrapper&) = delete;
+	~Wrapper();
+
+	operator bool() const;
+};
+
+Wrapper create(const Settings& pSettings);
 void destroy();
 
 bool exists();
