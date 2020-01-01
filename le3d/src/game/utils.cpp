@@ -201,6 +201,11 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 	bool bResetTint = false;
 	auto& dQuad = Quad();
 	Vertices verts;
+	if (bOneDrawCall)
+	{
+		u32 quadCount = (u32)quads.size();
+		verts.reserve(4 * quadCount, 6 * quadCount);
+	}
 	gfx::cropViewport(uiAR);
 	bResetTint |= gfx::setTextures(shader, {texture});
 	for (auto& quad : quads)
@@ -308,6 +313,11 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR,
 	}
 	gfx::cropViewport(uiAR);
 	Vertices verts;
+	if (bOneDrawCall)
+	{
+		u32 quadCount = (u32)text.text.length();
+		verts.reserve(4 * quadCount, 6 * quadCount);
+	}
 	s32 idx = 0;
 	for (auto c : text.text)
 	{

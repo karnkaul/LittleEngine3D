@@ -15,22 +15,22 @@ public:
 	};
 
 private:
-	u8 id = 0;
-	class JobManager* m_pManager = nullptr;
-	HThread m_threadHandle;
-	std::atomic<bool> m_bWork;
+	static std::atomic_bool s_bWork;
+
+private:
+	class JobManager* m_pManager;
+	HThread m_hThread;
 	State m_state = State::Idle;
-	const bool m_bEngineWorker;
+	u8 id;
 
 public:
-	JobWorker(JobManager& manager, u8 id, bool bEngineWorker);
+	JobWorker(JobManager& manager, u8 id);
 	~JobWorker();
-
-	void stop();
-	State getState() const;
 
 private:
 	std::string m_logName;
 	void run();
+
+	friend class JobManager;
 };
 } // namespace le

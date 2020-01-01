@@ -5,65 +5,56 @@
 
 namespace le
 {
-JobWorker::JobWorker(JobManager& manager, u8 id, bool bEngineWorker) : id(id), m_pManager(&manager), m_bEngineWorker(bEngineWorker)
+std::atomic_bool JobWorker::s_bWork = true;
+
+JobWorker::JobWorker(JobManager& manager, u8 id) : m_pManager(&manager), id(id)
 {
 	static const std::string PREFIX = "[JobWorker";
-	m_bWork.store(true, std::memory_order_relaxed);
 	m_logName.reserve(PREFIX.size() + 8);
 	m_logName += PREFIX;
 	m_logName += std::to_string(this->id);
 	m_logName += "]";
-	m_threadHandle = threads::newThread([&]() { run(); });
+	m_hThread = threads::newThread([&]() { run(); });
 }
 
 JobWorker::~JobWorker()
 {
-	threads::join(m_threadHandle);
-	LOG_D("%s destroyed", m_logName.c_str());
-}
-
-void JobWorker::stop()
-{
-	m_bWork.store(false, std::memory_order_relaxed);
-}
-
-JobWorker::State JobWorker::getState() const
-{
-	return m_state;
+	threads::join(m_hThread);
 }
 
 void JobWorker::run()
 {
-	while (m_bWork.load(std::memory_order_relaxed))
+	while (s_bWork.load(std::memory_order_relaxed))
 	{
-		// Reset
 		m_state = State::Idle;
-
-		auto oJob = m_pManager->lock_PopJob();
-		if (!oJob)
+		std::unique_lock<std::mutex> lock(m_pManager->m_wakeMutex);
+		// Sleep until notified and new job exists / exiting
+		m_pManager->m_wakeCV.wait(lock, [&]() { return !m_pManager->m_jobQueue.empty() || !s_bWork.load(std::memory_order_relaxed); });
+		JobManager::Job job;
+		if (!m_pManager->m_jobQueue.empty())
 		{
-			std::this_thread::yield();
+			job = std::move(m_pManager->m_jobQueue.front());
+			m_pManager->m_jobQueue.pop();
 		}
-
-		else
+		lock.unlock();
+		// Wake a sleeping worker (in case queue is not empty yet)
+		m_pManager->m_wakeCV.notify_one();
+		if (job.m_id >= 0)
 		{
 			m_state = State::Busy;
-
-			std::string suffix = m_bEngineWorker ? " Engine Job " : " Job ";
-			if (!oJob->m_bSilent)
+			if (!job.m_bSilent)
 			{
-				LOG_D("%s Starting %s %s", m_logName.c_str(), m_bEngineWorker ? "Engine Job" : "Job", oJob->m_logName.c_str());
+				LOG_D("%s Starting Job %s", m_logName.data(), job.m_logName.data());
 			}
-			oJob->run();
-			if (!oJob->m_bSilent && oJob->m_exception.empty())
+			job.run();
+			if (!job.m_bSilent && job.m_exception.empty())
 			{
-				LOG_D("%s Completed %s %s", m_logName.c_str(), m_bEngineWorker ? "Engine Job" : "Job", oJob->m_logName.c_str());
+				LOG_D("%s Completed Job %s", m_logName.data(), job.m_logName.data());
 			}
-			if (!oJob->m_exception.empty())
+			if (!job.m_exception.empty())
 			{
-				LOG_E("%s Threw an exception running %s\n\t%s!", m_logName.c_str(), oJob->m_logName.c_str(), oJob->m_exception.c_str());
+				LOG_E("%s Threw an exception running Job %s\n\t%s!", m_logName.data(), job.m_logName.data(), job.m_exception.data());
 			}
-			oJob->fulfil();
 		}
 	}
 }

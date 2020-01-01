@@ -1,4 +1,5 @@
 #pragma once
+#include <any>
 #include <list>
 #include <vector>
 #include "le3d/core/time.hpp"
@@ -9,7 +10,7 @@ namespace le
 class JobCatalog
 {
 private:
-	using Task = std::function<void()>;
+	using Task = std::function<std::any()>;
 	using SubJob = std::pair<std::string, Task>;
 
 	std::string m_logName;

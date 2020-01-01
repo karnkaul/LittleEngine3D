@@ -1,7 +1,9 @@
 #pragma once
+#include <any>
+#include <future>
 #include <list>
+#include <queue>
 #include <memory>
-#include <optional>
 #include <vector>
 #include "le3d/core/jobs/jobHandle.hpp"
 
@@ -13,20 +15,19 @@ public:
 	static constexpr s32 INVALID_ID = -1;
 
 private:
-	using Task = std::function<void()>;
+	using Task = std::function<std::any()>;
 
 	class Job
 	{
 	private:
-		std::promise<void> m_promise;
+		std::packaged_task<std::any()> m_task;
 
 	public:
 		std::string m_logName;
 		std::string m_exception;
 		JobHandle m_sHandle;
-		Task m_task;
-		s64 m_id;
-		bool m_bSilent = false;
+		s64 m_id = -1;
+		bool m_bSilent = true;
 
 	public:
 		Job();
@@ -35,18 +36,18 @@ private:
 		Job& operator=(Job&& rhs) = default;
 
 		void run();
-		void fulfil();
 	};
 
 private:
 	std::vector<std::unique_ptr<class JobWorker>> m_jobWorkers;
 	std::list<std::unique_ptr<class JobCatalog>> m_catalogs;
-	std::list<Job> m_jobQueue;
-	mutable std::mutex m_queueMutex;
-	s64 m_nextGameJobID = 0;
+	std::queue<Job> m_jobQueue;
+	mutable std::mutex m_wakeMutex;
+	std::condition_variable m_wakeCV;
+	s64 m_nextJobID = 0;
 
 public:
-	JobManager(u32 desiredWorkerCount, u32 maxWorkerCount);
+	JobManager(u8 workerCount);
 	~JobManager();
 
 public:
@@ -59,8 +60,6 @@ public:
 	u16 workerCount() const;
 
 private:
-	std::optional<Job> lock_PopJob();
-
 	friend class JobWorker;
 };
 } // namespace le
