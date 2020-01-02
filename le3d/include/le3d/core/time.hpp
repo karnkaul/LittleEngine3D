@@ -22,8 +22,8 @@ public:
 	constexpr Time() : microSeconds(0) {}
 	explicit constexpr Time(s64 microSeconds) : microSeconds(microSeconds) {}
 
-	Time& scale(Fixed magnitude);
-	Time scaled(Fixed magnitude) const;
+	Time& scale(f32 magnitude);
+	Time scaled(f32 magnitude) const;
 
 	Time& operator-();
 	Time& operator+=(const Time& rhs);

@@ -2,14 +2,13 @@ project(le3d CXX)
 
 # Sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/*.*pp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.*pp"
 )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
+configure_file_src_to_bin(src/buildVersion.hpp.in generated/buildVersion.hpp)
 
 # Target
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/buildVersion.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/generated/buildVersion.hpp")
-list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/generated/buildVersion.hpp")
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME}-$<CONFIG>)

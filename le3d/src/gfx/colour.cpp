@@ -1,4 +1,5 @@
 #include "le3d/gfx/colour.hpp"
+#include "le3d/core/maths.hpp"
 
 namespace le
 {
@@ -12,13 +13,13 @@ const Colour Colour::Magenta(255, 0, 255);
 const Colour Colour::Cyan(0, 255, 255);
 const Colour Colour::Transparent(0, 0, 0, 0);
 
-Colour Colour::lerp(Colour min, Colour max, Fixed alpha)
+Colour Colour::lerp(Colour min, Colour max, f32 alpha)
 {
 	if (min == max)
 	{
 		return min;
 	}
-	return ((Fixed::One - alpha) * min) + (alpha * max);
+	return ((1.0f - alpha) * min) + (alpha * max);
 }
 
 Colour::Colour(UByte r, UByte g, UByte b, UByte a) : r(r), g(g), b(b), a(a) {}
@@ -60,18 +61,17 @@ std::string Colour::toStr() const
 
 Colour operator+(Colour lhs, Colour rhs)
 {
-	return Colour(lhs) += rhs;
+	return lhs += rhs;
 }
 
 Colour operator-(Colour lhs, Colour rhs)
 {
-	return Colour(lhs) -= rhs;
+	return lhs -= rhs;
 }
 
-Colour& operator*=(Fixed nCoefficient, Colour& c)
+Colour& operator*=(f32 n, Colour& c)
 {
-	Fixed safeN = nCoefficient < Fixed::Zero ? Fixed::Zero : (nCoefficient > 1 ? Fixed::One : nCoefficient);
-	f32 n = safeN.toF32();
+	n = maths::clamp01(n);
 	c.r = n * c.r;
 	c.g = n * c.g;
 	c.b = n * c.b;
@@ -79,10 +79,9 @@ Colour& operator*=(Fixed nCoefficient, Colour& c)
 	return c;
 }
 
-Colour operator*(Fixed nCoefficient, Colour colour)
+Colour operator*(f32 n, Colour colour)
 {
-	Colour c(colour);
-	return nCoefficient *= c;
+	return n *= colour;
 }
 
 bool operator==(Colour lhs, Colour rhs)

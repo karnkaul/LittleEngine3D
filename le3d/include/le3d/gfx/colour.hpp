@@ -1,6 +1,5 @@
 #pragma once
 #include "le3d/stdtypes.hpp"
-#include "le3d/core/fixed.hpp"
 #include "le3d/core/ubyte.hpp"
 
 namespace le
@@ -19,7 +18,7 @@ public:
 	static const Colour Cyan;
 	static const Colour Transparent;
 
-	static Colour lerp(Colour min, Colour max, Fixed alpha);
+	static Colour lerp(Colour min, Colour max, f32 alpha);
 
 	UByte r;
 	UByte g;
@@ -37,8 +36,8 @@ public:
 
 Colour operator+(Colour lhs, Colour rhs);
 Colour operator-(Colour lhs, Colour rhs);
-Colour& operator*=(Fixed nCoefficient, Colour& colour);
-Colour operator*(Fixed nCoefficient, Colour colour);
+Colour& operator*=(f32 n, Colour& colour);
+Colour operator*(f32 n, Colour colour);
 
 bool operator==(Colour lhs, Colour rhs);
 bool operator!=(Colour lhs, Colour rhs);

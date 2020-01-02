@@ -79,14 +79,14 @@ void Time::reset()
 	epoch = std::chrono::high_resolution_clock::now();
 }
 
-Time& Time::scale(Fixed magnitude)
+Time& Time::scale(f32 magnitude)
 {
-	auto us = static_cast<f32>(microSeconds) * magnitude.toF32();
+	auto us = f32(microSeconds) * magnitude;
 	microSeconds = s64(us);
 	return *this;
 }
 
-Time Time::scaled(Fixed magnitude) const
+Time Time::scaled(f32 magnitude) const
 {
 	Time ret = *this;
 	return ret.scale(magnitude);
