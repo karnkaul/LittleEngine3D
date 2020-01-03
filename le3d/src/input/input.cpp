@@ -62,7 +62,7 @@ void onScroll(GLFWwindow* pWindow, f64 dx, f64 dy)
 	}
 }
 
-void onFiledrop(GLFWwindow* pWindow, s32 count, const char** szPaths)
+void onFiledrop(GLFWwindow* pWindow, s32 count, char const** szPaths)
 {
 	if (pWindow == g_pRenderWindow)
 	{
@@ -213,19 +213,19 @@ JoyState input::getJoyState(s32 id)
 	{
 		ret.id = id;
 		s32 count;
-		const auto axes = glfwGetJoystickAxes(id, &count);
+		auto const axes = glfwGetJoystickAxes(id, &count);
 		ret.axes.reserve((size_t)count);
 		for (s32 idx = 0; idx < count; ++idx)
 		{
 			ret.axes.push_back(axes[idx]);
 		}
-		const auto buttons = glfwGetJoystickButtons(id, &count);
+		auto const buttons = glfwGetJoystickButtons(id, &count);
 		ret.buttons.reserve((size_t)count);
 		for (s32 idx = 0; idx < count; ++idx)
 		{
 			ret.buttons.push_back(buttons[idx]);
 		}
-		const auto szName = glfwGetJoystickName(id);
+		auto const szName = glfwGetJoystickName(id);
 		if (szName)
 		{
 			ret.name = szName;

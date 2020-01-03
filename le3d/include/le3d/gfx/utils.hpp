@@ -19,7 +19,7 @@ constexpr glm::quat g_qIdentity = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
 namespace gfx
 {
-s32 glCheckError(const char* szFile, s32 line);
+s32 glCheckError(char const* szFile, s32 line);
 
 void cropViewport(f32 spaceAR);
 void resetViewport();

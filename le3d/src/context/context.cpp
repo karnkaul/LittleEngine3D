@@ -42,7 +42,7 @@ void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 	}
 }
 
-void onError(s32 code, const char* szDesc)
+void onError(s32 code, char const* szDesc)
 {
 	LOG_E("GLFW Error [%d]: %s", code, szDesc);
 }
@@ -62,7 +62,7 @@ context::Wrapper::operator bool() const
 	return m_bValid;
 }
 
-context::Wrapper context::create(const Settings& settings)
+context::Wrapper context::create(Settings const& settings)
 {
 	env::init(settings.env.args);
 	if (settings.log.bLogToFile)
@@ -85,7 +85,7 @@ context::Wrapper context::create(const Settings& settings)
 		LOG_E("Failed to detect output device");
 		return {};
 	}
-	const GLFWvidmode* mode = glfwGetVideoMode(ppScreens[0]);
+	GLFWvidmode const* mode = glfwGetVideoMode(ppScreens[0]);
 	if (!mode)
 	{
 		LOG_E("Failed to get default screen's video mode");

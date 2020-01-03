@@ -11,8 +11,8 @@ struct TZero
 	TZero(T);
 	TZero(TZero&&);
 	TZero& operator=(TZero&&);
-	TZero(const TZero&);
-	TZero& operator=(const TZero&);
+	TZero(TZero const&);
+	TZero& operator=(TZero const&);
 	~TZero();
 
 	operator T const()
@@ -44,10 +44,10 @@ TZero<T, Z>& TZero<T, Z>::operator=(TZero&& rhs)
 }
 
 template <typename T, s32 Z>
-TZero<T, Z>::TZero(const TZero& rhs) = default;
+TZero<T, Z>::TZero(TZero const& rhs) = default;
 
 template <typename T, s32 Z>
-TZero<T, Z>& TZero<T, Z>::operator=(const TZero& rhs) = default;
+TZero<T, Z>& TZero<T, Z>::operator=(TZero const& rhs) = default;
 
 template <typename T, s32 Z>
 TZero<T, Z>::~TZero() = default;

@@ -9,7 +9,7 @@ std::atomic_bool JobWorker::s_bWork = true;
 
 JobWorker::JobWorker(JobManager& manager, u8 id) : m_pManager(&manager), id(id)
 {
-	static const std::string PREFIX = "[JobWorker";
+	static std::string const PREFIX = "[JobWorker";
 	m_logName.reserve(PREFIX.size() + 8);
 	m_logName += PREFIX;
 	m_logName += std::to_string(this->id);

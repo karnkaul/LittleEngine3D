@@ -45,7 +45,7 @@ enum class LogLevel
 	Error
 };
 
-void log(LogLevel level, const char* szText, const char* szFile, u64 line, ...);
+void log(LogLevel level, char const* szText, char const* szFile, u64 line, ...);
 
 extern u32 g_logCacheSize;
 std::list<std::string> logCache();

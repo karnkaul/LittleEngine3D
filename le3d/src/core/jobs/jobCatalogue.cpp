@@ -45,7 +45,7 @@ void JobCatalog::update()
 	auto iter = m_pendingJobs.begin();
 	while (iter != m_pendingJobs.end())
 	{
-		const auto& subJob = *iter;
+		auto const& subJob = *iter;
 		if (subJob->hasCompleted())
 		{
 #if defined(DEBUG_LOG)

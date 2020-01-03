@@ -24,11 +24,11 @@ namespace
 {
 s32 g_maxTexIdx = 0;
 
-void preDraw(const HMesh& mesh, const HShader& shader)
+void preDraw(HMesh const& mesh, HShader const& shader)
 {
 	if (le::context::exists() && mesh.hVerts.vao.handle > 0)
 	{
-		const auto& u = env::g_config.uniforms;
+		auto const& u = env::g_config.uniforms;
 		ASSERT(shader.glID.handle > 0, "shader is null!");
 		{
 			Lock lock(contextImpl::g_glMutex);
@@ -39,43 +39,49 @@ void preDraw(const HMesh& mesh, const HShader& shader)
 }
 } // namespace
 
-HTexture gfx::gl::genTexture(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge)
+HTexture gfx::gl::genTexture(std::string name, u8 const* pData, TexType type, u8 ch, u16 w, u16 h, bool bClampToEdge)
+{
+	bool bAlpha = ch > 3;
+	Lock lock(contextImpl::g_glMutex);
+	GLObj hTex;
+	glChk(glGenTextures(1, &hTex.handle));
+	glChk(glActiveTexture(GL_TEXTURE0));
+	glChk(glBindTexture(GL_TEXTURE_2D, hTex));
+	if (bClampToEdge)
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+	else
+	{
+		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+	}
+	glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+	glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_RGBA : GL_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pData));
+#if !defined(__arm__)
+	glChk(glGenerateMipmap(GL_TEXTURE_2D));
+#endif
+	glChk(glBindTexture(GL_TEXTURE_2D, 0));
+	std::string_view typeStr = type == TexType::Diffuse ? "Diffuse" : "Specular";
+	u32 size = u32(w * h * ch);
+	auto fsize = utils::friendlySize(size);
+	LOG_I("== [%s] [%.1f%s] (%s) Texture created", name.data(), fsize.first, fsize.second.data(), typeStr.data());
+	return {std::move(name), glm::ivec2(w, h), size, type, std::move(hTex)};
+}
+
+HTexture gfx::gl::genTexture(std::string name, std::vector<u8> bytes, TexType type, bool bClampToEdge)
 {
 	HTexture ret;
 	if (context::exists())
 	{
 		s32 w, h, ch;
 		stbi_set_flip_vertically_on_load(1);
-		auto pData = stbi_load_from_memory(bytes.data(), (s32)bytes.size(), &w, &h, &ch, 0);
+		auto* pData = stbi_load_from_memory(bytes.data(), (s32)bytes.size(), &w, &h, &ch, 0);
 		if (pData)
 		{
-			bool bAlpha = ch > 3;
-			Lock lock(contextImpl::g_glMutex);
-			GLObj hTex;
-			glChk(glGenTextures(1, &hTex.handle));
-			glChk(glActiveTexture(GL_TEXTURE0));
-			glChk(glBindTexture(GL_TEXTURE_2D, hTex));
-			if (bClampToEdge)
-			{
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			}
-			else
-			{
-				glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-				glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-			}
-			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-			glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_RGBA : GL_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pData));
-#if !defined(__arm__)
-			glChk(glGenerateMipmap(GL_TEXTURE_2D));
-#endif
-			glChk(glBindTexture(GL_TEXTURE_2D, 0));
-			ret = {std::move(name), glm::ivec2(w, h), (u32)bytes.size(), type, std::move(hTex)};
-			std::string typeStr = ret.type == TexType::Diffuse ? "Diffuse" : "Specular";
-			auto size = utils::friendlySize((u64)bytes.size());
-			LOG_I("== [%s] [%.1f%s] (%s) Texture created", ret.id.data(), size.first, size.second.data(), typeStr.data());
+			ret = genTexture(std::move(name), pData, type, (u8)ch, (u16)w, (u16)h, bClampToEdge);
 		}
 		else
 		{
@@ -86,7 +92,7 @@ HTexture gfx::gl::genTexture(std::string name, TexType type, std::vector<u8> byt
 	return ret;
 }
 
-void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
+void gfx::gl::releaseTexture(std::vector<HTexture*> const& textures)
 {
 	if (context::exists())
 	{
@@ -117,11 +123,11 @@ void gfx::gl::releaseTexture(const std::vector<HTexture*>& textures)
 			auto size = utils::friendlySize(bytes);
 			LOG_D("[%.1f%s] Texture VRAM released", size.first, size.second.data());
 		}
-#endif
+#endif 
 	}
 }
 
-HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rlupfb)
+HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> const& rlupfb)
 {
 	HCubemap ret;
 	if (context::exists())
@@ -131,8 +137,9 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rl
 		glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, ret.glID.handle));
 		s32 w, h, ch;
 		u32 idx = 0;
+		u32 inTotal = 0;
 		stbi_set_flip_vertically_on_load(0);
-		for (const auto& side : rlupfb)
+		for (auto const& side : rlupfb)
 		{
 			auto pData = stbi_load_from_memory(side.data(), (s32)side.size(), &w, &h, &ch, 0);
 			if (pData)
@@ -140,7 +147,8 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rl
 				bool bAlpha = ch > 3;
 				s32 channels = bAlpha ? GL_RGBA : GL_RGB;
 				glChk(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, 0, channels, w, h, 0, (u32)channels, GL_UNSIGNED_BYTE, pData));
-				ret.byteCount += (u32)side.size();
+				ret.byteCount += u32(w * h * ch);
+				inTotal += side.size();
 			}
 			else
 			{
@@ -155,8 +163,9 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> rl
 		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
 		ret.id = std::move(name);
-		auto size = utils::friendlySize(ret.byteCount);
-		LOG_I("== [%s] [%.1f%s] Cubemap created", ret.id.data(), size.first, size.second.data());
+		auto fsize = utils::friendlySize(ret.byteCount);
+		auto fin = utils::friendlySize(inTotal);
+		LOG_I("== [%s] [%.1f%s => %.1f%s] Cubemap created", ret.id.data(), fin.first, fin.second.data(), fsize.first, fsize.second.data());
 	}
 	return ret;
 }
@@ -194,13 +203,13 @@ HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::strin
 	}
 
 #if defined(__arm__)
-	static const std::string_view VERSION = "#version 300 es\n";
+	static std::string_view const VERSION = "#version 300 es\n";
 #else
-	static const std::string_view VERSION = "#version 330 core\n";
+	static std::string_view const VERSION = "#version 330 core\n";
 #endif
 	Lock lock(contextImpl::g_glMutex);
 	u32 vsh = glCreateShader(GL_VERTEX_SHADER);
-	const GLchar* files[] = {VERSION.data(), vertCode.data()};
+	GLchar const* files[] = {VERSION.data(), vertCode.data()};
 	glShaderSource(vsh, (GLsizei)ARR_SIZE(files), files, nullptr);
 	glCompileShader(vsh);
 	std::array<char, 512> buf;
@@ -253,14 +262,14 @@ void gfx::gl::releaseShader(HShader& shader)
 	shader = HShader();
 }
 
-HVerts gfx::gl::genVertices(const Vertices& vertices, Draw drawType, const HShader* pShader)
+HVerts gfx::gl::genVertices(Vertices const& vertices, Draw drawType, HShader const* pShader)
 {
 	HVerts hVerts;
 	if (context::exists())
 	{
 		ASSERT(vertices.normals.empty() || vertices.normals.size() == vertices.points.size(), "Point/normal count mismatch!");
 		ASSERT(vertices.texCoords.empty() || vertices.texCoords.size() == vertices.points.size(), "Point/UV count mismatch!");
-		const GLenum type = drawType == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+		GLenum const type = drawType == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenVertexArrays(1, &hVerts.vao.handle));
 		glChk(glGenBuffers(1, &hVerts.vbo.handle));
@@ -271,12 +280,12 @@ HVerts gfx::gl::genVertices(const Vertices& vertices, Draw drawType, const HShad
 		glChk(glBindVertexArray(hVerts.vao));
 		glChk(glBindBuffer(GL_ARRAY_BUFFER, hVerts.vbo));
 		glChk(glBufferData(GL_ARRAY_BUFFER, (s64)vertices.byteCount(), nullptr, type));
-		const auto sf = (size_t)sizeof(f32);
-		const auto sv3 = (size_t)sizeof(Vertices::V3);
-		const auto sv2 = (size_t)sizeof(Vertices::V2);
-		const auto& p = vertices.points;
-		const auto& n = vertices.normals;
-		const auto& t = vertices.texCoords;
+		auto const sf = (size_t)sizeof(f32);
+		auto const sv3 = (size_t)sizeof(Vertices::V3);
+		auto const sv2 = (size_t)sizeof(Vertices::V2);
+		auto const& p = vertices.points;
+		auto const& n = vertices.normals;
+		auto const& t = vertices.texCoords;
 		glChk(glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sv3 * p.size()), p.data()));
 		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sv3 * p.size()), (GLsizeiptr)(sv3 * n.size()), n.data()));
 		glChk(glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sv3 * (p.size() + n.size())), (GLsizeiptr)(sv2 * t.size()), t.data()));
@@ -369,7 +378,7 @@ void gfx::gl::releaseUBO(HUBO& ubo)
 	ubo = HUBO();
 }
 
-void gfx::gl::draw(const HVerts& hVerts)
+void gfx::gl::draw(HVerts const& hVerts)
 {
 	if (context::exists())
 	{
@@ -388,7 +397,7 @@ void gfx::gl::draw(const HVerts& hVerts)
 	}
 }
 
-void gfx::setUBO(const HUBO& hUBO, s64 offset, s64 size, const void* pData)
+void gfx::setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData)
 {
 	if (hUBO.ubo.handle > 0)
 	{
@@ -398,7 +407,7 @@ void gfx::setUBO(const HUBO& hUBO, s64 offset, s64 size, const void* pData)
 	}
 }
 
-HMesh gfx::newMesh(std::string name, const Vertices& vertices, Draw type, const HShader* pShader /* = nullptr */)
+HMesh gfx::newMesh(std::string name, Vertices const& vertices, Draw type, HShader const* pShader /* = nullptr */)
 {
 	HMesh mesh;
 	if (le::context::exists())
@@ -412,7 +421,7 @@ HMesh gfx::newMesh(std::string name, const Vertices& vertices, Draw type, const 
 	return mesh;
 }
 
-void gfx::releaseMeshes(const std::vector<HMesh*>& meshes)
+void gfx::releaseMeshes(std::vector<HMesh*> const& meshes)
 {
 	for (auto pMesh : meshes)
 	{
@@ -426,9 +435,9 @@ void gfx::releaseMeshes(const std::vector<HMesh*>& meshes)
 	}
 }
 
-bool gfx::setTextures(const HShader& shader, const std::vector<HTexture>& textures)
+bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textures, bool bSkipIfEmpty)
 {
-	if (textures.empty())
+	if (bSkipIfEmpty && textures.empty())
 	{
 		return false;
 	}
@@ -436,8 +445,7 @@ bool gfx::setTextures(const HShader& shader, const std::vector<HTexture>& textur
 	s32 diffuse = 0;
 	s32 specular = 0;
 	bool bResetTint = false;
-	glChk(glBindTexture(GL_TEXTURE_2D, 0));
-	const auto& u = env::g_config.uniforms;
+	auto const& u = env::g_config.uniforms;
 	if (!shader.flags.isSet((s32)HShader::Flag::Untextured))
 	{
 		if (textures.empty())
@@ -447,8 +455,8 @@ bool gfx::setTextures(const HShader& shader, const std::vector<HTexture>& textur
 			++txID;
 		}
 	}
-	const size_t idLen = u.material.size() + 1 + std::max({u.diffuseTexPrefix.size() + 2, u.specularTexPrefix.size() + 2});
-	for (const auto& texture : textures)
+	size_t const idLen = u.material.size() + 1 + std::max({u.diffuseTexPrefix.size() + 2, u.specularTexPrefix.size() + 2});
+	for (auto const& texture : textures)
 	{
 		std::string id;
 		id.reserve(idLen);
@@ -513,7 +521,7 @@ bool gfx::setTextures(const HShader& shader, const std::vector<HTexture>& textur
 	return bResetTint;
 }
 
-void gfx::setBlankTex(const HShader& shader, s32 txID, bool bMagenta)
+void gfx::setBlankTex(HShader const& shader, s32 txID, bool bMagenta)
 {
 	if (bMagenta)
 	{
@@ -539,16 +547,16 @@ void gfx::unsetTextures(s32 lastTexID /* = 0 */)
 	}
 }
 
-void gfx::drawMesh(const HMesh& mesh, const HShader& shader)
+void gfx::drawMesh(HMesh const& mesh, HShader const& shader)
 {
 	preDraw(mesh, shader);
 	gl::draw(mesh.hVerts);
 }
 
-void gfx::drawMeshes(const HMesh& mesh, const std::vector<ModelMats>& mats, const HShader& shader)
+void gfx::drawMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader)
 {
 	preDraw(mesh, shader);
-	for (const auto& mat : mats)
+	for (auto const& mat : mats)
 	{
 		shader.setModelMats(mat);
 		gl::draw(mesh.hVerts);
@@ -565,7 +573,7 @@ HFont gfx::newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cel
 		f32 width = cellAR < 1.0f ? 1.0f * cellAR : 1.0f;
 		f32 height = cellAR > 1.0f ? 1.0f / cellAR : 1.0f;
 		ret.quad = createQuad(width, height, name + "_quad");
-		ret.sheet = gl::genTexture(name + "_sheet", TexType::Diffuse, std::move(spritesheet), true);
+		ret.sheet = gl::genTexture(name + "_sheet", std::move(spritesheet), TexType::Diffuse, true);
 		ret.name = std::move(name);
 		ret.cellSize = cellSize;
 		LOG_I("== [%s] Font created", ret.name.data());
@@ -573,7 +581,7 @@ HFont gfx::newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cel
 	return ret;
 }
 
-void gfx::releaseFonts(const std::vector<HFont*>& fonts)
+void gfx::releaseFonts(std::vector<HFont*> const& fonts)
 {
 	if (context::exists())
 	{
@@ -596,7 +604,7 @@ void gfx::releaseFonts(const std::vector<HFont*>& fonts)
 	}
 }
 
-HVerts gfx::tutorial::newLight(const HVerts& hVBO)
+HVerts gfx::tutorial::newLight(HVerts const& hVBO)
 {
 	HVerts ret;
 	if (context::exists())

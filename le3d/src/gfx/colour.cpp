@@ -3,15 +3,15 @@
 
 namespace le
 {
-const Colour Colour::Black(0, 0, 0);
-const Colour Colour::White;
-const Colour Colour::Red(255, 0, 0);
-const Colour Colour::Green(0, 255, 0);
-const Colour Colour::Blue(0, 0, 255);
-const Colour Colour::Yellow(255, 255, 0);
-const Colour Colour::Magenta(255, 0, 255);
-const Colour Colour::Cyan(0, 255, 255);
-const Colour Colour::Transparent(0, 0, 0, 0);
+Colour const Colour::Black(0, 0, 0);
+Colour const Colour::White;
+Colour const Colour::Red(255, 0, 0);
+Colour const Colour::Green(0, 255, 0);
+Colour const Colour::Blue(0, 0, 255);
+Colour const Colour::Yellow(255, 255, 0);
+Colour const Colour::Magenta(255, 0, 255);
+Colour const Colour::Cyan(0, 255, 255);
+Colour const Colour::Transparent(0, 0, 0, 0);
 
 Colour Colour::lerp(Colour min, Colour max, f32 alpha)
 {

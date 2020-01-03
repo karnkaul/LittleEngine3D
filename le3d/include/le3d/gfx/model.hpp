@@ -79,13 +79,13 @@ public:
 	~Model();
 	Model(Model&&);
 	Model& operator=(Model&&);
-	Model(const Model&);
-	Model& operator=(const Model&);
+	Model(Model const&);
+	Model& operator=(Model const&);
 
 public:
-	void setupModel(std::string name, const Data& data);
-	void addFixture(const HMesh& mesh, std::optional<glm::mat4> model = std::nullopt);
-	void render(const HShader& shader, const ModelMats& mats);
+	void setupModel(std::string name, Data const& data);
+	void addFixture(HMesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
+	void render(HShader const& shader, ModelMats const& mats);
 
 	u32 meshCount() const;
 	void release();

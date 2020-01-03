@@ -31,7 +31,7 @@ void JobManager::Job::run()
 	{
 		m_task();
 	}
-	catch (const std::exception& e)
+	catch (std::exception const& e)
 	{
 		ASSERT_VAR(false, e.what());
 		m_exception = e.what();

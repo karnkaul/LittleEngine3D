@@ -15,7 +15,7 @@ JobHandle enqueue(std::function<void()> task, std::string name = "", bool bSilen
 JobCatalog* createCatalogue(std::string name);
 void forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, size_t iterationsPerJob, size_t startIdx = 0);
 
-void waitAll(const std::vector<JobHandle>& handles);
+void waitAll(std::vector<JobHandle> const& handles);
 
 void update();
 bool areWorkersIdle();

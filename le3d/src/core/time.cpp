@@ -11,7 +11,7 @@ using namespace std::chrono;
 auto epoch = high_resolution_clock::now();
 } // namespace
 
-const Time Time::Zero = Time(0);
+Time const Time::Zero = Time(0);
 
 std::string Time::toStr(Time time)
 {
@@ -98,56 +98,56 @@ Time& Time::operator-()
 	return *this;
 }
 
-Time& Time::operator+=(const Time& rhs)
+Time& Time::operator+=(Time const& rhs)
 {
 	microSeconds += rhs.microSeconds;
 	return *this;
 }
 
-Time& Time::operator-=(const Time& rhs)
+Time& Time::operator-=(Time const& rhs)
 {
 	microSeconds -= rhs.microSeconds;
 	return *this;
 }
 
-Time& Time::operator*=(const Time& rhs)
+Time& Time::operator*=(Time const& rhs)
 {
 	microSeconds *= rhs.microSeconds;
 	return *this;
 }
 
-Time& Time::operator/=(const Time& rhs)
+Time& Time::operator/=(Time const& rhs)
 {
 	microSeconds = (rhs.microSeconds == 0) ? 0 : microSeconds /= rhs.microSeconds;
 	return *this;
 }
 
-bool Time::operator==(const Time& rhs)
+bool Time::operator==(Time const& rhs)
 {
 	return microSeconds == rhs.microSeconds;
 }
 
-bool Time::operator!=(const Time& rhs)
+bool Time::operator!=(Time const& rhs)
 {
 	return !(*this == rhs);
 }
 
-bool Time::operator<(const Time& rhs)
+bool Time::operator<(Time const& rhs)
 {
 	return microSeconds < rhs.microSeconds;
 }
 
-bool Time::operator<=(const Time& rhs)
+bool Time::operator<=(Time const& rhs)
 {
 	return microSeconds <= rhs.microSeconds;
 }
 
-bool Time::operator>(const Time& rhs)
+bool Time::operator>(Time const& rhs)
 {
 	return microSeconds > rhs.microSeconds;
 }
 
-bool Time::operator>=(const Time& rhs)
+bool Time::operator>=(Time const& rhs)
 {
 	return microSeconds >= rhs.microSeconds;
 }
@@ -167,22 +167,22 @@ s64 Time::asmusecs() const
 	return microSeconds;
 }
 
-Time operator+(const Time& lhs, const Time& rhs)
+Time operator+(Time const& lhs, Time const& rhs)
 {
 	return Time(lhs) -= rhs;
 }
 
-Time operator-(const Time& lhs, const Time& rhs)
+Time operator-(Time const& lhs, Time const& rhs)
 {
 	return Time(lhs) -= rhs;
 }
 
-Time operator*(const Time& lhs, const Time& rhs)
+Time operator*(Time const& lhs, Time const& rhs)
 {
 	return Time(lhs) *= rhs;
 }
 
-Time operator/(const Time& lhs, const Time& rhs)
+Time operator/(Time const& lhs, Time const& rhs)
 {
 	return Time(lhs) /= rhs;
 }

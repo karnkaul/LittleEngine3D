@@ -20,10 +20,10 @@ namespace
 {
 std::mutex g_logMutex;
 std::list<std::string> g_logCache;
-std::unordered_map<LogLevel, const char*> g_prefixes = {
+std::unordered_map<LogLevel, char const*> g_prefixes = {
 	{LogLevel::Debug, "[D] "}, {LogLevel::Info, "[I] "}, {LogLevel::Warning, "[W] "}, {LogLevel::Error, "[E] "}};
 
-std::tm* TM(const std::time_t& time)
+std::tm* TM(std::time_t const& time)
 {
 #if _MSC_VER
 	static std::tm tm;
@@ -35,9 +35,9 @@ std::tm* TM(const std::time_t& time)
 }
 
 #if defined(LOG_SOURCE_LOCATION)
-void logInternal(const char* szText, const char* szFile, u64 line, LogLevel level, va_list args)
+void logInternal(char const* szText, char const* szFile, u64 line, LogLevel level, va_list args)
 #else
-void logInternal(const char* szText, const char*, u64, LogLevel level, va_list args)
+void logInternal(char const* szText, char const*, u64, LogLevel level, va_list args)
 #endif
 {
 	static std::array<char, 1024> cacheStr;
@@ -79,7 +79,7 @@ std::list<std::string> logCache()
 	return std::move(g_logCache);
 }
 
-void log(LogLevel level, const char* szText, const char* szFile, u64 line, ...)
+void log(LogLevel level, char const* szText, char const* szFile, u64 line, ...)
 {
 	va_list argList;
 	va_start(argList, line);

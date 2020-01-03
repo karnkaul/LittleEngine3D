@@ -38,13 +38,13 @@ enum class Dir
 struct Args
 {
 	s32 argc = 0;
-	const char** argv = nullptr;
+	char const** argv = nullptr;
 };
 
-void init(const Args& args);
+void init(Args const& args);
 void setConfig(std::string json);
 stdfs::path dirPath(Dir dir);
-const std::vector<std::string_view>& args();
+std::vector<std::string_view> const& args();
 bool isDefined(std::string_view arg);
 } // namespace env
 } // namespace le

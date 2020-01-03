@@ -43,18 +43,18 @@ struct Settings
 struct Wrapper final
 {
 private:
-	const bool m_bValid = false;
+	bool const m_bValid = false;
 
 public:
 	Wrapper(bool bValid = false);
-	Wrapper(const Wrapper&) = delete;
-	Wrapper& operator=(const Wrapper&) = delete;
+	Wrapper(Wrapper const&) = delete;
+	Wrapper& operator=(Wrapper const&) = delete;
 	~Wrapper();
 
 	operator bool() const;
 };
 
-Wrapper create(const Settings& pSettings);
+Wrapper create(Settings const& pSettings);
 void destroy();
 
 bool exists();

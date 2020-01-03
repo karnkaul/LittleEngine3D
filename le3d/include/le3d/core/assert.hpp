@@ -11,6 +11,6 @@
 
 namespace le
 {
-void assertMsg(bool expr, const char* message, const char* fileName, long lineNumber);
+void assertMsg(bool expr, char const* message, char const* fileName, long lineNumber);
 void debugBreak();
 } // namespace le

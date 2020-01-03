@@ -111,7 +111,7 @@ void jobs::forEach(std::function<void(size_t)> indexedTask, size_t iterationCoun
 	}
 }
 
-void jobs::waitAll(const std::vector<JobHandle>& handles)
+void jobs::waitAll(std::vector<JobHandle> const& handles)
 {
 	for (auto& handle : handles)
 	{

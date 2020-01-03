@@ -18,8 +18,8 @@ glm::mat4 Camera::view() const
 #if defined(DEBUGGING)
 	if (s_bTEST)
 	{
-		const glm::vec3 nFront = glm::normalize(glm::rotate(m_orientation, g_nFront));
-		const glm::vec3 nUp = glm::normalize(glm::rotate(m_orientation, g_nUp));
+		glm::vec3 const nFront = glm::normalize(glm::rotate(m_orientation, g_nFront));
+		glm::vec3 const nUp = glm::normalize(glm::rotate(m_orientation, g_nUp));
 		return glm::lookAt(m_position, m_position - nFront, nUp);
 	}
 	else
@@ -43,10 +43,10 @@ glm::mat4 Camera::orthographicProj(f32 zoom, f32 near, f32 far) const
 	return glm::ortho(-w / zoom, w / zoom, -h / zoom, h / zoom, near, far);
 }
 
-glm::mat4 Camera::uiProj(const glm::vec3& uiSpace) const
+glm::mat4 Camera::uiProj(glm::vec3 const& uiSpace) const
 {
-	const f32 w = uiSpace.x * 0.5f;
-	const f32 h = uiSpace.y * 0.5f;
+	f32 const w = uiSpace.x * 0.5f;
+	f32 const h = uiSpace.y * 0.5f;
 	return glm::ortho(-w, w, -h, h, -uiSpace.z, uiSpace.z);
 }
 
@@ -142,7 +142,7 @@ void FreeCam::tick(Time dt)
 
 	// Look
 	f32 dLook = m_joyLookSens * dt.assecs();
-	const glm::vec2 padRight(pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_X), pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_Y));
+	glm::vec2 const padRight(pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_X), pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_Y));
 	if (glm::length2(padRight) > m_minJoyRightDPosSqr)
 	{
 		m_pitch += (padRight.y * dLook);
@@ -163,9 +163,9 @@ void FreeCam::tick(Time dt)
 
 	// Move
 	glm::vec3 dPos = glm::vec3(0.0f);
-	const glm::vec3 nForward = -glm::normalize(glm::rotate(m_orientation, g_nFront));
-	const glm::vec3 nRight = glm::normalize(glm::rotate(m_orientation, g_nRight));
-	const glm::vec2 padLeft(pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_X), -pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_Y));
+	glm::vec3 const nForward = -glm::normalize(glm::rotate(m_orientation, g_nFront));
+	glm::vec3 const nRight = glm::normalize(glm::rotate(m_orientation, g_nRight));
+	glm::vec2 const padLeft(pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_X), -pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_Y));
 
 	if (glm::length2(padLeft) > m_minJoyRightDPosSqr)
 	{

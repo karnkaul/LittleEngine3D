@@ -6,7 +6,7 @@
 
 namespace le
 {
-s32 gfx::glCheckError(const char* szFile, s32 line)
+s32 gfx::glCheckError(char const* szFile, s32 line)
 {
 	GLenum errorCode = 0;
 	errorCode = glGetError();
@@ -75,17 +75,17 @@ s32 gfx::glCheckError(const char* szFile, s32 line)
 
 void gfx::cropViewport(f32 spaceAR)
 {
-	const glm::vec2 vpSize = context::size();
-	const f32 vpAR = vpSize.x / vpSize.y;
+	glm::vec2 const vpSize = context::size();
+	f32 const vpAR = vpSize.x / vpSize.y;
 	spaceAR = spaceAR <= 0.0f ? vpAR : spaceAR;
-	const f32 uiW = vpAR > spaceAR ? vpSize.x * spaceAR / vpAR : vpSize.x;
-	const f32 uiH = vpAR < spaceAR ? vpSize.y * vpAR / spaceAR : vpSize.y;
+	f32 const uiW = vpAR > spaceAR ? vpSize.x * spaceAR / vpAR : vpSize.x;
+	f32 const uiH = vpAR < spaceAR ? vpSize.y * vpAR / spaceAR : vpSize.y;
 	glViewport((s32)((vpSize.x - uiW) * 0.5f), (s32)((vpSize.y - uiH) * 0.5f), (s32)uiW, (s32)uiH);
 }
 
 void gfx::resetViewport()
 {
-	const glm::vec2 vpSize = context::size();
+	glm::vec2 const vpSize = context::size();
 	glViewport(0, 0, (s32)vpSize.x, (s32)vpSize.y);
 }
 } // namespace le

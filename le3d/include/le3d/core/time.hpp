@@ -10,7 +10,7 @@ private:
 	s64 microSeconds;
 
 public:
-	static const Time Zero;
+	static Time const Zero;
 	static std::string toStr(Time time);
 	static Time musecs(s64 microSeconds);
 	static Time msecs(s32 milliSeconds);
@@ -26,25 +26,25 @@ public:
 	Time scaled(f32 magnitude) const;
 
 	Time& operator-();
-	Time& operator+=(const Time& rhs);
-	Time& operator-=(const Time& rhs);
-	Time& operator*=(const Time& rhs);
-	Time& operator/=(const Time& rhs);
+	Time& operator+=(Time const& rhs);
+	Time& operator-=(Time const& rhs);
+	Time& operator*=(Time const& rhs);
+	Time& operator/=(Time const& rhs);
 
-	bool operator==(const Time& rhs);
-	bool operator!=(const Time& rhs);
-	bool operator<(const Time& rhs);
-	bool operator<=(const Time& rhs);
-	bool operator>(const Time& rhs);
-	bool operator>=(const Time& rhs);
+	bool operator==(Time const& rhs);
+	bool operator!=(Time const& rhs);
+	bool operator<(Time const& rhs);
+	bool operator<=(Time const& rhs);
+	bool operator>(Time const& rhs);
+	bool operator>=(Time const& rhs);
 
 	f32 assecs() const;
 	s32 asmsecs() const;
 	s64 asmusecs() const;
 };
 
-Time operator+(const Time& lhs, const Time& rhs);
-Time operator-(const Time& lhs, const Time& rhs);
-Time operator*(const Time& lhs, const Time& rhs);
-Time operator/(const Time& lhs, const Time& rhs);
+Time operator+(Time const& lhs, Time const& rhs);
+Time operator-(Time const& lhs, Time const& rhs);
+Time operator*(Time const& lhs, Time const& rhs);
+Time operator/(Time const& lhs, Time const& rhs);
 } // namespace le

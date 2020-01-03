@@ -23,16 +23,16 @@ stdfs::path g_exePath;
 stdfs::path g_workingDir;
 std::vector<std::string_view> g_args;
 
-void SetConfigStrIfPresent(const std::string& id, const GData& data, std::string& member)
+void SetConfigStrIfPresent(std::string const& id, GData const& data, std::string& member)
 {
 	if (data.contains(id))
 	{
-		member = data.getString(id);
+		member = data.getStr(id);
 		LOG_D("[EngineConfig] Extracted [%s] = [%s]", id.data(), member.data());
 	}
 }
 
-// void SetConfigS32IfPresent(const std::string& id, const GData& data, s32& member)
+// void SetConfigS32IfPresent(std::string const& id, GData const& data, s32& member)
 //{
 //	if (data.contains(id))
 //	{
@@ -42,7 +42,7 @@ void SetConfigStrIfPresent(const std::string& id, const GData& data, std::string
 //}
 } // namespace
 
-void env::init(const Args& args)
+void env::init(Args const& args)
 {
 #if defined(__linux__)
 	s32 threadStatus = XInitThreads();
@@ -103,7 +103,7 @@ stdfs::path env::dirPath(Dir dir)
 	}
 }
 
-const std::vector<std::string_view>& env::args()
+std::vector<std::string_view> const& env::args()
 {
 	return g_args;
 }

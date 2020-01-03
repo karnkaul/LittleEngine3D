@@ -47,7 +47,7 @@ void FileLogger::dumpToFile()
 	if (!cache.empty())
 	{
 		std::ofstream file(m_path, std::ios_base::app);
-		for (const auto& logStr : cache)
+		for (auto const& logStr : cache)
 		{
 			file.write(logStr.data(), (std::streamsize)logStr.size());
 		}

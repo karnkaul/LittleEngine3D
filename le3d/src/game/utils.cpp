@@ -24,7 +24,7 @@ Text2D g_versionStyle = {
 	std::string(versions::buildVersion()), {-900.0f, -500.0f, 0.9f}, 30.0f, Text2D::Align::Left, Colour(150, 150, 150)};
 } // namespace debug
 
-void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)
+void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 {
 	glChk(glDepthMask(GL_FALSE));
 	shader.setV4(env::g_config.uniforms.tint, tint);
@@ -43,11 +43,11 @@ void renderSkybox(const Skybox& skybox, const HShader& shader, Colour tint)
 	glChk(glDepthMask(GL_TRUE));
 }
 
-void renderMeshes(const HMesh& mesh, const std::vector<ModelMats>& mats, const HShader& shader, Colour tint)
+void renderMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader, Colour tint)
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
 	shader.setV4(env::g_config.uniforms.tint, tint);
-	bool bResetTint = gfx::setTextures(shader, mesh.material.textures);
+	bool bResetTint = gfx::setTextures(shader, mesh.material.textures, true);
 	gfx::drawMeshes(mesh, mats, shader);
 	if (bResetTint)
 	{
@@ -195,9 +195,9 @@ debug::DArrow& debug::Arrow()
 	return g_debugArrow;
 }
 
-void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, const f32 uiAR, bool bOneDrawCall)
+void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, f32 const uiAR, bool bOneDrawCall)
 {
-	const HShader& shader = resources::get<HShader>("ui/textured");
+	HShader const& shader = resources::get<HShader>("ui/textured");
 	bool bResetTint = false;
 	auto& dQuad = Quad();
 	Vertices verts;
@@ -212,29 +212,28 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 	{
 		if (bOneDrawCall)
 		{
-			const glm::vec2 s = quad.size * glm::vec2(0.5f);
-			const glm::vec3& p = quad.pos;
-			const glm::vec3 n(0.0f, 0.0, 1.0f);
-			const glm::vec4& uv = quad.oTexCoords ? *quad.oTexCoords : glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-			auto v0 = verts.addVertex({p.x - s.x, p.y - s.y, p.z}, n, glm::vec2(uv.s, uv.t));
-			auto v1 = verts.addVertex({p.x + s.x, p.y - s.y, p.z}, n, glm::vec2(uv.p, uv.t));
-			auto v2 = verts.addVertex({p.x + s.x, p.y + s.y, p.z}, n, glm::vec2(uv.p, uv.q));
-			auto v3 = verts.addVertex({p.x - s.x, p.y + s.y, p.z}, n, glm::vec2(uv.s, uv.q));
+			glm::vec2 const s = quad.size * glm::vec2(0.5f);
+			glm::vec3 const& p = quad.pos;
+			glm::vec3 const n(0.0f, 0.0, 1.0f);
+			glm::vec4 const& uv = quad.oTexCoords ? *quad.oTexCoords : glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+			auto const v0 = verts.addVertex({p.x - s.x, p.y - s.y, p.z}, n, glm::vec2(uv.s, uv.t));
+			auto const v1 = verts.addVertex({p.x + s.x, p.y - s.y, p.z}, n, glm::vec2(uv.p, uv.t));
+			auto const v2 = verts.addVertex({p.x + s.x, p.y + s.y, p.z}, n, glm::vec2(uv.p, uv.q));
+			auto const v3 = verts.addVertex({p.x - s.x, p.y + s.y, p.z}, n, glm::vec2(uv.s, uv.q));
 			verts.addIndices({v0, v1, v2, v2, v3, v0});
 		}
 		else
 		{
-			glm::mat4 world(1.0f);
 			ModelMats mats;
-			world = glm::translate(world, quad.pos);
+			auto world = glm::translate(glm::mat4(1.0f), quad.pos);
 			mats.model = glm::scale(world, glm::vec3(quad.size.x, quad.size.y, 1.0f));
 			shader.setModelMats(mats);
 			shader.setV4(env::g_config.uniforms.tint, quad.tint);
+			static auto const sf = sizeof(f32);
 			if (quad.oTexCoords)
 			{
-				const glm::vec4& uv = *quad.oTexCoords;
-				f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
-				auto sf = sizeof(f32);
+				glm::vec4 const& uv = *quad.oTexCoords;
+				f32 const data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
 				glChk(glBindVertexArray(dQuad.hVerts.vao));
 				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.hVerts.vbo));
 				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
@@ -242,8 +241,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 			gfx::drawMesh(dQuad, shader);
 			if (quad.oTexCoords)
 			{
-				f32 data[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
-				auto sf = sizeof(f32);
+				f32 const data[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
 				glChk(glBindVertexArray(dQuad.hVerts.vao));
 				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.hVerts.vbo));
 				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
@@ -267,10 +265,10 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, cons
 	gfx::resetViewport();
 }
 
-void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR, bool bOneDrawCall)
+void debug::renderString(Text2D const& text, HFont const& hFont, f32 const uiAR, bool bOneDrawCall)
 {
 	ASSERT(hFont.sheet.glID.handle > 0, "Font has no texture!");
-	const auto& shader = resources::get<HShader>("ui/textured");
+	auto const& shader = resources::get<HShader>("ui/textured");
 	f32 cellAR = (f32)hFont.cellSize.x / hFont.cellSize.y;
 	glm::vec2 cell(text.height * cellAR, text.height);
 	glm::vec2 duv = {(f32)hFont.cellSize.x / hFont.sheet.size.x, (f32)hFont.cellSize.y / hFont.sheet.size.y};
@@ -295,7 +293,7 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR,
 		break;
 	}
 	}
-	const auto& u = env::g_config.uniforms;
+	auto const& u = env::g_config.uniforms;
 	std::string matID;
 	bool bResetTint = false;
 	matID.reserve(128);
@@ -305,7 +303,7 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR,
 	matID += "[0]";
 	shader.setS32(matID, 0);
 	shader.setV4(env::g_config.uniforms.tint, text.colour);
-	bResetTint |= gfx::setTextures(shader, {hFont.sheet});
+	bResetTint |= gfx::setTextures(shader, {hFont.sheet}, true);
 	if (!bOneDrawCall)
 	{
 		glBindVertexArray(hFont.quad.hVerts.vao.handle);
@@ -338,8 +336,8 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR,
 			glm::vec3 p = glm::vec3(topLeft.x, topLeft.y, text.pos.z) + glm::vec3(cell.x * idx, 0.0f, text.pos.z);
 			if (bOneDrawCall)
 			{
-				const auto n = glm::vec3(0.0f);
-				const auto w = cell * glm::vec2(0.5f);
+				auto const n = glm::vec3(0.0f);
+				auto const w = cell * glm::vec2(0.5f);
 				auto v0 = verts.addVertex(p + glm::vec3(-w.x, -w.y, 0.0f), n, glm::vec2(s, t));
 				auto v1 = verts.addVertex(p + glm::vec3(w.x, -w.y, 0.0f), n, glm::vec2(s + duv.x, t));
 				auto v2 = verts.addVertex(p + glm::vec3(w.x, w.y, 0.0f), n, glm::vec2(s + duv.x, t + duv.y));
@@ -382,7 +380,7 @@ void debug::renderString(const Text2D& text, const HFont& hFont, const f32 uiAR,
 	gfx::resetViewport();
 }
 
-void debug::renderFPS(const HFont& font, const f32 uiAR)
+void debug::renderFPS(HFont const& font, f32 const uiAR)
 {
 	static Time frameTime = Time::now();
 	static Time totalDT;
@@ -402,7 +400,7 @@ void debug::renderFPS(const HFont& font, const f32 uiAR)
 	renderString(g_fpsStyle, font, uiAR);
 }
 
-void debug::renderVersion(const HFont& font, const f32 uiAR)
+void debug::renderVersion(HFont const& font, f32 const uiAR)
 {
 	renderString(g_versionStyle, font, uiAR);
 }

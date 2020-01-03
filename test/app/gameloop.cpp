@@ -31,9 +31,9 @@ using namespace le::utils;
 namespace
 {
 OnInput::Token tOnInput;
-const stdfs::path resourcesPath = "../test/resources";
+stdfs::path const resourcesPath = "../test/resources";
 
-stdfs::path resourcePath(const stdfs::path& id)
+stdfs::path resourcePath(stdfs::path const& id)
 {
 	return env::dirPath(env::Dir::Executable) / resourcesPath / id;
 }
@@ -120,11 +120,11 @@ void runTest()
 	lights.ptLights[0].diffuse = lights.ptLights[1].diffuse = lights.dirLights[0].diffuse = glm::vec4(0.5f);
 	lights.ptLights[0].specular = lights.ptLights[1].specular = lights.dirLights[0].specular = glm::vec4(1.0f);
 
-	auto drawLight = [](const glm::vec3& pos, HVerts light) {
+	auto drawLight = [](glm::vec3 const& pos, HVerts light) {
 		ModelMats mats;
 		mats.model = glm::translate(mats.model, pos);
 		mats.oNormals = mats.model = glm::scale(mats.model, glm::vec3(0.1f));
-		const auto& tinted = resources::get<HShader>("unlit/tinted");
+		auto const& tinted = resources::get<HShader>("unlit/tinted");
 		tinted.setV4(env::g_config.uniforms.tint, Colour::White);
 		tinted.setModelMats(mats);
 		gfx::gl::draw(light);
@@ -259,7 +259,7 @@ void runTest()
 		}
 	});
 #if defined(DEBUGGING)
-	auto test = input::registerFiledrop([](const stdfs::path& path) { LOG_D("File path: %s", path.generic_string().data()); });
+	auto test = input::registerFiledrop([](stdfs::path const& path) { LOG_D("File path: %s", path.generic_string().data()); });
 #endif
 	Time::reset();
 	Time dt;
@@ -313,7 +313,7 @@ void runTest()
 			prop.render();
 		}
 		litTextured.setV4(env::g_config.uniforms.tint, Colour::White);
-		// const auto& cube = debug::debugCube();
+		// auto const& cube = debug::debugCube();
 		// renderMeshes(cube, m, litTextured);
 		m = std::vector<ModelMats>(props.size() - 3, ModelMats());
 		for (size_t i = 3; i < props.size(); ++i)
@@ -367,7 +367,7 @@ void runTest()
 }
 } // namespace
 
-s32 gameloop::run(s32 argc, const char** argv)
+s32 gameloop::run(s32 argc, char const** argv)
 {
 	context::Settings settings;
 	settings.title = "LE3D Test";

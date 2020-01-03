@@ -16,8 +16,8 @@ namespace le
 Model::Model() = default;
 Model::Model(Model&&) = default;
 Model& Model::operator=(Model&&) = default;
-Model::Model(const Model&) = default;
-Model& Model::operator=(const Model&) = default;
+Model::Model(Model const&) = default;
+Model& Model::operator=(Model const&) = default;
 
 Model::~Model()
 {
@@ -96,10 +96,10 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 		};
 
 		std::unordered_set<std::string> meshIDs;
-		for (const auto& shape : shapes)
+		for (auto const& shape : shapes)
 		{
 			Data::Mesh meshData;
-			for (const auto& idx : shape.mesh.indices)
+			for (auto const& idx : shape.mesh.indices)
 			{
 				f32 vx = attrib.vertices[3 * (size_t)idx.vertex_index + 0] * scale;
 				f32 vy = attrib.vertices[3 * (size_t)idx.vertex_index + 1] * scale;
@@ -113,9 +113,9 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 				bool bFound = false;
 				for (size_t i = 0; i < vertCount; ++i)
 				{
-					const auto& p = meshData.vertices.points;
-					const auto& n = meshData.vertices.normals;
-					const auto& t = meshData.vertices.texCoords;
+					auto const& p = meshData.vertices.points;
+					auto const& n = meshData.vertices.normals;
+					auto const& t = meshData.vertices.texCoords;
 					if (p[i] == Vertices::V3{vx, vy, vz} && n[i] == Vertices::V3{nx, ny, nz} && t[i] == Vertices::V2{tx, ty})
 					{
 						bFound = true;
@@ -189,19 +189,19 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 	return ret;
 }
 
-void Model::addFixture(const HMesh& mesh, std::optional<glm::mat4> model /* = std::nullopt */)
+void Model::addFixture(HMesh const& mesh, std::optional<glm::mat4> model /* = std::nullopt */)
 {
 	m_fixtures.emplace_back(Fixture{mesh, model});
 }
 
-void Model::setupModel(std::string name, const Data& data)
+void Model::setupModel(std::string name, Data const& data)
 {
 	m_name = std::move(name);
 	m_type = Typename(*this);
 #if defined(PROFILE_MODEL_LOADS)
 	Time dt = Time::now();
 #endif
-	for (const auto& texData : data.textures)
+	for (auto const& texData : data.textures)
 	{
 		ASSERT(!texData.bytes.empty(), "Texture has no data!");
 		if (texData.bytes.empty())
@@ -212,17 +212,17 @@ void Model::setupModel(std::string name, const Data& data)
 		auto search = m_loadedTextures.find(texData.id);
 		if (search == m_loadedTextures.end())
 		{
-			m_loadedTextures[texData.id] = gfx::gl::genTexture(texData.id, texData.type, std::move(texData.bytes), false);
+			m_loadedTextures[texData.id] = gfx::gl::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
 		}
 	}
-	for (const auto& meshData : data.meshes)
+	for (auto const& meshData : data.meshes)
 	{
 		HMesh hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic);
 		hMesh.material.noTexTint = meshData.noTexTint;
 		hMesh.material.shininess = meshData.shininess;
 		for (auto texIdx : meshData.texIndices)
 		{
-			const auto& texData = data.textures[texIdx];
+			auto const& texData = data.textures[texIdx];
 			auto search = m_loadedTextures.find(texData.id);
 			if (search != m_loadedTextures.end())
 			{
@@ -244,7 +244,7 @@ void Model::setupModel(std::string name, const Data& data)
 	LOG_D("[%s] %s setup", m_name.data(), m_type.data());
 }
 
-void Model::render(const HShader& shader, const ModelMats& mats)
+void Model::render(HShader const& shader, ModelMats const& mats)
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
 #if defined(DEBUGGING)

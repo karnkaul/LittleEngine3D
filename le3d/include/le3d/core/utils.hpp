@@ -9,9 +9,9 @@ namespace le::utils
 {
 namespace stdfs = std::filesystem;
 
-std::stringstream readFile(const stdfs::path& path);
-std::vector<std::string> readLines(const stdfs::path& path);
-std::vector<u8> readBytes(const stdfs::path& path);
+std::stringstream readFile(stdfs::path const& path);
+std::vector<std::string> readLines(stdfs::path const& path);
+std::vector<u8> readBytes(stdfs::path const& path);
 
 std::pair<f32, std::string_view> friendlySize(u64 byteCount);
 

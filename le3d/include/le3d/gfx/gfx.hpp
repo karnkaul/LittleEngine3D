@@ -18,50 +18,51 @@ extern GLObj g_blankTexID;
 
 namespace gl
 {
-HTexture genTexture(std::string name, TexType type, std::vector<u8> bytes, bool bClampToEdge);
-void releaseTexture(const std::vector<HTexture*>& textures);
+HTexture genTexture(std::string name, u8 const* pData, TexType type, u8 ch, u16 w, u16 h, bool bClampToEdge);
+HTexture genTexture(std::string name, std::vector<u8> image, TexType type, bool bClampToEdge);
+void releaseTexture(std::vector<HTexture*> const& textures);
 
-HCubemap genCubemap(std::string name, std::array<std::vector<u8>, 6> rltbfb);
+HCubemap genCubemap(std::string name, std::array<std::vector<u8>, 6> const& rltbfb);
 void releaseCubemap(HCubemap& cube);
 
 HShader genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
 void releaseShader(HShader& shader);
 
-HVerts genVertices(const Vertices& vertices, Draw drawType = Draw::Dynamic, const HShader* pShader = nullptr);
+HVerts genVertices(Vertices const& vertices, Draw drawType = Draw::Dynamic, HShader const* pShader = nullptr);
 void releaseVerts(HVerts& hVerts);
 
 HUBO genUBO(s64 size, u32 bindingPoint, Draw type);
 void releaseUBO(HUBO& ubo);
 
-void draw(const HVerts& hVerts);
+void draw(HVerts const& hVerts);
 } // namespace gl
 
-void setUBO(const HUBO& hUBO, s64 offset, s64 size, const void* pData);
+void setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData);
 template <typename T>
-static void setUBO(const HUBO& hUBO, const T& data)
+static void setUBO(HUBO const& hUBO, T const& data)
 {
 	setUBO(hUBO, 0, sizeof(data), &data);
 }
 
-HMesh newMesh(std::string name, const Vertices& vertices, Draw type, const HShader* pShader = nullptr);
-void releaseMeshes(const std::vector<HMesh*>& meshes);
+HMesh newMesh(std::string name, Vertices const& vertices, Draw type, HShader const* pShader = nullptr);
+void releaseMeshes(std::vector<HMesh*> const& meshes);
 
 // Returns true if shader tint changed (missing texture)
-bool setTextures(const HShader& shader, const std::vector<HTexture>& textures);
-void setBlankTex(const HShader& shader, s32 txID, bool bMagenta);
+bool setTextures(HShader const& shader, std::vector<HTexture> const& textures, bool bSkipIfEmpty = false);
+void setBlankTex(HShader const& shader, s32 txID, bool bMagenta);
 // Pass -1 to reset all textures
 void unsetTextures(s32 lastTexID);
 
-void drawMesh(const HMesh& mesh, const HShader& shader);
-void drawMeshes(const HMesh& mesh, const std::vector<ModelMats>& mats, const HShader& shader);
+void drawMesh(HMesh const& mesh, HShader const& shader);
+void drawMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader);
 
-void renderMesh(const HMesh& mesh, const HShader& shader);
+void renderMesh(HMesh const& mesh, HShader const& shader);
 
 HFont newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cellSize);
-void releaseFonts(const std::vector<HFont*>& fonts);
+void releaseFonts(std::vector<HFont*> const& fonts);
 
 namespace tutorial
 {
-HVerts newLight(const HVerts& hVBO);
+HVerts newLight(HVerts const& hVBO);
 }
 } // namespace le::gfx
