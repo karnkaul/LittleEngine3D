@@ -123,7 +123,7 @@ void gfx::gl::releaseTexture(std::vector<HTexture*> const& textures)
 			auto size = utils::friendlySize(bytes);
 			LOG_D("[%.1f%s] Texture VRAM released", size.first, size.second.data());
 		}
-#endif 
+#endif
 	}
 }
 
@@ -437,7 +437,7 @@ void gfx::releaseMeshes(std::vector<HMesh*> const& meshes)
 
 bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textures, bool bSkipIfEmpty)
 {
-	if (bSkipIfEmpty && textures.empty())
+	if (bSkipIfEmpty && (textures.empty() || shader.flags.isSet((s32)HShader::Flag::Untextured)))
 	{
 		return false;
 	}
@@ -456,6 +456,7 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 		}
 	}
 	size_t const idLen = u.material.size() + 1 + std::max({u.diffuseTexPrefix.size() + 2, u.specularTexPrefix.size() + 2});
+	bool bHasSpecular = false;
 	for (auto const& texture : textures)
 	{
 		std::string id;
@@ -479,8 +480,8 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 		}
 		case TexType::Specular:
 		{
+			bHasSpecular = true;
 			id += u.specularTexPrefix;
-
 			number = std::to_string(specular++);
 			break;
 		}
@@ -513,6 +514,9 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 			setBlankTex(shader, txID, true);
 		}
 	}
+	char buf[128];
+	std::snprintf(buf, sizeof(buf), "%s.%s", u.material.data(), u.hasSpecular.data());
+	shader.setS32(buf, bHasSpecular ? 1 : 0);
 	for (; txID <= g_maxTexIdx; ++txID)
 	{
 		glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));

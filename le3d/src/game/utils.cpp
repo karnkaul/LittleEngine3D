@@ -195,9 +195,8 @@ debug::DArrow& debug::Arrow()
 	return g_debugArrow;
 }
 
-void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, f32 const uiAR, bool bOneDrawCall)
+void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HShader const& shader, f32 const uiAR, bool bOneDrawCall)
 {
-	HShader const& shader = resources::get<HShader>("ui/textured");
 	bool bResetTint = false;
 	auto& dQuad = Quad();
 	Vertices verts;
@@ -265,10 +264,9 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, f32 
 	gfx::resetViewport();
 }
 
-void debug::renderString(Text2D const& text, HFont const& hFont, f32 const uiAR, bool bOneDrawCall)
+void debug::renderString(Text2D const& text, HShader const& shader, HFont const& hFont, f32 const uiAR, bool bOneDrawCall)
 {
 	ASSERT(hFont.sheet.glID.handle > 0, "Font has no texture!");
-	auto const& shader = resources::get<HShader>("ui/textured");
 	f32 cellAR = (f32)hFont.cellSize.x / hFont.cellSize.y;
 	glm::vec2 cell(text.height * cellAR, text.height);
 	glm::vec2 duv = {(f32)hFont.cellSize.x / hFont.sheet.size.x, (f32)hFont.cellSize.y / hFont.sheet.size.y};
@@ -380,7 +378,7 @@ void debug::renderString(Text2D const& text, HFont const& hFont, f32 const uiAR,
 	gfx::resetViewport();
 }
 
-void debug::renderFPS(HFont const& font, f32 const uiAR)
+void debug::renderFPS(HFont const& font, HShader const& shader, f32 const uiAR)
 {
 	static Time frameTime = Time::now();
 	static Time totalDT;
@@ -397,12 +395,12 @@ void debug::renderFPS(HFont const& font, f32 const uiAR)
 	}
 	g_fpsStyle.text = "FPS ";
 	g_fpsStyle.text += std::to_string(fps == 0 ? frames : fps);
-	renderString(g_fpsStyle, font, uiAR);
+	renderString(g_fpsStyle, shader, font, uiAR);
 }
 
-void debug::renderVersion(HFont const& font, f32 const uiAR)
+void debug::renderVersion(HFont const& font, HShader const& shader, f32 const uiAR)
 {
-	renderString(g_versionStyle, font, uiAR);
+	renderString(g_versionStyle, shader, font, uiAR);
 }
 
 void debug::unloadAll()

@@ -19,6 +19,10 @@ struct EngineConfig
 		std::string specularTexPrefix = "specular";
 		std::string modelMatrix = "model";
 		std::string normalMatrix = "normals";
+		std::string diffuseColour = "diffuse";
+		std::string specularColour = "specular";
+		std::string ambientColour = "ambient";
+		std::string hasSpecular = "hasSpecular";
 	};
 
 	Uniforms uniforms;

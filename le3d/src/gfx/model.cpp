@@ -266,9 +266,14 @@ void Model::render(HShader const& shader, ModelMats const& mats)
 #endif
 		if (!shader.flags.isSet((s32)HShader::Flag::Unlit) && shader.flags.isSet((s32)HShader::Flag::Untextured))
 		{
-			shader.setV3("material.ambient", fixture.mesh.material.noTexTint.ambient);
-			shader.setV3("material.diffuse", fixture.mesh.material.noTexTint.diffuse);
-			shader.setV3("material.specular", fixture.mesh.material.noTexTint.specular);
+			static char buf[128];
+			const auto& u = env::g_config.uniforms;
+			std::snprintf(buf, sizeof(buf), "%s.%s", u.material.data(), u.ambientColour.data());
+			shader.setV3(buf, fixture.mesh.material.noTexTint.ambient);
+			std::snprintf(buf, sizeof(buf), "%s.%s", u.material.data(), u.diffuseColour.data());
+			shader.setV3(buf, fixture.mesh.material.noTexTint.diffuse);
+			std::snprintf(buf, sizeof(buf), "%s.%s", u.material.data(), u.specularColour.data());
+			shader.setV3(buf, fixture.mesh.material.noTexTint.specular);
 		}
 		if (fixture.oWorld)
 		{

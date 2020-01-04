@@ -70,12 +70,13 @@ DArrow& Arrow();
 
 void unloadAll();
 
-void draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, f32 const uiAR = 0.0f, bool bOneDrawCall = true);
-void renderString(Text2D const& text, HFont const& hFont, f32 const uiAR = 0.0f, bool bOneDrawCall = true);
+void draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HShader const& shader, f32 const uiAR = 0.0f,
+				 bool bOneDrawCall = true);
+void renderString(Text2D const& text, HShader const& shader, HFont const& hFont, f32 const uiAR = 0.0f, bool bOneDrawCall = true);
 
 extern Text2D g_fpsStyle;
 extern Text2D g_versionStyle;
-void renderFPS(HFont const& font, f32 const uiAR = 0.0f);
-void renderVersion(HFont const& font, f32 const uiAR = 0.0f);
+void renderFPS(HFont const& font, HShader const& shader, f32 const uiAR = 0.0f);
+void renderVersion(HFont const& font, HShader const& shader, f32 const uiAR = 0.0f);
 } // namespace debug
 } // namespace le

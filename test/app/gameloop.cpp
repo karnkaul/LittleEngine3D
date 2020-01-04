@@ -76,8 +76,7 @@ void runTest()
 													 noLit);
 	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")).str(), noTex);
 	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")).str(), {});
-	/*auto& uiTextured = */ resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")).str(),
-												  noTexNoLit);
+	auto& uiTextured = resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")).str(), noLit);
 	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(), noLit);
 	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")).str(), noLit);
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
@@ -347,17 +346,17 @@ void runTest()
 		tl.pos = {-tr.pos.x, tr.pos.y, 0.0f};
 		bl.pos = {-tr.pos.x, -tr.pos.y, 0.0f};
 		br.pos = {tr.pos.x, -tr.pos.y, 0.0f};
-		debug::draw2DQuads({tl, tr, bl, br}, quadTex, uiAR);
+		debug::draw2DQuads({tl, tr, bl, br}, quadTex, uiTextured, uiAR);
 
 		debug::Text2D text;
 		text.text = "Hello World!";
 		text.align = debug::Text2D::Align::Centre;
 		text.height = 100.0f;
 		text.pos = glm::vec3(0.0f, 300.0f, 0.0f);
-		debug::renderString(text, hFont, uiAR);
+		debug::renderString(text, uiTextured, hFont, uiAR);
 
-		debug::renderFPS(hFont, uiAR);
-		debug::renderVersion(hFont, uiAR);
+		debug::renderFPS(hFont, uiTextured, uiAR);
+		debug::renderVersion(hFont, uiTextured, uiAR);
 
 		context::swapBuffers();
 		context::pollEvents();
