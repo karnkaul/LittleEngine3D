@@ -96,8 +96,8 @@ struct HShader final
 {
 	enum class Flag
 	{
-		Untextured = 0,
-		Unlit,
+		Textured = 0,
+		Lit,
 	};
 
 	static size_t const MAX_FLAGS = 8;
@@ -143,6 +143,7 @@ struct HMesh final
 		LitTint noTexTint;
 		std::vector<HTexture> textures;
 		f32 shininess = 32.0f;
+		bool bForceOpaque = false;
 	};
 
 	Material material;

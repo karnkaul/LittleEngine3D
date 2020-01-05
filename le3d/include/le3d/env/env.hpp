@@ -12,17 +12,29 @@ struct EngineConfig
 {
 	struct Uniforms
 	{
-		std::string material = "material";
-		std::string shininess = "material.shininess";
+		struct Lit
+		{
+			std::string shininess = "material.shininess";
+		};
+		struct Textured
+		{
+			std::string hasSpecular = "material.hasSpecular";
+			std::string forceOpaque = "material.forceOpaque";
+			std::string diffuseTexPrefix = "material.diffuse";
+			std::string specularTexPrefix = "material.specular";
+		};
+		struct LitTinted
+		{
+			std::string diffuseColour = "material.diffuse";
+			std::string specularColour = "material.specular";
+			std::string ambientColour = "material.ambient";
+		};
+		Textured textured;
+		LitTinted litTinted;
+		Lit lit;
 		std::string tint = "tint";
-		std::string diffuseTexPrefix = "diffuse";
-		std::string specularTexPrefix = "specular";
 		std::string modelMatrix = "model";
 		std::string normalMatrix = "normals";
-		std::string diffuseColour = "diffuse";
-		std::string specularColour = "specular";
-		std::string ambientColour = "ambient";
-		std::string hasSpecular = "hasSpecular";
 	};
 
 	Uniforms uniforms;

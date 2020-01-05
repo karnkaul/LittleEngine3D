@@ -320,11 +320,11 @@ void resources::unloadAll<HFont>()
 	g_fontMap.clear();
 }
 
-Model& resources::loadModel(std::string id, Model::Data const& data)
+Model& resources::loadModel(std::string id, Model::Data const& data, bool bForceOpaque)
 {
 	ASSERT(g_modelMap.find(id) == g_modelMap.end(), "Model already loaded!");
 	Model newModel;
-	newModel.setupModel(id, data);
+	newModel.setupModel(id, data, bForceOpaque);
 	g_modelMap.emplace(id, std::move(newModel));
 	return g_modelMap[id];
 }

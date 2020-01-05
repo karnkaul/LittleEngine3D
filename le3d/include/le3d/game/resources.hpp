@@ -97,7 +97,7 @@ void unloadAll<HFont>();
 template <>
 u32 count<HFont>();
 
-Model& loadModel(std::string id, Model::Data const& data);
+Model& loadModel(std::string id, Model::Data const& data, bool bForceOpaque);
 template <>
 Model& get<Model>(std::string const& id);
 template <>

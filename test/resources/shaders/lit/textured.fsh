@@ -18,6 +18,7 @@ struct Material
 	sampler2D specular0;
 	float shininess;
 	int hasSpecular;
+	int forceOpaque;
 };
 
 struct PtLight
@@ -50,32 +51,32 @@ uniform Material material;
 	uniform vec4 tint = vec4(1.0);
 #endif
 
-vec4 calcDirColour(DirLight light, sampler2D diffuseTex, sampler2D specularTex, float diff, float spec, int hasSpec)
+vec4 calcDirColour(DirLight light, vec4 diffTexColour, vec4 specTexColour, float diff, float spec)
 {
-	vec4 ambient  = vec4(vec3(light.ambient), 1.0) * texture(diffuseTex, texCoord);
-	vec4 diffuse  = vec4(vec3(light.diffuse), 1.0) * diff * texture(diffuseTex, texCoord);
-	vec4 specular = vec4(vec3(light.specular), 1.0) * spec * texture(specularTex, texCoord) * hasSpec;
+	vec4 ambient  = vec4(vec3(light.ambient), 1.0) * diffTexColour;
+	vec4 diffuse  = vec4(vec3(light.diffuse), 1.0) * diff * diffTexColour;
+	vec4 specular = vec4(vec3(light.specular), 1.0) * spec * specTexColour;
 	return max(ambient + diffuse, 0.0) + max(specular, 0.0);
 }
 
-vec4 calcPtColour(PtLight light, sampler2D diffuseTex, sampler2D specularTex, float diff, float spec, float attenuation, int hasSpec)
+vec4 calcPtColour(PtLight light, vec4 diffTexColour, vec4 specTexColour, float diff, float spec, float attenuation)
 {
-	vec4 ambient = vec4(vec3(light.ambient), 1.0) * texture(diffuseTex, texCoord) * attenuation;
-	vec4 diffuse = vec4(vec3(light.diffuse), 1.0) * (diff * texture(diffuseTex, texCoord)) * attenuation;
-	vec4 specular = vec4(vec3(light.specular), 1.0) * (spec * texture(specularTex, texCoord)) * attenuation * hasSpec;
+	vec4 ambient = vec4(vec3(light.ambient), 1.0) * diffTexColour * attenuation;
+	vec4 diffuse = vec4(vec3(light.diffuse), 1.0) * diffTexColour * attenuation;
+	vec4 specular = vec4(vec3(light.specular), 1.0) * spec * specTexColour * attenuation;
 	return max(ambient + diffuse, 0.0) + max(specular, 0.0);
 }
 
-vec4 calcDirLight(DirLight light, vec3 norm, vec3 toView)
+vec4 calcDirLight(DirLight light, vec4 diffTexColour, vec4 specTexColour, vec3 norm, vec3 toView)
 {
 	vec3 nToLight = normalize(-vec3(light.direction));
 	vec3 reflectDir = reflect(-nToLight, norm);
 	float diff = max(dot(norm, nToLight), 0.0);
 	float spec = pow(max(dot(toView, reflectDir), 0.0), material.shininess);
-	return calcDirColour(light, material.diffuse0, material.specular0, diff, spec, material.hasSpecular);
+	return calcDirColour(light, diffTexColour, specTexColour, diff, spec);
 }
 
-vec4 calcPtLight(PtLight light, vec3 norm, vec3 fragPos, vec3 toView)
+vec4 calcPtLight(PtLight light, vec4 diffTexColour, vec4 specTexColour, vec3 norm, vec3 fragPos, vec3 toView)
 {
 	vec3 toLight = vec3(light.position) - fragPos;
 	vec3 nToLight = normalize(toLight);
@@ -84,7 +85,7 @@ vec4 calcPtLight(PtLight light, vec3 norm, vec3 fragPos, vec3 toView)
 	float attenuation = 1.0 / (light.clq.x + distance * light.clq.y + distance * distance * light.clq.z);
 	float diff = max(dot(norm, nToLight), 0.0);
 	float spec = pow(max(dot(toView, reflectDir), 0.0), material.shininess);
-	return calcPtColour(light, material.diffuse0, material.specular0, diff, spec, attenuation, material.hasSpecular);
+	return calcPtColour(light, diffTexColour, specTexColour, diff, spec, attenuation);
 }
 
 void main()
@@ -92,13 +93,20 @@ void main()
 	vec3 norm = normalize(normal);
 	vec3 toView = normalize(viewPos - fragPos);
 	vec4 result = vec4(0.0f);
+	vec4 diffTexColour = texture(material.diffuse0, texCoord);
+	vec4 specTexColour = texture(material.specular0, texCoord) * material.hasSpecular;
+	if (material.forceOpaque != 0)
+	{
+		diffTexColour.a = 1.0;
+		specTexColour.a = 1.0;
+	}
 	for (int i = 0; i < MAX_DIR_LIGHTS; i++)
 	{
-		result += calcDirLight(dirLights[i], norm, toView);
+		result += calcDirLight(dirLights[i], diffTexColour, specTexColour, norm, toView);
 	}
 	for (int i = 0; i < MAX_PT_LIGHTS; ++i)
 	{
-		result += calcPtLight(ptLights[i], norm, fragPos, toView);
+		result += calcPtLight(ptLights[i], diffTexColour, specTexColour, norm, fragPos, toView);
 	}
 	if (result.a < 0.1)
 	{

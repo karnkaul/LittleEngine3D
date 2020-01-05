@@ -83,7 +83,7 @@ public:
 	Model& operator=(Model const&);
 
 public:
-	void setupModel(std::string name, Data const& data);
+	void setupModel(std::string name, Data const& data, bool bForceOpaque = false);
 	void addFixture(HMesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void render(HShader const& shader, ModelMats const& mats);
 

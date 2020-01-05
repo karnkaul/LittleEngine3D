@@ -59,26 +59,24 @@ void runTest()
 	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::s_bindingPoint, gfx::Draw::Dynamic);
 	auto& hUIUBO = resources::addUBO("UI", sizeof(uboData::UI), uboData::UI::s_bindingPoint, gfx::Draw::Dynamic);
 
-	Flags<HShader::MAX_FLAGS> noTex;
-	noTex.set((s32)HShader::Flag::Untextured, true);
-	Flags<HShader::MAX_FLAGS> noLit;
-	noLit.set((s32)HShader::Flag::Unlit, true);
-	Flags<HShader::MAX_FLAGS> noTexNoLit;
-	noTexNoLit.set((s32)HShader::Flag::Unlit, true);
-	noTexNoLit.set((s32)HShader::Flag::Untextured, true);
+	Flags<HShader::MAX_FLAGS> tex_;
+	tex_.set((s32)HShader::Flag::Textured, true);
+	Flags<HShader::MAX_FLAGS> lit_;
+	lit_.set((s32)HShader::Flag::Lit, true);
+	Flags<HShader::MAX_FLAGS> texLit_;
+	texLit_.set((s32)HShader::Flag::Lit, true);
+	texLit_.set((s32)HShader::Flag::Textured, true);
 
 	auto def = readFile(resourcePath("shaders/default.vsh")).str();
 	auto ui = readFile(resourcePath("shaders/ui.vsh")).str();
 	auto sb = readFile(resourcePath("shaders/skybox.vsh")).str();
-	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(),
-												   noTexNoLit);
-	/*auto& unlitTextured = */ resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")).str(),
-													 noLit);
-	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")).str(), noTex);
-	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")).str(), {});
-	auto& uiTextured = resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")).str(), noLit);
-	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(), noLit);
-	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")).str(), noLit);
+	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(), {});
+	resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")).str(), tex_);
+	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")).str(), lit_);
+	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")).str(), texLit_);
+	auto& uiTextured = resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")).str(), tex_);
+	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")).str(), tex_);
+	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")).str(), tex_);
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
 
 #if defined(DEBUG_LOG)
@@ -142,7 +140,7 @@ void runTest()
 		return utils::readBytes(resourcePath(filepath));
 	});
 	bool bTexturedObj = true;
-	Model& objModel = resources::loadModel("objModel", objData);
+	Model& objModel = resources::loadModel("objModel", objData, modelFile == "nanosuit" ? true : false);
 
 	auto& cubeMesh = debug::Cube();
 	auto& quadMesh = debug::Quad();

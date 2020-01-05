@@ -20,11 +20,33 @@ This is essentially a v2 of [`LittleEngine`](https://github.com/karnkaul/LittleE
 	1. Open project and build
 	1. Run le3d-test (or custom executable target)
 
-### Shader Vertex Attributes
+### Shaders
+LittleEngine3D uses forward rendering with a fixed number of point and directional lights. A mesh has a material which supports diffuse and specular textures and various built-in uniforms as defined in `env::g_config`.
+
+#### Vertex Attributes
 The engine expects vertex shaders to use a specific layout when using `gfx::genVertices()`:
 - 0 => `vec3 aPos` [required]
 - 1 => `vec3 aNormal`
 - 2 => `vec2 aTexCoord`
+
+#### Flags
+The engine will set these built-in uniforms (* = based on shader flags) when drawing a mesh:
+- Vertex:
+	- `mat4 model`
+	- `mat4 normals`
+- Fragment:
+	- `vec4 tint`
+	- Lit:
+		- `float material.shininess`*
+	- Textured:
+		- `sampler2D material.diffuseN`*
+		- `sampler2D material.specularN`*
+		- `int material.hasSpecular`*
+		- `int material.forceOpaque`*
+	- Lit Tinted:
+		- `vec4 material.ambient`*
+		- `vec4 material.diffuse`*
+		- `vec4 material.specular`*
 
 It is recommended to use UBOs for light data and view/projection matrices instead of individual uniforms. Use `resources::addUBO()` to auto-bind them to subsequent shaders created via `resources::loadShader()`, and `gfx::setUBO<T>()` to copy data (must be 16-aligned).
 

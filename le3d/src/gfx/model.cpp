@@ -90,7 +90,7 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 			Data::Tex tex;
 			tex.filename = texName;
 			tex.id = std::move(id);
-			tex.type = TexType::Diffuse;
+			tex.type = type;
 			ret.textures.emplace_back(std::move(tex));
 			return ret.textures.size() - 1;
 		};
@@ -194,7 +194,7 @@ void Model::addFixture(HMesh const& mesh, std::optional<glm::mat4> model /* = st
 	m_fixtures.emplace_back(Fixture{mesh, model});
 }
 
-void Model::setupModel(std::string name, Data const& data)
+void Model::setupModel(std::string name, Data const& data, bool bForceOpaque)
 {
 	m_name = std::move(name);
 	m_type = Typename(*this);
@@ -220,6 +220,7 @@ void Model::setupModel(std::string name, Data const& data)
 		HMesh hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic);
 		hMesh.material.noTexTint = meshData.noTexTint;
 		hMesh.material.shininess = meshData.shininess;
+		hMesh.material.bForceOpaque = bForceOpaque;
 		for (auto texIdx : meshData.texIndices)
 		{
 			auto const& texData = data.textures[texIdx];
@@ -264,17 +265,6 @@ void Model::render(HShader const& shader, ModelMats const& mats)
 			gfx::setBlankTex(shader, 0, bResetTint);
 		}
 #endif
-		if (!shader.flags.isSet((s32)HShader::Flag::Unlit) && shader.flags.isSet((s32)HShader::Flag::Untextured))
-		{
-			static char buf[128];
-			const auto& u = env::g_config.uniforms;
-			std::snprintf(buf, sizeof(buf), "%s.%s", u.material.data(), u.ambientColour.data());
-			shader.setV3(buf, fixture.mesh.material.noTexTint.ambient);
-			std::snprintf(buf, sizeof(buf), "%s.%s", u.material.data(), u.diffuseColour.data());
-			shader.setV3(buf, fixture.mesh.material.noTexTint.diffuse);
-			std::snprintf(buf, sizeof(buf), "%s.%s", u.material.data(), u.specularColour.data());
-			shader.setV3(buf, fixture.mesh.material.noTexTint.specular);
-		}
 		if (fixture.oWorld)
 		{
 			ModelMats matsCopy = mats;

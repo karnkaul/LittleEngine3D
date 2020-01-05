@@ -294,11 +294,9 @@ void debug::renderString(Text2D const& text, HShader const& shader, HFont const&
 	auto const& u = env::g_config.uniforms;
 	std::string matID;
 	bool bResetTint = false;
-	matID.reserve(128);
-	matID += u.material;
-	matID += ".";
-	matID += u.diffuseTexPrefix;
-	matID += "[0]";
+	matID.reserve(64);
+	matID += u.textured.diffuseTexPrefix;
+	matID += "0";
 	shader.setS32(matID, 0);
 	shader.setV4(env::g_config.uniforms.tint, text.colour);
 	bResetTint |= gfx::setTextures(shader, {hFont.sheet}, true);
