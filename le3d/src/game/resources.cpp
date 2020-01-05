@@ -114,10 +114,10 @@ u32 resources::count<HUBO>()
 	return (u32)g_uboMap.size();
 }
 
-HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
+HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode)
 {
 	ASSERT(g_shaderMap.find(id) == g_shaderMap.end(), "Shader ID already loaded!");
-	HShader shader = gfx::gl::genShader(id, vertCode, fragCode, flags);
+	HShader shader = gfx::gl::genShader(id, vertCode, fragCode);
 	if (shader.glID.handle > 0)
 	{
 		for (auto const& kvp : g_uboMap)
@@ -248,7 +248,9 @@ Skybox resources::createSkybox(std::string name, std::array<std::vector<u8>, 6> 
 {
 	Skybox ret;
 	ret.cubemap = gfx::gl::genCubemap(name + "_map", std::move(rludfb));
-	ret.mesh = gfx::createCube(1.0f, name + "_mesh");
+	Material::Flags flags;
+	flags.set(s32(Material::Flag::Textured), true);
+	ret.mesh = gfx::createCube(1.0f, name + "_mesh", flags);
 	ret.name = std::move(name);
 	LOG_D("[%s] Skybox created", ret.name.data());
 	return ret;
@@ -320,11 +322,11 @@ void resources::unloadAll<HFont>()
 	g_fontMap.clear();
 }
 
-Model& resources::loadModel(std::string id, Model::Data const& data, bool bForceOpaque)
+Model& resources::loadModel(std::string id, Model::Data const& data, Material::Flags flags)
 {
 	ASSERT(g_modelMap.find(id) == g_modelMap.end(), "Model already loaded!");
 	Model newModel;
-	newModel.setupModel(id, data, bForceOpaque);
+	newModel.setupModel(id, data, flags);
 	g_modelMap.emplace(id, std::move(newModel));
 	return g_modelMap[id];
 }

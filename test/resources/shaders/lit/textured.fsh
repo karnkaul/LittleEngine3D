@@ -17,8 +17,8 @@ struct Material
 	sampler2D diffuse0;
 	sampler2D specular0;
 	float shininess;
-	int hasSpecular;
-	int forceOpaque;
+	float hasSpecular;
+	int isOpaque;
 };
 
 struct PtLight
@@ -95,7 +95,7 @@ void main()
 	vec4 result = vec4(0.0f);
 	vec4 diffTexColour = texture(material.diffuse0, texCoord);
 	vec4 specTexColour = texture(material.specular0, texCoord) * material.hasSpecular;
-	if (material.forceOpaque != 0)
+	if (material.isOpaque == 1)
 	{
 		diffTexColour.a = 1.0;
 		specTexColour.a = 1.0;

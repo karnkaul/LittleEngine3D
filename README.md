@@ -21,7 +21,7 @@ This is essentially a v2 of [`LittleEngine`](https://github.com/karnkaul/LittleE
 	1. Run le3d-test (or custom executable target)
 
 ### Shaders
-LittleEngine3D uses forward rendering with a fixed number of point and directional lights. A mesh has a material which supports diffuse and specular textures and various built-in uniforms as defined in `env::g_config`.
+LittleEngine3D uses forward rendering with a fixed number of point and directional lights. A mesh has a material which supports diffuse and specular textures and various built-in uniforms as defined in `env::g_config` (can be overridden).
 
 #### Vertex Attributes
 The engine expects vertex shaders to use a specific layout when using `gfx::genVertices()`:
@@ -29,26 +29,31 @@ The engine expects vertex shaders to use a specific layout when using `gfx::genV
 - 1 => `vec3 aNormal`
 - 2 => `vec2 aTexCoord`
 
-#### Flags
-The engine will set these built-in uniforms (* = based on shader flags) when drawing a mesh:
+#### Uniforms
+The engine will set these built-in uniforms (default names shown) when drawing a mesh; shaders may choose to use any subset of these:
 - Vertex:
-	- `mat4 model`
-	- `mat4 normals`
+	- `mat4 model`		// Model Matrix
+	- `mat4 normals`	// Normals Matrix
+	- Transform:
+		- `int transform.isUI`	// Whether to use a UI projection matrix
 - Fragment:
 	- `vec4 tint`
-	- Lit:
-		- `float material.shininess`*
-	- Textured:
-		- `sampler2D material.diffuseN`*
-		- `sampler2D material.specularN`*
-		- `int material.hasSpecular`*
-		- `int material.forceOpaque`*
-	- Lit Tinted:
-		- `vec4 material.ambient`*
-		- `vec4 material.diffuse`*
-		- `vec4 material.specular`*
+	- Material:
+		- `int material.isTextured`			// Whether to use sampler2Ds
+		- `int material.isLit`				// Whether to apply lighting
+		- `int material.isOpaque`			// Whether to force alpha as 1.0
+		- `float material.hasSpecular`		// Whether to use specular sampler2Ds
+		- `float material.shininess`		// Specular shininess
+		- `vec4 material.ambient`			// Ambient colour (only if no textures)
+		- `vec4 material.diffuse`			// Diffuse colour (only if no textures)
+		- `vec4 material.specular`			// Specular colour (only if no textures)
+		- `sampler2D material.diffuseN`		// Diffuse textures
+		- `sampler2D material.specularN`	// Specular textures
 
-It is recommended to use UBOs for light data and view/projection matrices instead of individual uniforms. Use `resources::addUBO()` to auto-bind them to subsequent shaders created via `resources::loadShader()`, and `gfx::setUBO<T>()` to copy data (must be 16-aligned).
+Monolithic shaders can be reused for multiple `Material`s (lit, textured, opaque, etc) by branching on the corresponding uniforms; individual shaders can skip declaring/using them entirely. Cubemaps like Skyboxes will require their own shader that declares a `samplerCube`.
+
+#### Lights and View/Projection/UI Matrices
+It is recommended to use UBOs for light data and view/projection matrices and share them across all shaders instead of setting individual uniforms on each shader. Use `resources::addUBO()` to auto-bind them to subsequent shaders created via `resources::loadShader()`, and `gfx::setUBO<T>()` to copy data (must be 16-aligned).
 
 ### MVP Target
 - [x] Perspective and orthographic projections
@@ -66,3 +71,4 @@ It is recommended to use UBOs for light data and view/projection matrices instea
 - [glad]()
 - [glm](https://github.com/g-truc/glm)
 - [stb-image](https://github.com/nothings/stb)
+- [tinyobjloader](https://github.com/syoyo/tinyobjloader)

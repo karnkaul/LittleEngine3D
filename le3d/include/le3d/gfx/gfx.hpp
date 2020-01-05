@@ -2,7 +2,6 @@
 #include <array>
 #include <glm/glm.hpp>
 #include "le3d/stdtypes.hpp"
-#include "le3d/core/flags.hpp"
 #include "le3d/gfx/colour.hpp"
 #include "le3d/gfx/gfxtypes.hpp"
 
@@ -25,7 +24,7 @@ void releaseTexture(std::vector<HTexture*> const& textures);
 HCubemap genCubemap(std::string name, std::array<std::vector<u8>, 6> const& rltbfb);
 void releaseCubemap(HCubemap& cube);
 
-HShader genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
+HShader genShader(std::string id, std::string_view vertCode, std::string_view fragCode);
 void releaseShader(HShader& shader);
 
 HVerts genVertices(Vertices const& vertices, Draw drawType = Draw::Dynamic, HShader const* pShader = nullptr);
@@ -34,6 +33,7 @@ void releaseVerts(HVerts& hVerts);
 HUBO genUBO(s64 size, u32 bindingPoint, Draw type);
 void releaseUBO(HUBO& ubo);
 
+void setMaterial(HShader const& shader, Material const& material);
 void draw(HVerts const& hVerts);
 } // namespace gl
 
@@ -44,7 +44,7 @@ static void setUBO(HUBO const& hUBO, T const& data)
 	setUBO(hUBO, 0, sizeof(data), &data);
 }
 
-HMesh newMesh(std::string name, Vertices const& vertices, Draw type, HShader const* pShader = nullptr);
+HMesh newMesh(std::string name, Vertices const& vertices, Draw type, Material::Flags flags, HShader const* pShader = nullptr);
 void releaseMeshes(std::vector<HMesh*> const& meshes);
 
 // Returns true if shader tint changed (missing texture)

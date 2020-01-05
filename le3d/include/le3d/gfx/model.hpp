@@ -46,9 +46,11 @@ public:
 		void setTextureData(std::function<std::vector<u8>(std::string_view)> getTexBytes, bool bUseJobs = true);
 	};
 
+	using Flags = TFlags<size_t(DrawFlag::_COUNT)>;
+
 #if defined(DEBUGGING)
 public:
-	Flags<(s32)DrawFlag::_COUNT> m_renderFlags;
+	Flags m_renderFlags;
 	bool m_bDEBUG = false;
 #endif
 
@@ -83,7 +85,7 @@ public:
 	Model& operator=(Model const&);
 
 public:
-	void setupModel(std::string name, Data const& data, bool bForceOpaque = false);
+	void setupModel(std::string name, Data const& data, Material::Flags flags);
 	void addFixture(HMesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void render(HShader const& shader, ModelMats const& mats);
 

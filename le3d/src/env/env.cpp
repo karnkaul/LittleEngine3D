@@ -75,25 +75,22 @@ void env::setConfig(std::string json)
 			SetConfigStrIfPresent("modelMatrix", uniforms, g_config.uniforms.modelMatrix);
 			SetConfigStrIfPresent("normalMatrix", uniforms, g_config.uniforms.normalMatrix);
 			SetConfigStrIfPresent("tint", uniforms, g_config.uniforms.tint);
-			if (uniforms.contains("lit"))
+			if (uniforms.contains("transform"))
 			{
-				GData lit = uniforms.getGData("lit");
-				SetConfigStrIfPresent("shininess", lit, g_config.uniforms.lit.shininess);
+				GData transform = uniforms.getGData("uniforms");
+				SetConfigStrIfPresent("isUI", transform, g_config.uniforms.transform.isUI);
 			}
-			if (uniforms.contains("textured"))
+			if (uniforms.contains("material"))
 			{
-				GData textured = uniforms.getGData("textured");
-				SetConfigStrIfPresent("hasSpecular", textured, g_config.uniforms.textured.hasSpecular);
-				SetConfigStrIfPresent("forceOpaque", textured, g_config.uniforms.textured.forceOpaque);
-				SetConfigStrIfPresent("diffuseTexPrefix", textured, g_config.uniforms.textured.diffuseTexPrefix);
-				SetConfigStrIfPresent("specularTexPrefix", textured, g_config.uniforms.textured.specularTexPrefix);
-			}
-			if (uniforms.contains("unlitTextured"))
-			{
-				GData unlitTextured = uniforms.getGData("unlitTextured");
-				SetConfigStrIfPresent("diffuseColour", unlitTextured, g_config.uniforms.litTinted.diffuseColour);
-				SetConfigStrIfPresent("specularColour", unlitTextured, g_config.uniforms.litTinted.specularColour);
-				SetConfigStrIfPresent("ambientColour", unlitTextured, g_config.uniforms.litTinted.ambientColour);
+				GData material = uniforms.getGData("material");
+				SetConfigStrIfPresent("shininess", material, g_config.uniforms.material.shininess);
+				SetConfigStrIfPresent("hasSpecular", material, g_config.uniforms.material.hasSpecular);
+				SetConfigStrIfPresent("isOpaque", material, g_config.uniforms.material.isOpaque);
+				SetConfigStrIfPresent("diffuseTexPrefix", material, g_config.uniforms.material.diffuseTexPrefix);
+				SetConfigStrIfPresent("specularTexPrefix", material, g_config.uniforms.material.specularTexPrefix);
+				SetConfigStrIfPresent("diffuseColour", material, g_config.uniforms.material.diffuseColour);
+				SetConfigStrIfPresent("specularColour", material, g_config.uniforms.material.specularColour);
+				SetConfigStrIfPresent("ambientColour", material, g_config.uniforms.material.ambientColour);
 			}
 		}
 	}

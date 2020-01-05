@@ -1,7 +1,7 @@
 #pragma once
 #include <bitset>
 #include <set>
-#include "le3d/core/flags.hpp"
+#include "le3d/core/tFlags.hpp"
 #include "le3d/game/object.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/core/transform.hpp"
@@ -38,8 +38,10 @@ public:
 		_COUNT
 	};
 
+	using Flags = TFlags<(size_t)Flag::_COUNT>;
+
 public:
-	Flags<(size_t)Flag::_COUNT> m_flags;
+	Flags m_flags;
 	f32 m_defaultSpeed = 2.0f;
 	f32 m_speed = m_defaultSpeed;
 	f32 m_minSpeed = 1.0f;

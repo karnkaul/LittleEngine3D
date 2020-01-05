@@ -3,7 +3,7 @@
 #include <optional>
 #include <vector>
 #include "le3d/stdtypes.hpp"
-#include "le3d/core/flags.hpp"
+#include "le3d/core/tFlags.hpp"
 #include "le3d/core/transform.hpp"
 #include "le3d/game/object.hpp"
 #include "le3d/gfx/gfx.hpp"
@@ -26,6 +26,12 @@ public:
 		_COUNT,
 	};
 
+	using Flags = TFlags<size_t(Flag::_COUNT)>;
+
+#if defined(DEBUGGING)
+	static HShader s_gizmoShader;
+#endif
+
 protected:
 #if defined(DEBUGGING)
 	debug::DArrow* m_pArrow = nullptr;
@@ -33,7 +39,7 @@ protected:
 
 public:
 	Transform m_transform;
-	Flags<(size_t)Flag::_COUNT> m_flags;
+	Flags m_flags;
 #if defined(DEBUGGING)
 	bool m_bDEBUG = false;
 #endif

@@ -12,26 +12,30 @@ struct EngineConfig
 {
 	struct Uniforms
 	{
-		struct Lit
+		struct Transform
 		{
-			std::string shininess = "material.shininess";
+			// bool
+			std::string isUI = "transform.isUI";
 		};
-		struct Textured
+		struct Material
 		{
+			// int
+			std::string isTextured = "material.isTextured";
+			std::string isLit = "material.isLit";
+			std::string isOpaque = "material.isOpaque";
+			// float
 			std::string hasSpecular = "material.hasSpecular";
-			std::string forceOpaque = "material.forceOpaque";
-			std::string diffuseTexPrefix = "material.diffuse";
-			std::string specularTexPrefix = "material.specular";
-		};
-		struct LitTinted
-		{
+			std::string shininess = "material.shininess";
+			// vec3
 			std::string diffuseColour = "material.diffuse";
 			std::string specularColour = "material.specular";
 			std::string ambientColour = "material.ambient";
+			// sampler2D
+			std::string diffuseTexPrefix = "material.diffuse";
+			std::string specularTexPrefix = "material.specular";
 		};
-		Textured textured;
-		LitTinted litTinted;
-		Lit lit;
+		Transform transform;
+		Material material;
 		std::string tint = "tint";
 		std::string modelMatrix = "model";
 		std::string normalMatrix = "normals";

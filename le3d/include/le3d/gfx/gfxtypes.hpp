@@ -6,7 +6,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include "le3d/stdtypes.hpp"
-#include "le3d/core/flags.hpp"
+#include "le3d/core/tFlags.hpp"
 #include "le3d/core/tZero.hpp"
 #include "colour.hpp"
 
@@ -94,15 +94,7 @@ struct HCubemap final
 
 struct HShader final
 {
-	enum class Flag
-	{
-		Textured = 0,
-		Lit,
-	};
-
-	static size_t const MAX_FLAGS = 8;
 	std::string id;
-	Flags<MAX_FLAGS> flags;
 	GLObj glID;
 
 	void use() const;
@@ -136,16 +128,26 @@ struct HUBO final
 	u32 byteCount = 0;
 };
 
-struct HMesh final
+struct Material
 {
-	struct Material
+	enum class Flag
 	{
-		LitTint noTexTint;
-		std::vector<HTexture> textures;
-		f32 shininess = 32.0f;
-		bool bForceOpaque = false;
+		Lit = 0,
+		Textured,
+		Opaque,
+		_COUNT
 	};
 
+	using Flags = TFlags<(size_t)Flag::_COUNT>;
+
+	LitTint noTexTint;
+	std::vector<HTexture> textures;
+	f32 shininess = 32.0f;
+	Flags flags;
+};
+
+struct HMesh final
+{
 	Material material;
 	std::string name;
 	HVerts hVerts;

@@ -9,7 +9,7 @@ in vec2 texCoord;
 struct Material
 {
 	sampler2D diffuse0;
-	int forceOpaque;
+	int isOpaque;
 };
 
 uniform Material material;
@@ -23,7 +23,7 @@ void main()
 {
 	vec4 texColour = vec4(0.0);
 	texColour += max(texture(material.diffuse0, texCoord), 0.0);
-	if (material.forceOpaque != 0)
+	if (material.isOpaque == 1)
 	{
 		texColour.a = 1.0;
 	}

@@ -23,33 +23,6 @@ GLObj g_blankTexID = GLObj(1);
 namespace
 {
 s32 g_maxTexIdx = 0;
-
-void preDraw(HMesh const& mesh, HShader const& shader)
-{
-	if (le::context::exists() && mesh.hVerts.vao.handle > 0)
-	{
-		auto const& u = env::g_config.uniforms;
-		ASSERT(shader.glID.handle > 0, "shader is null!");
-		{
-			Lock lock(contextImpl::g_glMutex);
-			shader.use();
-			if (shader.flags.isSet((s32)HShader::Flag::Lit))
-			{
-				shader.setF32(u.lit.shininess, mesh.material.shininess);
-			}
-			if (shader.flags.isSet((s32)HShader::Flag::Textured))
-			{
-				shader.setBool(u.textured.forceOpaque, mesh.material.bForceOpaque);
-			}
-			if (shader.flags.isSet((s32)HShader::Flag::Lit) && !shader.flags.isSet((s32)HShader::Flag::Textured))
-			{
-				shader.setV3(u.litTinted.ambientColour, mesh.material.noTexTint.ambient);
-				shader.setV3(u.litTinted.diffuseColour, mesh.material.noTexTint.diffuse);
-				shader.setV3(u.litTinted.specularColour, mesh.material.noTexTint.specular);
-			}
-		}
-	}
-}
 } // namespace
 
 HTexture gfx::gl::genTexture(std::string name, u8 const* pData, TexType type, u8 ch, u16 w, u16 h, bool bClampToEdge)
@@ -196,7 +169,7 @@ void gfx::gl::releaseCubemap(HCubemap& cube)
 	cube = HCubemap();
 }
 
-HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
+HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode)
 {
 	if (!context::exists())
 	{
@@ -264,7 +237,6 @@ HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::strin
 	glDeleteShader(fsh);
 	LOG_I("== [%s] (Shader) created", id.data());
 	program.id = std::move(id);
-	program.flags = flags;
 	return program;
 }
 
@@ -391,6 +363,34 @@ void gfx::gl::releaseUBO(HUBO& ubo)
 	ubo = HUBO();
 }
 
+void gfx::gl::setMaterial(HShader const& shader, Material const& material)
+{
+	auto const& u = env::g_config.uniforms;
+	ASSERT(shader.glID.handle > 0, "shader is null!");
+	{
+		Lock lock(contextImpl::g_glMutex);
+		shader.use();
+		bool const bIsLit = material.flags.isSet((s32)Material::Flag::Lit);
+		shader.setBool(u.material.isLit, bIsLit);
+		bool const bIsTextured = material.flags.isSet((s32)Material::Flag::Textured);
+		shader.setBool(u.material.isTextured, bIsTextured);
+		if (bIsLit)
+		{
+			shader.setF32(u.material.shininess, material.shininess);
+			if (!bIsTextured)
+			{
+				shader.setV3(u.material.ambientColour, material.noTexTint.ambient);
+				shader.setV3(u.material.diffuseColour, material.noTexTint.diffuse);
+				shader.setV3(u.material.specularColour, material.noTexTint.specular);
+			}
+		}
+		if (bIsTextured)
+		{
+			shader.setBool(u.material.isOpaque, material.flags.isSet((s32)Material::Flag::Opaque));
+		}
+	}
+}
+
 void gfx::gl::draw(HVerts const& hVerts)
 {
 	if (context::exists())
@@ -420,7 +420,7 @@ void gfx::setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData)
 	}
 }
 
-HMesh gfx::newMesh(std::string name, Vertices const& vertices, Draw type, HShader const* pShader /* = nullptr */)
+HMesh gfx::newMesh(std::string name, Vertices const& vertices, Draw type, Material::Flags flags, HShader const* pShader /* = nullptr */)
 {
 	HMesh mesh;
 	if (le::context::exists())
@@ -430,6 +430,7 @@ HMesh gfx::newMesh(std::string name, Vertices const& vertices, Draw type, HShade
 		auto size = utils::friendlySize(mesh.hVerts.byteCount);
 		LOGIF_I(!mesh.name.empty(), "== [%s] [%.1f%s] Mesh set up (%u vertices)", mesh.name.data(), size.first, size.second.data(),
 				mesh.hVerts.vCount);
+		mesh.material.flags = flags;
 	}
 	return mesh;
 }
@@ -450,8 +451,9 @@ void gfx::releaseMeshes(std::vector<HMesh*> const& meshes)
 
 bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textures, bool bSkipIfEmpty)
 {
-	if (bSkipIfEmpty && (textures.empty() || !shader.flags.isSet((s32)HShader::Flag::Textured)))
+	if (bSkipIfEmpty && textures.empty())
 	{
+		shader.setS32(env::g_config.uniforms.material.isTextured, 0);
 		return false;
 	}
 	s32 txID = 0;
@@ -459,13 +461,13 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 	s32 specular = 0;
 	bool bResetTint = false;
 	auto const& u = env::g_config.uniforms;
-	if (shader.flags.isSet((s32)HShader::Flag::Textured) && textures.empty())
+	if (textures.empty())
 	{
 		bResetTint = true;
 		setBlankTex(shader, 0, true);
 		++txID;
 	}
-	size_t const idLen = std::max(u.textured.diffuseTexPrefix.size(), u.textured.specularTexPrefix.size());
+	size_t const idLen = std::max(u.material.diffuseTexPrefix.size(), u.material.specularTexPrefix.size());
 	bool bHasSpecular = false;
 	for (auto const& texture : textures)
 	{
@@ -482,14 +484,14 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 		{
 		case TexType::Diffuse:
 		{
-			id += u.textured.diffuseTexPrefix;
+			id += u.material.diffuseTexPrefix;
 			number = std::to_string(diffuse++);
 			break;
 		}
 		case TexType::Specular:
 		{
 			bHasSpecular = true;
-			id += u.textured.specularTexPrefix;
+			id += u.material.specularTexPrefix;
 			number = std::to_string(specular++);
 			break;
 		}
@@ -521,7 +523,7 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 			setBlankTex(shader, txID, true);
 		}
 	}
-	shader.setS32(u.textured.hasSpecular, bHasSpecular ? 1 : 0);
+	shader.setF32(u.material.hasSpecular, bHasSpecular ? 1.0f : 0.0f);
 	for (; txID <= g_maxTexIdx; ++txID)
 	{
 		glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
@@ -558,13 +560,13 @@ void gfx::unsetTextures(s32 lastTexID /* = 0 */)
 
 void gfx::drawMesh(HMesh const& mesh, HShader const& shader)
 {
-	preDraw(mesh, shader);
+	gl::setMaterial(shader, mesh.material);
 	gl::draw(mesh.hVerts);
 }
 
 void gfx::drawMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader)
 {
-	preDraw(mesh, shader);
+	gl::setMaterial(shader, mesh.material);
 	for (auto const& mat : mats)
 	{
 		shader.setModelMats(mat);
@@ -581,7 +583,9 @@ HFont gfx::newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cel
 		f32 cellAR = (f32)cellSize.x / cellSize.y;
 		f32 width = cellAR < 1.0f ? 1.0f * cellAR : 1.0f;
 		f32 height = cellAR > 1.0f ? 1.0f / cellAR : 1.0f;
-		ret.quad = createQuad(width, height, name + "_quad");
+		Material::Flags flags;
+		flags.set(s32(Material::Flag::Textured), true);
+		ret.quad = createQuad(width, height, name + "_quad", flags);
 		ret.sheet = gl::genTexture(name + "_sheet", std::move(spritesheet), TexType::Diffuse, true);
 		ret.name = std::move(name);
 		ret.cellSize = cellSize;

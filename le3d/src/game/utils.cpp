@@ -62,7 +62,9 @@ void debug::DArrow::setupDArrow(const glm::quat& orientation)
 	m = glm::scale(m, glm::vec3(0.02f, 0.02f, 0.5f));
 	m = glm::rotate(m, glm::radians(90.0f), g_nRight);
 	m = glm::translate(m, g_nUp * 0.5f);
-	addFixture(Cylinder(), m);
+	m_cylinder.mesh = Cylinder();
+	m_cylinder.mesh.material.flags = {};
+	addFixture(m_cylinder.mesh, m);
 	m = glm::toMat4(orientation);
 	m = glm::translate(m, g_nFront * 0.5f);
 	m = glm::rotate(m, glm::radians(90.0f), g_nRight);
@@ -75,8 +77,9 @@ void debug::DArrow::setupDArrow(const glm::quat& orientation)
 	m_cube.oWorld = mCb;
 	m_sphere.mesh = Sphere();
 	m_sphere.oWorld = mSp;
+	m_cone.mesh.material.flags = m_cube.mesh.material.flags = m_sphere.mesh.material.flags = {};
 	setTip(m_tip, true);
-	setupModel("dArrow", {});
+	setupModel("dArrow", {}, {});
 }
 
 void debug::DArrow::setTip(Tip tip, bool bForce)
@@ -110,7 +113,9 @@ HMesh& debug::Cube()
 	auto& cube = g_debugMeshes["dCube"];
 	if (cube.hVerts.vao <= 0)
 	{
-		cube = gfx::createCube(1.0f, "dCube");
+		Material::Flags flags;
+		flags.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured)}, true);
+		cube = gfx::createCube(1.0f, "dCube", flags);
 	}
 	return cube;
 }
@@ -120,7 +125,9 @@ HMesh& debug::Quad()
 	auto& quad = g_debugMeshes["dQuad"];
 	if (quad.hVerts.vao <= 0)
 	{
-		quad = gfx::createQuad(1.0f, 1.0f, "dQuad");
+		Material::Flags flags;
+		flags.set(s32(Material::Flag::Textured), true);
+		quad = gfx::createQuad(1.0f, 1.0f, "dQuad", flags);
 	}
 	return quad;
 }
@@ -130,7 +137,9 @@ HMesh& debug::Circle()
 	auto& circle = g_debugMeshes["dCircle"];
 	if (circle.hVerts.vao <= 0)
 	{
-		circle = gfx::createCircle(1.0f, 32, "dCircle");
+		Material::Flags flags;
+		flags.set(s32(Material::Flag::Lit), true);
+		circle = gfx::createCircle(1.0f, 32, "dCircle", flags);
 	}
 	return circle;
 }
@@ -140,7 +149,9 @@ HMesh& debug::Pyramid()
 	auto& pyramid = g_debugMeshes["dPyramid"];
 	if (pyramid.hVerts.vao <= 0)
 	{
-		pyramid = gfx::create4Pyramid(1.0f, "dPyramid");
+		Material::Flags flags;
+		flags.set(s32(Material::Flag::Lit), true);
+		pyramid = gfx::create4Pyramid(1.0f, "dPyramid", flags);
 	}
 	return pyramid;
 }
@@ -150,7 +161,9 @@ HMesh& debug::Tetrahedron()
 	auto& tetrahedron = g_debugMeshes["dTetrahedron"];
 	if (tetrahedron.hVerts.vao <= 0)
 	{
-		tetrahedron = gfx::createTetrahedron(1.0f, "dTetrahedron");
+		Material::Flags flags;
+		flags.set(s32(Material::Flag::Lit), true);
+		tetrahedron = gfx::createTetrahedron(1.0f, "dTetrahedron", flags);
 	}
 	return tetrahedron;
 }
@@ -160,7 +173,9 @@ HMesh& debug::Cone()
 	auto& cone = g_debugMeshes["dCone"];
 	if (cone.hVerts.vao <= 0)
 	{
-		cone = gfx::createCone(1.0f, 1.0f, 16, "dCone");
+		Material::Flags flags;
+		flags.set(s32(Material::Flag::Lit), true);
+		cone = gfx::createCone(1.0f, 1.0f, 16, "dCone", flags);
 	}
 	return cone;
 }
@@ -170,7 +185,9 @@ HMesh& debug::Cylinder()
 	auto& cylinder = g_debugMeshes["dCylinder"];
 	if (cylinder.hVerts.vao <= 0)
 	{
-		cylinder = gfx::createCylinder(1.0f, 1.0f, 16, "dCylinder");
+		Material::Flags flags;
+		flags.set(s32(Material::Flag::Lit), true);
+		cylinder = gfx::createCylinder(1.0f, 1.0f, 16, "dCylinder", flags);
 	}
 	return cylinder;
 }
@@ -180,7 +197,9 @@ HMesh& debug::Sphere()
 	auto& sphere = g_debugMeshes["dSphere"];
 	if (sphere.hVerts.vao <= 0)
 	{
-		sphere = gfx::createCubedSphere(1.0f, "dSphere");
+		Material::Flags flags;
+		flags.set(s32(Material::Flag::Lit), true);
+		sphere = gfx::createCubedSphere(1.0f, "dSphere", 8, flags);
 		sphere.material.shininess = 5.0f;
 	}
 	return sphere;
@@ -206,6 +225,10 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 		verts.reserve(4 * quadCount, 6 * quadCount);
 	}
 	gfx::cropViewport(uiAR);
+	auto const& u = env::g_config.uniforms;
+	shader.setBool(u.transform.isUI, true);
+	shader.setBool(u.material.isLit, false);
+	shader.setBool(u.material.isTextured, true);
 	bResetTint |= gfx::setTextures(shader, {texture});
 	for (auto& quad : quads)
 	{
@@ -260,6 +283,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 	{
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
+	shader.setBool(env::g_config.uniforms.transform.isUI, false);
 	gfx::unsetTextures(0);
 	gfx::resetViewport();
 }
@@ -295,7 +319,7 @@ void debug::renderString(Text2D const& text, HShader const& shader, HFont const&
 	std::string matID;
 	bool bResetTint = false;
 	matID.reserve(64);
-	matID += u.textured.diffuseTexPrefix;
+	matID += u.material.diffuseTexPrefix;
 	matID += "0";
 	shader.setS32(matID, 0);
 	shader.setV4(env::g_config.uniforms.tint, text.colour);
@@ -312,6 +336,9 @@ void debug::renderString(Text2D const& text, HShader const& shader, HFont const&
 		u32 quadCount = (u32)text.text.length();
 		verts.reserve(4 * quadCount, 6 * quadCount);
 	}
+	shader.setBool(u.transform.isUI, true);
+	shader.setBool(u.material.isLit, false);
+	shader.setBool(u.material.isTextured, true);
 	s32 idx = 0;
 	for (auto c : text.text)
 	{
@@ -368,6 +395,7 @@ void debug::renderString(Text2D const& text, HShader const& shader, HFont const&
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 	glChk(glBindTexture(GL_TEXTURE_2D, 0));
+	shader.setBool(env::g_config.uniforms.transform.isUI, false);
 	if (bResetTint)
 	{
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);

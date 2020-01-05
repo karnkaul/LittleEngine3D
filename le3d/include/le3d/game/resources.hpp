@@ -58,7 +58,7 @@ void unloadAll<HUBO>();
 template <>
 u32 count<HUBO>();
 
-HShader& loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags);
+HShader& loadShader(std::string id, std::string_view vertCode, std::string_view fragCode);
 template <>
 HShader& get<HShader>(std::string const& id);
 template <>
@@ -97,7 +97,7 @@ void unloadAll<HFont>();
 template <>
 u32 count<HFont>();
 
-Model& loadModel(std::string id, Model::Data const& data, bool bForceOpaque);
+Model& loadModel(std::string id, Model::Data const& data, Material::Flags flags);
 template <>
 Model& get<Model>(std::string const& id);
 template <>

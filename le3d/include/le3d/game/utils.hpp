@@ -49,6 +49,7 @@ public:
 	Tip m_tip = Tip::Cone;
 
 private:
+	Fixture m_cylinder;
 	Fixture m_cone;
 	Fixture m_cube;
 	Fixture m_sphere;

@@ -13,6 +13,7 @@ struct Matrices final
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::mat4(1.0f);
 	glm::mat4 viewProj = glm::mat4(1.0f);
+	glm::mat4 uiProj = glm::mat4(1.0f);
 	glm::vec4 viewPos = glm::vec4(0.0f);
 };
 
@@ -44,6 +45,6 @@ struct UI final
 {
 	static s32 const s_bindingPoint = 12;
 
-	glm::mat4 projection = glm::mat4(1.0f);
+	glm::mat4 uiProj = glm::mat4(1.0f);
 };
 } // namespace le::uboData

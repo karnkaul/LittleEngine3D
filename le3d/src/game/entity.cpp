@@ -15,6 +15,10 @@
 
 namespace le
 {
+#if defined(DEBUGGING)
+HShader Entity::s_gizmoShader;
+#endif
+
 Entity::Entity()
 {
 #if defined(DEBUGGING)
@@ -25,10 +29,9 @@ Entity::Entity()
 void Entity::render()
 {
 #if defined(DEBUGGING)
-	if (m_pArrow)
+	if (m_pArrow && s_gizmoShader.glID.handle > 0)
 	{
 		glDisable(GL_DEPTH_TEST);
-		HShader tinted = resources::get<HShader>("unlit/tinted");
 		glm::mat4 mZ = m_transform.model();
 		glm::vec3 scale = m_transform.worldScl();
 		mZ = glm::scale(mZ, {1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z});
@@ -37,13 +40,13 @@ void Entity::render()
 		ModelMats mats;
 		mats.model = mX;
 		m_pArrow->m_tint = Colour::Red;
-		m_pArrow->render(tinted, mats);
+		m_pArrow->render(s_gizmoShader, mats);
 		mats.model = mY;
 		m_pArrow->m_tint = Colour::Green;
-		m_pArrow->render(tinted, mats);
+		m_pArrow->render(s_gizmoShader, mats);
 		mats.model = mZ;
 		m_pArrow->m_tint = Colour::Blue;
-		m_pArrow->render(tinted, mats);
+		m_pArrow->render(s_gizmoShader, mats);
 		glEnable(GL_DEPTH_TEST);
 	}
 #endif
