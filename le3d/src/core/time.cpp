@@ -1,5 +1,5 @@
 #include <chrono>
-#include <string>
+#include <sstream>
 #include "le3d/core/time.hpp"
 
 namespace le
@@ -15,33 +15,30 @@ Time const Time::Zero = Time(0);
 
 std::string Time::toStr(Time time)
 {
-	std::string ret;
-	ret.reserve(12);
-	ret += "[";
+	std::stringstream ret;
+	ret << "[";
 	s32 h = s32(time.assecs() / 60 / 60);
 	if (h > 0)
 	{
-		ret += std::to_string(h);
-		ret += ":";
+		ret << h << ":";
 	}
 	s32 m = s32((time.assecs() / 60) - (h * 60));
 	if (m > 0)
 	{
-		ret += std::to_string(m);
-		ret += ":";
+		ret << m << ":";
 	}
 	f32 s = (f32(time.asmsecs()) / 1000.0f) - (h * 60 * 60) - (m * 60);
-	if (s > 0)
+	if (s > 0.0f)
 	{
-		ret += std::to_string(s);
+		ret << s;
 	}
-	ret += "]";
-	return ret;
+	ret << "]";
+	return ret.str();
 }
 
-Time Time::musecs(s64 microSeconds)
+Time Time::musecs(s64 duration)
 {
-	return Time(microSeconds);
+	return Time(duration);
 }
 
 Time Time::msecs(s32 milliSeconds)
@@ -57,17 +54,16 @@ Time Time::secs(f32 seconds)
 
 Time Time::now()
 {
-	using namespace std::chrono;
-	return Time(duration_cast<microseconds>(high_resolution_clock::now() - epoch).count());
+	return Time(stdch::duration_cast<stdch::microseconds>(stdch::high_resolution_clock::now() - epoch).count());
 }
 
 Time Time::clamp(Time val, Time min, Time max)
 {
-	if (val.microSeconds < min.microSeconds)
+	if (val.usecs < min.usecs)
 	{
 		return min;
 	}
-	if (val.microSeconds > max.microSeconds)
+	if (val.usecs > max.usecs)
 	{
 		return max;
 	}
@@ -76,13 +72,13 @@ Time Time::clamp(Time val, Time min, Time max)
 
 void Time::reset()
 {
-	epoch = std::chrono::high_resolution_clock::now();
+	epoch = stdch::high_resolution_clock::now();
 }
 
 Time& Time::scale(f32 magnitude)
 {
-	auto us = f32(microSeconds) * magnitude;
-	microSeconds = s64(us);
+	auto fus = f32(usecs.count()) * magnitude;
+	usecs = stdch::microseconds(s64(fus));
 	return *this;
 }
 
@@ -94,37 +90,37 @@ Time Time::scaled(f32 magnitude) const
 
 Time& Time::operator-()
 {
-	microSeconds = -microSeconds;
+	usecs = -usecs;
 	return *this;
 }
 
 Time& Time::operator+=(Time const& rhs)
 {
-	microSeconds += rhs.microSeconds;
+	usecs += rhs.usecs;
 	return *this;
 }
 
 Time& Time::operator-=(Time const& rhs)
 {
-	microSeconds -= rhs.microSeconds;
+	usecs -= rhs.usecs;
 	return *this;
 }
 
 Time& Time::operator*=(Time const& rhs)
 {
-	microSeconds *= rhs.microSeconds;
+	usecs *= rhs.usecs.count();
 	return *this;
 }
 
 Time& Time::operator/=(Time const& rhs)
 {
-	microSeconds = (rhs.microSeconds == 0) ? 0 : microSeconds /= rhs.microSeconds;
+	usecs = (rhs.usecs == usecs.zero()) ? usecs.zero() : usecs /= rhs.usecs.count();
 	return *this;
 }
 
 bool Time::operator==(Time const& rhs)
 {
-	return microSeconds == rhs.microSeconds;
+	return usecs == rhs.usecs;
 }
 
 bool Time::operator!=(Time const& rhs)
@@ -134,37 +130,37 @@ bool Time::operator!=(Time const& rhs)
 
 bool Time::operator<(Time const& rhs)
 {
-	return microSeconds < rhs.microSeconds;
+	return usecs < rhs.usecs;
 }
 
 bool Time::operator<=(Time const& rhs)
 {
-	return microSeconds <= rhs.microSeconds;
+	return usecs <= rhs.usecs;
 }
 
 bool Time::operator>(Time const& rhs)
 {
-	return microSeconds > rhs.microSeconds;
+	return usecs > rhs.usecs;
 }
 
 bool Time::operator>=(Time const& rhs)
 {
-	return microSeconds >= rhs.microSeconds;
+	return usecs >= rhs.usecs;
 }
 
 f32 Time::assecs() const
 {
-	return f32(microSeconds) / (1000.0f * 1000.0f);
+	return f32(usecs.count()) / (1000.0f * 1000.0f);
 }
 
 s32 Time::asmsecs() const
 {
-	return s32(microSeconds / 1000);
+	return s32(usecs.count() / 1000);
 }
 
 s64 Time::asmusecs() const
 {
-	return microSeconds;
+	return usecs.count();
 }
 
 Time operator+(Time const& lhs, Time const& rhs)

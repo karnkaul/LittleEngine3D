@@ -1,13 +1,16 @@
 #pragma once
+#include <chrono>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/fixed.hpp"
 
 namespace le
 {
+namespace stdch = std::chrono;
+
 struct Time
 {
 private:
-	s64 microSeconds;
+	stdch::microseconds usecs;
 
 public:
 	static Time const Zero;
@@ -19,8 +22,9 @@ public:
 	static Time clamp(Time val, Time min, Time max);
 	static void reset();
 
-	constexpr Time() : microSeconds(0) {}
-	explicit constexpr Time(s64 microSeconds) : microSeconds(microSeconds) {}
+	constexpr Time() : usecs(0) {}
+	explicit constexpr Time(s64 usecs) : usecs(usecs) {}
+	explicit constexpr Time(stdch::microseconds usecs) : usecs(usecs) {}
 
 	Time& scale(f32 magnitude);
 	Time scaled(f32 magnitude) const;

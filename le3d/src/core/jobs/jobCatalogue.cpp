@@ -8,7 +8,7 @@ namespace le
 JobCatalog::JobCatalog(JobManager& manager, std::string name) : m_pManager(&manager)
 {
 	m_logName.reserve(name.size() + 2);
-	m_logName = "[";
+	m_logName += "[";
 	m_logName += std::move(name);
 	m_logName += "]";
 }
