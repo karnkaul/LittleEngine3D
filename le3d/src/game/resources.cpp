@@ -15,14 +15,6 @@ namespace le
 {
 namespace
 {
-static const std::vector<u8> blank_1pxBytes = {
-	0x42, 0x4D, 0x7A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x76, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
-	0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x13, 0x0B, 0x00, 0x00,
-	0x13, 0x0B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00,
-	0x80, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80,
-	0x80, 0x00, 0xC0, 0xC0, 0xC0, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0x00, 0x00,
-	0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00};
-
 std::unordered_map<std::string, HShader> g_shaderMap;
 std::unordered_map<std::string, HTexture> g_textureMap;
 std::unordered_map<std::string, HFont> g_fontMap;
@@ -38,7 +30,8 @@ Model g_nullModel;
 namespace resources
 {
 HTexture g_blankTex1px;
-}
+HTexture g_noTex1px;
+} // namespace resources
 
 void FontAtlasData::deserialise(std::string json)
 {
@@ -64,7 +57,7 @@ HUBO& resources::addUBO(std::string id, s64 size, u32 bindingPoint, gfx::Draw ty
 }
 
 template <>
-HUBO& resources::get<HUBO>(const std::string& id)
+HUBO& resources::get<HUBO>(std::string const& id)
 {
 	auto search = g_uboMap.find(id);
 	if (search != g_uboMap.end())
@@ -75,7 +68,7 @@ HUBO& resources::get<HUBO>(const std::string& id)
 }
 
 template <>
-bool resources::isLoaded<HUBO>(const std::string& id)
+bool resources::isLoaded<HUBO>(std::string const& id)
 {
 	return g_uboMap.find(id) != g_uboMap.end();
 }
@@ -122,13 +115,13 @@ u32 resources::count<HUBO>()
 	return (u32)g_uboMap.size();
 }
 
-HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode, Flags<HShader::MAX_FLAGS> flags)
+HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode)
 {
 	ASSERT(g_shaderMap.find(id) == g_shaderMap.end(), "Shader ID already loaded!");
-	HShader shader = gfx::gl::genShader(id, vertCode, fragCode, flags);
+	HShader shader = gfx::gl::genShader(id, vertCode, fragCode);
 	if (shader.glID.handle > 0)
 	{
-		for (const auto& kvp : g_uboMap)
+		for (auto const& kvp : g_uboMap)
 		{
 			shader.bindUBO(kvp.first, kvp.second);
 		}
@@ -140,7 +133,7 @@ HShader& resources::loadShader(std::string id, std::string_view vertCode, std::s
 }
 
 template <>
-HShader& resources::get<HShader>(const std::string& id)
+HShader& resources::get<HShader>(std::string const& id)
 {
 	ASSERT(isLoaded<HShader>(id), "Shader not loaded!");
 	if (isLoaded<HShader>(id))
@@ -151,7 +144,7 @@ HShader& resources::get<HShader>(const std::string& id)
 }
 
 template <>
-bool resources::isLoaded<HShader>(const std::string& id)
+bool resources::isLoaded<HShader>(std::string const& id)
 {
 	return g_shaderMap.find(id) != g_shaderMap.end();
 }
@@ -188,11 +181,18 @@ HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> b
 {
 	if (g_blankTex1px.glID <= 0)
 	{
-		g_blankTex1px = gfx::gl::genTexture("blankTex", type, blank_1pxBytes, false);
+		u8 const whitepx[] = {0xff, 0xff, 0xff};
+		g_blankTex1px = gfx::gl::genTexture("blankTex", whitepx, TexType::Diffuse, sizeof(whitepx), 1, 1, false);
 		gfx::g_blankTexID = g_blankTex1px.glID;
 	}
+	if (g_noTex1px.glID <= 0)
+	{
+		u8 const nopx[] = {0x00, 0x00, 0x00, 0x00};
+		g_noTex1px = gfx::gl::genTexture("noTex", nopx, TexType::Diffuse, sizeof(nopx), 1, 1, false);
+		gfx::g_noTexID = g_noTex1px.glID;
+	}
 	ASSERT(g_textureMap.find(id) == g_textureMap.end(), "Texture already loaded!");
-	HTexture texture = gfx::gl::genTexture(id, type, std::move(bytes), bClampToEdge);
+	HTexture texture = gfx::gl::genTexture(id, std::move(bytes), type, bClampToEdge);
 	if (texture.glID > 0)
 	{
 		g_textureMap.emplace(id, std::move(texture));
@@ -203,7 +203,7 @@ HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> b
 }
 
 template <>
-HTexture& resources::get<HTexture>(const std::string& id)
+HTexture& resources::get<HTexture>(std::string const& id)
 {
 	ASSERT(isLoaded<HTexture>(id), "Texture not loaded!");
 	if (isLoaded<HTexture>(id))
@@ -214,7 +214,7 @@ HTexture& resources::get<HTexture>(const std::string& id)
 }
 
 template <>
-bool resources::isLoaded<HTexture>(const std::string& id)
+bool resources::isLoaded<HTexture>(std::string const& id)
 {
 	return g_textureMap.find(id) != g_textureMap.end();
 }
@@ -255,7 +255,9 @@ Skybox resources::createSkybox(std::string name, std::array<std::vector<u8>, 6> 
 {
 	Skybox ret;
 	ret.cubemap = gfx::gl::genCubemap(name + "_map", std::move(rludfb));
-	ret.mesh = gfx::createCube(1.0f, name + "_mesh");
+	Material::Flags flags;
+	flags.set(s32(Material::Flag::Textured), true);
+	ret.mesh = gfx::createCube(1.0f, name + "_mesh", flags);
 	ret.name = std::move(name);
 	LOG_D("[%s] Skybox created", ret.name.data());
 	return ret;
@@ -285,7 +287,7 @@ HFont& resources::loadFont(std::string id, FontAtlasData atlas)
 }
 
 template <>
-HFont& resources::get<HFont>(const std::string& id)
+HFont& resources::get<HFont>(std::string const& id)
 {
 	auto search = g_fontMap.find(id);
 	if (search != g_fontMap.end())
@@ -296,7 +298,7 @@ HFont& resources::get<HFont>(const std::string& id)
 }
 
 template <>
-bool resources::isLoaded<HFont>(const std::string& id)
+bool resources::isLoaded<HFont>(std::string const& id)
 {
 	return g_fontMap.find(id) != g_fontMap.end();
 }
@@ -327,7 +329,7 @@ void resources::unloadAll<HFont>()
 	g_fontMap.clear();
 }
 
-Model& resources::loadModel(std::string id, const Model::Data& data)
+Model& resources::loadModel(std::string id, Model::Data const& data)
 {
 	ASSERT(g_modelMap.find(id) == g_modelMap.end(), "Model already loaded!");
 	Model newModel;
@@ -337,7 +339,7 @@ Model& resources::loadModel(std::string id, const Model::Data& data)
 }
 
 template <>
-Model& resources::get<Model>(const std::string& id)
+Model& resources::get<Model>(std::string const& id)
 {
 	auto search = g_modelMap.find(id);
 	if (search != g_modelMap.end())
@@ -348,7 +350,7 @@ Model& resources::get<Model>(const std::string& id)
 }
 
 template <>
-bool resources::isLoaded<Model>(const std::string& id)
+bool resources::isLoaded<Model>(std::string const& id)
 {
 	return g_modelMap.find(id) != g_modelMap.end();
 }

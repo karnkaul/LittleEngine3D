@@ -12,11 +12,38 @@ struct EngineConfig
 {
 	struct Uniforms
 	{
-		std::string material = "material";
-		std::string shininess = "material.shininess";
+		struct Transform
+		{
+			// bool
+			std::string isUI = "transform.isUI";
+		};
+		struct Material
+		{
+			struct Albedo
+			{
+				// vec3
+				std::string ambient = "material.albedo.ambient";
+				std::string diffuse = "material.albedo.diffuse";
+				std::string specular = "material.albedo.specular";
+			};
+
+			Albedo albedo;
+			// int
+			std::string isTextured = "material.isTextured";
+			std::string isLit = "material.isLit";
+			std::string isOpaque = "material.isOpaque";
+			std::string hasSpecular = "material.hasSpecular";
+
+			// float
+			std::string shininess = "material.shininess";
+
+			// sampler2D
+			std::string diffuseTexPrefix = "material.diffuse";
+			std::string specularTexPrefix = "material.specular";
+		};
+		Transform transform;
+		Material material;
 		std::string tint = "tint";
-		std::string diffuseTexPrefix = "diffuse";
-		std::string specularTexPrefix = "specular";
 		std::string modelMatrix = "model";
 		std::string normalMatrix = "normals";
 	};
@@ -35,10 +62,16 @@ enum class Dir
 	Executable
 };
 
-void init(s32 argc, char** argv);
+struct Args
+{
+	s32 argc = 0;
+	char const** argv = nullptr;
+};
+
+void init(Args const& args);
 void setConfig(std::string json);
 stdfs::path dirPath(Dir dir);
-const std::vector<std::string_view>& args();
+std::vector<std::string_view> const& args();
 bool isDefined(std::string_view arg);
 } // namespace env
 } // namespace le

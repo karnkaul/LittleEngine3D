@@ -30,13 +30,13 @@ public:
 	u32 tweak() const;
 	std::string toString() const;
 
-	bool upgrade(const Version& rhs);
+	bool upgrade(Version const& rhs);
 
-	bool operator==(const Version& rhs);
-	bool operator!=(const Version& rhs);
-	bool operator<(const Version& rhs);
-	bool operator<=(const Version& rhs);
-	bool operator>(const Version& rhs);
-	bool operator>=(const Version& rhs);
+	bool operator==(Version const& rhs);
+	bool operator!=(Version const& rhs);
+	bool operator<(Version const& rhs);
+	bool operator<=(Version const& rhs);
+	bool operator>(Version const& rhs);
+	bool operator>=(Version const& rhs);
 };
 } // namespace le

@@ -16,8 +16,8 @@ namespace le
 Model::Model() = default;
 Model::Model(Model&&) = default;
 Model& Model::operator=(Model&&) = default;
-Model::Model(const Model&) = default;
-Model& Model::operator=(const Model&) = default;
+Model::Model(Model const&) = default;
+Model& Model::operator=(Model const&) = default;
 
 Model::~Model()
 {
@@ -90,16 +90,16 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 			Data::Tex tex;
 			tex.filename = texName;
 			tex.id = std::move(id);
-			tex.type = TexType::Diffuse;
+			tex.type = type;
 			ret.textures.emplace_back(std::move(tex));
 			return ret.textures.size() - 1;
 		};
 
 		std::unordered_set<std::string> meshIDs;
-		for (const auto& shape : shapes)
+		for (auto const& shape : shapes)
 		{
 			Data::Mesh meshData;
-			for (const auto& idx : shape.mesh.indices)
+			for (auto const& idx : shape.mesh.indices)
 			{
 				f32 vx = attrib.vertices[3 * (size_t)idx.vertex_index + 0] * scale;
 				f32 vy = attrib.vertices[3 * (size_t)idx.vertex_index + 1] * scale;
@@ -113,9 +113,9 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 				bool bFound = false;
 				for (size_t i = 0; i < vertCount; ++i)
 				{
-					const auto& p = meshData.vertices.points;
-					const auto& n = meshData.vertices.normals;
-					const auto& t = meshData.vertices.texCoords;
+					auto const& p = meshData.vertices.points;
+					auto const& n = meshData.vertices.normals;
+					auto const& t = meshData.vertices.texCoords;
 					if (p[i] == Vertices::V3{vx, vy, vz} && n[i] == Vertices::V3{nx, ny, nz} && t[i] == Vertices::V2{tx, ty})
 					{
 						bFound = true;
@@ -152,12 +152,33 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 				}
 				if (pMat)
 				{
-					meshData.noTexTint.ambient = {pMat->ambient[0], pMat->ambient[1], pMat->ambient[2]};
-					meshData.noTexTint.diffuse = {pMat->diffuse[0], pMat->diffuse[1], pMat->diffuse[2]};
-					meshData.noTexTint.specular = {pMat->specular[0], pMat->specular[1], pMat->specular[2]};
+					meshData.flags.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured), s32(Material::Flag::Opaque)}, true);
+					switch (pMat->illum)
+					{
+					default:
+						break;
+					case 0:
+					case 1:
+					{
+						meshData.flags.set(s32(Material::Flag::Lit), false);
+						break;
+					}
+					case 4:
+					{
+						meshData.flags.set(s32(Material::Flag::Opaque), false);
+						break;
+					}
+					}
+					meshData.albedo.ambient = {pMat->ambient[0], pMat->ambient[1], pMat->ambient[2]};
+					meshData.albedo.diffuse = {pMat->diffuse[0], pMat->diffuse[1], pMat->diffuse[2]};
+					meshData.albedo.specular = {pMat->specular[0], pMat->specular[1], pMat->specular[2]};
 					if (pMat->shininess >= 0.0f)
 					{
 						meshData.shininess = pMat->shininess;
+					}
+					if (pMat->diffuse_texname.empty())
+					{
+						meshData.flags.set(s32(Material::Flag::Textured), false);
 					}
 					if (!pMat->diffuse_texname.empty())
 					{
@@ -189,19 +210,19 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 	return ret;
 }
 
-void Model::addFixture(const HMesh& mesh, std::optional<glm::mat4> model /* = std::nullopt */)
+void Model::addFixture(HMesh const& mesh, std::optional<glm::mat4> model /* = std::nullopt */)
 {
 	m_fixtures.emplace_back(Fixture{mesh, model});
 }
 
-void Model::setupModel(std::string name, const Data& data)
+void Model::setupModel(std::string name, Data const& data)
 {
 	m_name = std::move(name);
 	m_type = Typename(*this);
 #if defined(PROFILE_MODEL_LOADS)
 	Time dt = Time::now();
 #endif
-	for (const auto& texData : data.textures)
+	for (auto const& texData : data.textures)
 	{
 		ASSERT(!texData.bytes.empty(), "Texture has no data!");
 		if (texData.bytes.empty())
@@ -212,17 +233,17 @@ void Model::setupModel(std::string name, const Data& data)
 		auto search = m_loadedTextures.find(texData.id);
 		if (search == m_loadedTextures.end())
 		{
-			m_loadedTextures[texData.id] = gfx::gl::genTexture(texData.id, texData.type, std::move(texData.bytes), false);
+			m_loadedTextures[texData.id] = gfx::gl::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
 		}
 	}
-	for (const auto& meshData : data.meshes)
+	for (auto const& meshData : data.meshes)
 	{
-		HMesh hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic);
-		hMesh.material.noTexTint = meshData.noTexTint;
+		HMesh hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic, meshData.flags);
+		hMesh.material.albedo = meshData.albedo;
 		hMesh.material.shininess = meshData.shininess;
 		for (auto texIdx : meshData.texIndices)
 		{
-			const auto& texData = data.textures[texIdx];
+			auto const& texData = data.textures[texIdx];
 			auto search = m_loadedTextures.find(texData.id);
 			if (search != m_loadedTextures.end())
 			{
@@ -244,7 +265,7 @@ void Model::setupModel(std::string name, const Data& data)
 	LOG_D("[%s] %s setup", m_name.data(), m_type.data());
 }
 
-void Model::render(const HShader& shader, const ModelMats& mats)
+void Model::render(HShader const& shader, ModelMats const& mats)
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
 #if defined(DEBUGGING)
@@ -264,12 +285,6 @@ void Model::render(const HShader& shader, const ModelMats& mats)
 			gfx::setBlankTex(shader, 0, bResetTint);
 		}
 #endif
-		if (!shader.flags.isSet((s32)HShader::Flag::Unlit) && shader.flags.isSet((s32)HShader::Flag::Untextured))
-		{
-			shader.setV3("material.ambient", fixture.mesh.material.noTexTint.ambient);
-			shader.setV3("material.diffuse", fixture.mesh.material.noTexTint.diffuse);
-			shader.setV3("material.specular", fixture.mesh.material.noTexTint.specular);
-		}
 		if (fixture.oWorld)
 		{
 			ModelMats matsCopy = mats;
@@ -288,7 +303,7 @@ void Model::render(const HShader& shader, const ModelMats& mats)
 		if (!bSkipTextures)
 		{
 #endif
-			gfx::setTextures(shader, fixture.mesh.material.textures);
+			gfx::setTextures(shader, fixture.mesh.material.textures, true);
 #if defined(DEBUGGING)
 		}
 #endif

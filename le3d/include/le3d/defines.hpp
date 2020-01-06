@@ -34,7 +34,7 @@
  * Variable     : PROFILE_MODEL_LOADS
  * Description  : Used to log time taken to load meshes, textures, etc from model data
  */
-#if defined(DEBUGGING)
+#if 1 || defined(DEBUGGING)
 #if !defined(PROFILE_MODEL_LOADS)
 #define PROFILE_MODEL_LOADS
 #endif

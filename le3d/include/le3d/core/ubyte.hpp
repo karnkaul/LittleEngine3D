@@ -9,8 +9,10 @@ struct UByte
 {
 	u8 rawValue;
 
+	static UByte lerp(UByte lhs, UByte rhs, f32 alpha);
 	// Any literals passed in must be positive!
 	UByte(u8 value = 0);
+	explicit UByte(f32 nValue);
 
 	u8 toU8() const;
 	f32 toF32() const;

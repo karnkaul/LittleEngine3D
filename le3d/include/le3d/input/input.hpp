@@ -17,7 +17,7 @@ using OnText = Delegate<char>;
 using OnInput = Delegate<s32, s32, s32>;
 using OnMouse = Delegate<f64, f64>;
 using OnFocus = Delegate<bool>;
-using OnFiledrop = Delegate<const stdfs::path&>;
+using OnFiledrop = Delegate<stdfs::path const&>;
 using OnResize = Delegate<s32, s32>;
 
 enum class CursorMode

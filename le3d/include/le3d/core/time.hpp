@@ -1,16 +1,19 @@
 #pragma once
+#include <chrono>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/fixed.hpp"
 
 namespace le
 {
+namespace stdch = std::chrono;
+
 struct Time
 {
 private:
-	s64 microSeconds;
+	stdch::microseconds usecs;
 
 public:
-	static const Time Zero;
+	static Time const Zero;
 	static std::string toStr(Time time);
 	static Time musecs(s64 microSeconds);
 	static Time msecs(s32 milliSeconds);
@@ -19,32 +22,33 @@ public:
 	static Time clamp(Time val, Time min, Time max);
 	static void reset();
 
-	constexpr Time() : microSeconds(0) {}
-	explicit constexpr Time(s64 microSeconds) : microSeconds(microSeconds) {}
+	constexpr Time() : usecs(0) {}
+	explicit constexpr Time(s64 usecs) : usecs(usecs) {}
+	explicit constexpr Time(stdch::microseconds usecs) : usecs(usecs) {}
 
-	Time& scale(Fixed magnitude);
-	Time scaled(Fixed magnitude) const;
+	Time& scale(f32 magnitude);
+	Time scaled(f32 magnitude) const;
 
 	Time& operator-();
-	Time& operator+=(const Time& rhs);
-	Time& operator-=(const Time& rhs);
-	Time& operator*=(const Time& rhs);
-	Time& operator/=(const Time& rhs);
+	Time& operator+=(Time const& rhs);
+	Time& operator-=(Time const& rhs);
+	Time& operator*=(Time const& rhs);
+	Time& operator/=(Time const& rhs);
 
-	bool operator==(const Time& rhs);
-	bool operator!=(const Time& rhs);
-	bool operator<(const Time& rhs);
-	bool operator<=(const Time& rhs);
-	bool operator>(const Time& rhs);
-	bool operator>=(const Time& rhs);
+	bool operator==(Time const& rhs);
+	bool operator!=(Time const& rhs);
+	bool operator<(Time const& rhs);
+	bool operator<=(Time const& rhs);
+	bool operator>(Time const& rhs);
+	bool operator>=(Time const& rhs);
 
 	f32 assecs() const;
 	s32 asmsecs() const;
 	s64 asmusecs() const;
 };
 
-Time operator+(const Time& lhs, const Time& rhs);
-Time operator-(const Time& lhs, const Time& rhs);
-Time operator*(const Time& lhs, const Time& rhs);
-Time operator/(const Time& lhs, const Time& rhs);
+Time operator+(Time const& lhs, Time const& rhs);
+Time operator-(Time const& lhs, Time const& rhs);
+Time operator*(Time const& lhs, Time const& rhs);
+Time operator/(Time const& lhs, Time const& rhs);
 } // namespace le

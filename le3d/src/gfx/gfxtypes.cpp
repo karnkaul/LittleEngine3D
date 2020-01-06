@@ -62,7 +62,7 @@ bool HShader::setF32(std::string_view id, f32 val) const
 	return false;
 }
 
-bool HShader::setV2(std::string_view id, const glm::vec2& val) const
+bool HShader::setV2(std::string_view id, glm::vec2 const& val) const
 {
 	if (!id.empty())
 	{
@@ -77,7 +77,7 @@ bool HShader::setV2(std::string_view id, const glm::vec2& val) const
 	return false;
 }
 
-bool HShader::setV3(std::string_view id, const glm::vec3& val) const
+bool HShader::setV3(std::string_view id, glm::vec3 const& val) const
 {
 	if (!id.empty())
 	{
@@ -97,7 +97,7 @@ bool HShader::setV4(std::string_view id, Colour colour) const
 	return setV4(id, glm::vec4(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
 }
 
-bool HShader::setV4(std::string_view id, const glm::vec4& val) const
+bool HShader::setV4(std::string_view id, glm::vec4 const& val) const
 {
 	if (!id.empty())
 	{
@@ -112,7 +112,7 @@ bool HShader::setV4(std::string_view id, const glm::vec4& val) const
 	return false;
 }
 
-void HShader::setModelMats(const ModelMats& mats) const
+void HShader::setModelMats(ModelMats const& mats) const
 {
 	use();
 	auto temp = glGetUniformLocation(glID.handle, env::g_config.uniforms.modelMatrix.data());
@@ -126,7 +126,7 @@ void HShader::setModelMats(const ModelMats& mats) const
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(*pNMat));
 }
 
-void HShader::bindUBO(std::string_view id, const HUBO& ubo) const
+void HShader::bindUBO(std::string_view id, HUBO const& ubo) const
 {
 	u32 idx = glGetUniformBlockIndex(glID.handle, id.data());
 	if ((s32)idx >= 0)
@@ -145,12 +145,12 @@ u32 Vertices::vertexCount() const
 	return (u32)points.size();
 }
 
-void Vertices::addPoint(const glm::vec3& point)
+void Vertices::addPoint(glm::vec3 const& point)
 {
 	points.push_back({point.x, point.y, point.z});
 }
 
-void Vertices::addNormals(const glm::vec3& normal, u16 count)
+void Vertices::addNormals(glm::vec3 const& normal, u16 count)
 {
 	for (u16 i = 0; i < count; ++i)
 	{
@@ -158,7 +158,7 @@ void Vertices::addNormals(const glm::vec3& normal, u16 count)
 	}
 }
 
-void Vertices::addTexCoord(const glm::vec2& texCoord)
+void Vertices::addTexCoord(glm::vec2 const& texCoord)
 {
 	texCoords.push_back({texCoord.x, texCoord.y});
 }
@@ -171,7 +171,7 @@ void Vertices::reserve(u32 vCount, u32 iCount)
 	indices.reserve(iCount);
 }
 
-u32 Vertices::addVertex(const glm::vec3& point, const glm::vec3& normal, std::optional<glm::vec2> oTexCoord)
+u32 Vertices::addVertex(glm::vec3 const& point, glm::vec3 const& normal, std::optional<glm::vec2> oTexCoord)
 {
 	points.push_back({point.x, point.y, point.z});
 	normals.push_back({normal.x, normal.y, normal.z});
@@ -182,27 +182,27 @@ u32 Vertices::addVertex(const glm::vec3& point, const glm::vec3& normal, std::op
 	return (u32)points.size() - 1;
 }
 
-void Vertices::addIndices(const std::vector<u32> newIndices)
+void Vertices::addIndices(std::vector<u32> const& newIndices)
 {
 	std::copy(newIndices.begin(), newIndices.end(), std::back_inserter(indices));
 }
 
-bool operator==(const Vertices::V3& lhs, const Vertices::V3& rhs)
+bool operator==(Vertices::V3 const& lhs, Vertices::V3 const& rhs)
 {
 	return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
 }
 
-bool operator==(const Vertices::V2& lhs, const Vertices::V2& rhs)
+bool operator==(Vertices::V2 const& lhs, Vertices::V2 const& rhs)
 {
 	return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
-bool operator!=(const Vertices::V3& lhs, const Vertices::V3& rhs)
+bool operator!=(Vertices::V3 const& lhs, Vertices::V3 const& rhs)
 {
 	return !(lhs == rhs);
 }
 
-bool operator!=(const Vertices::V2& lhs, const Vertices::V2& rhs)
+bool operator!=(Vertices::V2 const& lhs, Vertices::V2 const& rhs)
 {
 	return !(lhs == rhs);
 }

@@ -32,7 +32,8 @@ public:
 		struct Mesh
 		{
 			Vertices vertices;
-			LitTint noTexTint;
+			Albedo albedo;
+			Material::Flags flags;
 			std::string id;
 			std::vector<size_t> texIndices;
 			f32 shininess = 32.0f;
@@ -46,9 +47,11 @@ public:
 		void setTextureData(std::function<std::vector<u8>(std::string_view)> getTexBytes, bool bUseJobs = true);
 	};
 
+	using Flags = TFlags<size_t(DrawFlag::_COUNT)>;
+
 #if defined(DEBUGGING)
 public:
-	Flags<(s32)DrawFlag::_COUNT> m_renderFlags;
+	Flags m_renderFlags;
 	bool m_bDEBUG = false;
 #endif
 
@@ -79,13 +82,13 @@ public:
 	~Model();
 	Model(Model&&);
 	Model& operator=(Model&&);
-	Model(const Model&);
-	Model& operator=(const Model&);
+	Model(Model const&);
+	Model& operator=(Model const&);
 
 public:
-	void setupModel(std::string name, const Data& data);
-	void addFixture(const HMesh& mesh, std::optional<glm::mat4> model = std::nullopt);
-	void render(const HShader& shader, const ModelMats& mats);
+	void setupModel(std::string name, Data const& data);
+	void addFixture(HMesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
+	void render(HShader const& shader, ModelMats const& mats);
 
 	u32 meshCount() const;
 	void release();

@@ -39,7 +39,7 @@ void threads::join(HThread& id)
 	id = HThread();
 }
 
-void threads::join(const std::vector<HThread*>& ids)
+void threads::join(std::vector<HThread*> const& ids)
 {
 	for (auto pID : ids)
 	{

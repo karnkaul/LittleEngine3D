@@ -7,7 +7,7 @@ namespace le
 {
 namespace
 {
-u32 parse(const std::vector<std::string>& vec, size_t idx)
+u32 parse(std::vector<std::string> const& vec, size_t idx)
 {
 	return (vec.size() > idx) ? u32(utils::strings::toS32(vec[idx], 0)) : 0;
 }
@@ -61,7 +61,7 @@ std::string Version::toString() const
 	return ret;
 }
 
-bool Version::upgrade(const Version& rhs)
+bool Version::upgrade(Version const& rhs)
 {
 	if (*this < rhs)
 	{
@@ -71,34 +71,34 @@ bool Version::upgrade(const Version& rhs)
 	return false;
 }
 
-bool Version::operator==(const Version& rhs)
+bool Version::operator==(Version const& rhs)
 {
 	return mj == rhs.mj && mn == rhs.mn && pa == rhs.pa && tw == rhs.tw;
 }
 
-bool Version::operator!=(const Version& rhs)
+bool Version::operator!=(Version const& rhs)
 {
 	return !(*this == rhs);
 }
 
-bool Version::operator<(const Version& rhs)
+bool Version::operator<(Version const& rhs)
 {
 	return (mj < rhs.mj) || (mj == rhs.mj && mn < rhs.mn) || (mj == rhs.mj && mn == rhs.mn && pa < rhs.pa)
 		   || (mj == rhs.mj && mn == rhs.mn && pa == rhs.pa && tw < rhs.tw);
 }
 
-bool Version::operator<=(const Version& rhs)
+bool Version::operator<=(Version const& rhs)
 {
 	return (*this == rhs) || (*this < rhs);
 }
 
-bool Version::operator>(const Version& rhs)
+bool Version::operator>(Version const& rhs)
 {
 	return (mj > rhs.mj) || (mj == rhs.mj && mn > rhs.mn) || (mj == rhs.mj && mn == rhs.mn && pa > rhs.pa)
 		   || (mj == rhs.mj && mn == rhs.mn && pa == rhs.pa && tw > rhs.tw);
 }
 
-bool Version::operator>=(const Version& rhs)
+bool Version::operator>=(Version const& rhs)
 {
 	return (*this == rhs) || (*this > rhs);
 }

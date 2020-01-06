@@ -6,7 +6,7 @@
 
 namespace le
 {
-std::stringstream utils::readFile(const stdfs::path& path)
+std::stringstream utils::readFile(stdfs::path const& path)
 {
 	std::ifstream file(path);
 	std::stringstream buf;
@@ -17,7 +17,7 @@ std::stringstream utils::readFile(const stdfs::path& path)
 	return buf;
 }
 
-std::vector<std::string> utils::readLines(const stdfs::path& path)
+std::vector<std::string> utils::readLines(stdfs::path const& path)
 {
 	std::ifstream file(path);
 	std::vector<std::string> ret;
@@ -26,7 +26,7 @@ std::vector<std::string> utils::readLines(const stdfs::path& path)
 	return ret;
 }
 
-std::vector<u8> utils::readBytes(const stdfs::path& path)
+std::vector<u8> utils::readBytes(stdfs::path const& path)
 {
 	std::ifstream file(path, std::ios::binary);
 	std::vector<u8> buf;
@@ -88,7 +88,7 @@ s32 toS32(std::string input, s32 defaultValue)
 		{
 			ret = std::stoi(input);
 		}
-		catch (const std::invalid_argument&)
+		catch (std::invalid_argument const&)
 		{
 			ret = defaultValue;
 		}
@@ -105,7 +105,7 @@ f32 toF32(std::string input, f32 defaultValue)
 		{
 			ret = std::stof(input);
 		}
-		catch (const std::exception&)
+		catch (std::invalid_argument const&)
 		{
 			ret = defaultValue;
 		}
@@ -122,7 +122,7 @@ f64 toF64(std::string input, f64 defaultValue)
 		{
 			ret = std::stod(input);
 		}
-		catch (const std::exception&)
+		catch (std::invalid_argument const&)
 		{
 			ret = defaultValue;
 		}
@@ -181,10 +181,10 @@ std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initi
 
 	std::stack<std::pair<char, char>> escapeStack;
 	std::vector<std::string> v;
-	bool escaping = false;
+	bool bEscaping = false;
 	for (auto it = s.cbegin(); it != end; ++it)
 	{
-		if (*it != delimiter || escaping)
+		if (*it != delimiter || bEscaping)
 		{
 			if (start == end)
 			{
@@ -192,18 +192,18 @@ std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initi
 			}
 			for (auto e : escape)
 			{
-				if (escaping && *it == e.second)
+				if (bEscaping && *it == e.second)
 				{
 					if (e.first == escapeStack.top().first)
 					{
 						escapeStack.pop();
-						escaping = !escapeStack.empty();
+						bEscaping = !escapeStack.empty();
 						break;
 					}
 				}
 				if (*it == e.first)
 				{
-					escaping = true;
+					bEscaping = true;
 					escapeStack.push(e);
 					break;
 				}
@@ -228,7 +228,7 @@ void substituteChars(std::string& outInput, std::initializer_list<std::pair<char
 	std::string::iterator iter = outInput.begin();
 	while (iter != outInput.end())
 	{
-		for (const auto replacement : replacements)
+		for (auto const replacement : replacements)
 		{
 			if (*iter == replacement.first)
 			{

@@ -6,8 +6,8 @@
 
 namespace le
 {
-void renderSkybox(const struct Skybox& skybox, const HShader& shader, Colour tint = Colour::White);
-void renderMeshes(const HMesh& mesh, const std::vector<ModelMats>& mats, const HShader& shader, Colour tint = Colour::White);
+void renderSkybox(struct Skybox const& skybox, HShader const& shader, Colour tint = Colour::White);
+void renderMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader, Colour tint = Colour::White);
 
 namespace debug
 {
@@ -49,12 +49,13 @@ public:
 	Tip m_tip = Tip::Cone;
 
 private:
+	Fixture m_cylinder;
 	Fixture m_cone;
 	Fixture m_cube;
 	Fixture m_sphere;
 
 public:
-	void setupDArrow(const glm::quat& orientation);
+	void setupDArrow(glm::quat const& orientation);
 	void setTip(Tip tip, bool bForce = false);
 };
 
@@ -70,12 +71,13 @@ DArrow& Arrow();
 
 void unloadAll();
 
-void draw2DQuads(std::vector<Quad2D> quads, const HTexture& texture, const f32 uiAR = 0.0f, bool bOneDrawCall = true);
-void renderString(const Text2D& text, const HFont& hFont, const f32 uiAR = 0.0f, bool bOneDrawCall = true);
+void draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HShader const& shader, f32 const uiAR = 0.0f,
+				 bool bOneDrawCall = true);
+void renderString(Text2D const& text, HShader const& shader, HFont const& hFont, f32 const uiAR = 0.0f, bool bOneDrawCall = true);
 
 extern Text2D g_fpsStyle;
 extern Text2D g_versionStyle;
-void renderFPS(const HFont& font, const f32 uiAR = 0.0f);
-void renderVersion(const HFont& font, const f32 uiAR = 0.0f);
+void renderFPS(HFont const& font, HShader const& shader, f32 const uiAR = 0.0f);
+void renderVersion(HFont const& font, HShader const& shader, f32 const uiAR = 0.0f);
 } // namespace debug
 } // namespace le

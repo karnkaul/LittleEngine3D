@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <iostream>
 #include <mutex>
+#include <sstream>
 #include <unordered_map>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/log.hpp"
@@ -20,10 +21,10 @@ namespace
 {
 std::mutex g_logMutex;
 std::list<std::string> g_logCache;
-std::unordered_map<LogLevel, const char*> g_prefixes = {
+std::unordered_map<LogLevel, char const*> g_prefixes = {
 	{LogLevel::Debug, "[D] "}, {LogLevel::Info, "[I] "}, {LogLevel::Warning, "[W] "}, {LogLevel::Error, "[E] "}};
 
-std::tm* TM(const std::time_t& time)
+std::tm* TM(std::time_t const& time)
 {
 #if _MSC_VER
 	static std::tm tm;
@@ -35,35 +36,31 @@ std::tm* TM(const std::time_t& time)
 }
 
 #if defined(LOG_SOURCE_LOCATION)
-void logInternal(const char* szText, const char* szFile, u64 line, LogLevel level, va_list args)
+void logInternal(char const* szText, char const* szFile, u64 line, LogLevel level, va_list args)
 #else
-void logInternal(const char* szText, const char*, u64, LogLevel level, va_list args)
+void logInternal(char const* szText, char const*, u64, LogLevel level, va_list args)
 #endif
 {
 	static std::array<char, 1024> cacheStr;
 	std::lock_guard<std::mutex> lock(g_logMutex);
-	std::string logText;
-	logText.reserve(strlen(szText) + 32);
-	logText += g_prefixes[level];
+	std::stringstream logText;
+	logText << g_prefixes[level];
 	std::vsnprintf(cacheStr.data(), cacheStr.size(), szText, args);
-	logText += std::string(cacheStr.data());
+	logText << cacheStr.data();
 	std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	auto pTM = TM(now);
 	std::snprintf(cacheStr.data(), cacheStr.size(), " [%02d:%02d:%02d]", pTM->tm_hour, pTM->tm_min, pTM->tm_sec);
-	logText += cacheStr.data();
+	logText << cacheStr.data();
 #if defined(LOG_SOURCE_LOCATION)
-	logText += " [";
-	logText += stdfs::path(szFile).generic_string();
-	logText += "|";
-	logText += std::to_string(line);
-	logText += "]";
+	logText << "[" << stdfs::path(szFile).generic_string() << "|" << line << "]";
 #endif
-	logText += env::g_EOL;
-	std::cout << logText;
+	logText << env::g_EOL;
+	auto logStr = logText.str();
+	std::cout << logStr;
 #if _MSC_VER
-	OutputDebugStringA(logText.data());
+	OutputDebugStringA(logStr.data());
 #endif
-	g_logCache.emplace_back(std::move(logText));
+	g_logCache.emplace_back(std::move(logStr));
 	while (g_logCache.size() > g_logCacheSize)
 	{
 		g_logCache.pop_front();
@@ -79,7 +76,7 @@ std::list<std::string> logCache()
 	return std::move(g_logCache);
 }
 
-void log(LogLevel level, const char* szText, const char* szFile, u64 line, ...)
+void log(LogLevel level, char const* szText, char const* szFile, u64 line, ...)
 {
 	va_list argList;
 	va_start(argList, line);

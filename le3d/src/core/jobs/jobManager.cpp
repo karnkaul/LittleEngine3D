@@ -22,7 +22,7 @@ JobManager::Job::Job(s64 id, Task task, std::string name, bool bSilent) : m_task
 		m_logName += std::move(name);
 	}
 	m_logName += "]";
-	m_sHandle = std::make_shared<JobHandleBlock>(id, m_promise.get_future());
+	m_sHandle = std::make_shared<JobHandleBlock>(id, m_task.get_future());
 }
 
 void JobManager::Job::run()
@@ -31,43 +31,42 @@ void JobManager::Job::run()
 	{
 		m_task();
 	}
-	catch (const std::exception& e)
+	catch (std::exception const& e)
 	{
 		ASSERT_VAR(false, e.what());
 		m_exception = e.what();
 	}
 }
 
-void JobManager::Job::fulfil()
+JobManager::JobManager(u8 workerCount)
 {
-	m_promise.set_value();
-}
-
-JobManager::JobManager(u32 desiredWorkerCount, u32 maxWorkerCount)
-{
-	desiredWorkerCount = std::min(desiredWorkerCount, maxWorkerCount);
-	for (u32 i = 0; i < desiredWorkerCount; ++i)
+	JobWorker::s_bWork.store(true, std::memory_order_seq_cst);
+	for (u8 i = 0; i < workerCount; ++i)
 	{
-		m_jobWorkers.emplace_back(std::make_unique<JobWorker>(*this, i + 100, false));
+		m_jobWorkers.emplace_back(std::make_unique<JobWorker>(*this, i));
 	}
-	LOG_D("[JobManager] Spawned [%u] JobWorkers ([%u] max)", desiredWorkerCount, maxWorkerCount);
 }
 
 JobManager::~JobManager()
 {
-	for (auto& worker : m_jobWorkers)
-	{
-		worker->stop();
-	}
+	JobWorker::s_bWork.store(false, std::memory_order_seq_cst);
+	// Wake all sleeping workers
+	m_wakeCV.notify_all();
+	// Join all worker threads
 	m_jobWorkers.clear();
-	LOG_D("[JobManager] destroyed");
 }
 
 JobHandle JobManager::enqueue(Task task, std::string name, bool bSilent)
 {
-	Lock lock(m_queueMutex);
-	m_jobQueue.emplace_front(++m_nextGameJobID, std::move(task), std::move(name), bSilent);
-	return m_jobQueue.front().m_sHandle;
+	JobHandle ret;
+	{
+		Lock lock(m_wakeMutex);
+		m_jobQueue.emplace(++m_nextJobID, std::move(task), std::move(name), bSilent);
+		ret = m_jobQueue.back().m_sHandle;
+	}
+	// Wake a sleeping worker
+	m_wakeCV.notify_one();
+	return ret;
 }
 
 JobCatalog* JobManager::createCatalogue(std::string name)
@@ -87,11 +86,12 @@ void JobManager::forEach(std::function<void(size_t)> indexedTask, size_t iterati
 		size_t end = start + iterationsPerJob;
 		end = end < start ? start : end > iterationCount ? iterationCount : end;
 		handles.emplace_back(enqueue(
-			[start, end, &indexedTask]() {
+			[start, end, &indexedTask]() -> std::any {
 				for (size_t i = start; i < end; ++i)
 				{
 					indexedTask(i);
 				}
+				return {};
 			},
 			"", true));
 		idx += iterationsPerJob;
@@ -101,11 +101,12 @@ void JobManager::forEach(std::function<void(size_t)> indexedTask, size_t iterati
 		size_t start = idx;
 		size_t end = iterationCount;
 		handles.emplace_back(enqueue(
-			[start, end, &indexedTask]() {
+			[start, end, &indexedTask]() -> std::any {
 				for (size_t i = start; i < end; ++i)
 				{
 					indexedTask(i);
 				}
+				return {};
 			},
 			"", true));
 	}
@@ -124,7 +125,7 @@ void JobManager::update()
 		uCatalog->update();
 		if (uCatalog->m_bCompleted)
 		{
-			LOG_D("[JobManager] %s completed. Destroying instance.", uCatalog->m_logName.c_str());
+			LOG_D("[Jobs] %s JobCatalog completed. Destroying instance.", uCatalog->m_logName.data());
 			iter = m_catalogs.erase(iter);
 		}
 		else
@@ -134,24 +135,12 @@ void JobManager::update()
 	}
 }
 
-std::optional<JobManager::Job> JobManager::lock_PopJob()
-{
-	std::optional<Job> ret;
-	Lock lock(m_queueMutex);
-	if (!m_jobQueue.empty())
-	{
-		ret.emplace(std::move(m_jobQueue.back()));
-		m_jobQueue.pop_back();
-	}
-	return ret;
-}
-
 bool JobManager::areWorkersIdle() const
 {
-	Lock lock(m_queueMutex);
+	Lock lock(m_wakeMutex);
 	for (auto& gameWorker : m_jobWorkers)
 	{
-		if (gameWorker->getState() == JobWorker::State::Busy)
+		if (gameWorker->m_state == JobWorker::State::Busy)
 		{
 			return false;
 		}

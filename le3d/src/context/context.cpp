@@ -4,6 +4,7 @@
 #include "le3d/engineVersion.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/fileLogger.hpp"
+#include "le3d/core/jobs.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
 #include "le3d/context/context.hpp"
@@ -41,17 +42,32 @@ void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 	}
 }
 
-void onError(s32 code, const char* szDesc)
+void onError(s32 code, char const* szDesc)
 {
 	LOG_E("GLFW Error [%d]: %s", code, szDesc);
 }
 } // namespace
 
-bool context::create(const Settings& settings)
+context::Wrapper::Wrapper(bool bValid) : m_bValid(bValid) {}
+context::Wrapper::~Wrapper()
 {
-	if (settings.logOpts.bLogToFile)
+	if (m_bValid && context::exists())
 	{
-		auto path = env::dirPath(settings.logOpts.dir) / settings.logOpts.filename;
+		context::destroy();
+	}
+}
+
+context::Wrapper::operator bool() const
+{
+	return m_bValid;
+}
+
+context::Wrapper context::create(Settings const& settings)
+{
+	env::init(settings.env.args);
+	if (settings.log.bLogToFile)
+	{
+		auto path = env::dirPath(settings.log.dir) / settings.log.filename;
 		g_uFileLogger = std::make_unique<FileLogger>(std::move(path));
 	}
 	LOG_I("LittleEngine3D v%s", versions::buildVersion().data());
@@ -59,7 +75,7 @@ bool context::create(const Settings& settings)
 	if (!glfwInit())
 	{
 		LOG_E("Failed to initialise GLFW!");
-		return false;
+		return {};
 	}
 
 	s32 screenCount;
@@ -67,13 +83,13 @@ bool context::create(const Settings& settings)
 	if (screenCount < 1)
 	{
 		LOG_E("Failed to detect output device");
-		return false;
+		return {};
 	}
-	const GLFWvidmode* mode = glfwGetVideoMode(ppScreens[0]);
+	GLFWvidmode const* mode = glfwGetVideoMode(ppScreens[0]);
 	if (!mode)
 	{
 		LOG_E("Failed to get default screen's video mode");
-		return false;
+		return {};
 	}
 	GLFWmonitor* pTarget = nullptr;
 	u16 height = settings.height;
@@ -87,7 +103,7 @@ bool context::create(const Settings& settings)
 		if (mode->width < width || mode->height < height)
 		{
 			LOG_E("Context size [%ux%u] too large for default screen! [%ux%u]", width, height, mode->width, mode->height);
-			return false;
+			return {};
 		}
 		break;
 	}
@@ -117,7 +133,7 @@ bool context::create(const Settings& settings)
 	if (!g_pRenderWindow)
 	{
 		LOG_E("Failed to create window!");
-		return false;
+		return {};
 	}
 	glfwSetWindowPos(g_pRenderWindow, cX, cY);
 	{
@@ -131,7 +147,7 @@ bool context::create(const Settings& settings)
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		{
 			LOG_E("Failed to initialise GLAD!");
-			return false;
+			return {};
 		}
 		inputImpl::init(*g_pRenderWindow);
 		g_contextThreadID = std::this_thread::get_id();
@@ -141,8 +157,12 @@ bool context::create(const Settings& settings)
 	}
 	glframeBufferResizeCallback(g_pRenderWindow, width, height);
 	glfwSetFramebufferSizeCallback(g_pRenderWindow, &glframeBufferResizeCallback);
+	if (settings.env.jobWorkerCount > 0)
+	{
+		jobs::init(settings.env.jobWorkerCount);
+	}
 	LOG_D("Context created");
-	return true;
+	return Wrapper(true);
 }
 
 void context::destroy()
@@ -158,6 +178,7 @@ void context::destroy()
 		}
 	}
 	glfwTerminate();
+	jobs::cleanup();
 	g_pRenderWindow = nullptr;
 	g_windowSize = glm::vec2(0.0f);
 	g_contextThreadID = std::thread::id();

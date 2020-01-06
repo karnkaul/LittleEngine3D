@@ -1,7 +1,7 @@
 #pragma once
 #include <bitset>
 #include <set>
-#include "le3d/core/flags.hpp"
+#include "le3d/core/tFlags.hpp"
 #include "le3d/game/object.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/core/transform.hpp"
@@ -23,7 +23,7 @@ public:
 	glm::mat4 view() const;
 	glm::mat4 perspectiveProj(f32 near = 0.1f, f32 far = 100.0f) const;
 	glm::mat4 orthographicProj(f32 zoom = 1.0f, f32 near = 0.1f, f32 far = 100.0f) const;
-	glm::mat4 uiProj(const glm::vec3& uiSpace) const;
+	glm::mat4 uiProj(glm::vec3 const& uiSpace) const;
 };
 
 class FreeCam : public Camera
@@ -38,8 +38,10 @@ public:
 		_COUNT
 	};
 
+	using Flags = TFlags<(size_t)Flag::_COUNT>;
+
 public:
-	Flags<(size_t)Flag::_COUNT> m_flags;
+	Flags m_flags;
 	f32 m_defaultSpeed = 2.0f;
 	f32 m_speed = m_defaultSpeed;
 	f32 m_minSpeed = 1.0f;
@@ -48,7 +50,11 @@ public:
 	f32 m_joyLookSens = 50.0f;
 
 protected:
+#if defined(__arm__)
+	f32 m_minJoyRightDPosSqr = 0.5f;
+#else
 	f32 m_minJoyRightDPosSqr = 0.05f;
+#endif
 	f32 m_minCursorDPosSqr = 0.2f;
 	f32 m_pitch = 0.0f;
 	f32 m_yaw = 0.0f;

@@ -10,17 +10,17 @@ struct Fixed final
 {
 public:
 	static constexpr u32 SCALE_FACTOR = 10000;
-	static const Fixed Zero;
-	static const Fixed One;
-	static const Fixed Two;
-	static const Fixed Three;
-	static const Fixed Ten;
-	static const Fixed OneHalf;
-	static const Fixed OneThird;
-	static const Fixed OneTenth;
-	static const Fixed Pi;
-	static const Fixed DegToRad;
-	static const Fixed RadToDeg;
+	static Fixed const Zero;
+	static Fixed const One;
+	static Fixed const Two;
+	static Fixed const Three;
+	static Fixed const Ten;
+	static Fixed const OneHalf;
+	static Fixed const OneThird;
+	static Fixed const OneTenth;
+	static Fixed const Pi;
+	static Fixed const DegToRad;
+	static Fixed const RadToDeg;
 
 private:
 	s32 value;

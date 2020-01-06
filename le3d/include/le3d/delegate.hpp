@@ -72,7 +72,7 @@ template <typename... T>
 uint32_t Delegate<T...>::operator()(T... t)
 {
 	Cleanup();
-	for (const auto& c : m_callbacks)
+	for (auto const& c : m_callbacks)
 	{
 		c.callback(t...);
 	}

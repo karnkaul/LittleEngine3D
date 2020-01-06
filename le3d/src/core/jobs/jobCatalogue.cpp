@@ -8,7 +8,7 @@ namespace le
 JobCatalog::JobCatalog(JobManager& manager, std::string name) : m_pManager(&manager)
 {
 	m_logName.reserve(name.size() + 2);
-	m_logName = "[";
+	m_logName += "[";
 	m_logName += std::move(name);
 	m_logName += "]";
 }
@@ -45,7 +45,7 @@ void JobCatalog::update()
 	auto iter = m_pendingJobs.begin();
 	while (iter != m_pendingJobs.end())
 	{
-		const auto& subJob = *iter;
+		auto const& subJob = *iter;
 		if (subJob->hasCompleted())
 		{
 #if defined(DEBUG_LOG)

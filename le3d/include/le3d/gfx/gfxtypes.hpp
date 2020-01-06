@@ -6,7 +6,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include "le3d/stdtypes.hpp"
-#include "le3d/core/flags.hpp"
+#include "le3d/core/tFlags.hpp"
 #include "le3d/core/tZero.hpp"
 #include "colour.hpp"
 
@@ -46,21 +46,21 @@ struct Vertices final
 	u32 byteCount() const;
 	u32 vertexCount() const;
 
-	void addPoint(const glm::vec3& point);
-	void addNormals(const glm::vec3& normal, u16 count = 1);
-	void addTexCoord(const glm::vec2& texCoord);
+	void addPoint(glm::vec3 const& point);
+	void addNormals(glm::vec3 const& normal, u16 count = 1);
+	void addTexCoord(glm::vec2 const& texCoord);
 
 	void reserve(u32 vCount, u32 iCount);
-	u32 addVertex(const glm::vec3& point, const glm::vec3& normal, std::optional<glm::vec2> oTexCoord = std::nullopt);
-	void addIndices(const std::vector<u32> indices);
+	u32 addVertex(glm::vec3 const& point, glm::vec3 const& normal, std::optional<glm::vec2> oTexCoord = std::nullopt);
+	void addIndices(std::vector<u32> const& indices);
 };
 
-bool operator==(const Vertices::V3& lhs, const Vertices::V3& rhs);
-bool operator==(const Vertices::V2& lhs, const Vertices::V2& rhs);
-bool operator!=(const Vertices::V3& lhs, const Vertices::V3& rhs);
-bool operator!=(const Vertices::V2& lhs, const Vertices::V2& rhs);
+bool operator==(Vertices::V3 const& lhs, Vertices::V3 const& rhs);
+bool operator==(Vertices::V2 const& lhs, Vertices::V2 const& rhs);
+bool operator!=(Vertices::V3 const& lhs, Vertices::V3 const& rhs);
+bool operator!=(Vertices::V2 const& lhs, Vertices::V2 const& rhs);
 
-struct LitTint final
+struct Albedo final
 {
 	glm::vec3 ambient = glm::vec3(1.0f);
 	glm::vec3 diffuse = glm::vec3(1.0f);
@@ -94,29 +94,21 @@ struct HCubemap final
 
 struct HShader final
 {
-	enum class Flag
-	{
-		Untextured = 0,
-		Unlit,
-	};
-
-	static const size_t MAX_FLAGS = 8;
 	std::string id;
-	Flags<MAX_FLAGS> flags;
 	GLObj glID;
 
 	void use() const;
 	bool setBool(std::string_view id, bool bVal) const;
 	bool setS32(std::string_view id, s32 val) const;
 	bool setF32(std::string_view id, f32 val) const;
-	bool setV2(std::string_view id, const glm::vec2& val) const;
-	bool setV3(std::string_view id, const glm::vec3& val) const;
-	bool setV4(std::string_view id, const glm::vec4& val) const;
+	bool setV2(std::string_view id, glm::vec2 const& val) const;
+	bool setV3(std::string_view id, glm::vec3 const& val) const;
+	bool setV4(std::string_view id, glm::vec4 const& val) const;
 	bool setV4(std::string_view id, Colour colour) const;
 
-	void setModelMats(const struct ModelMats& mats) const;
+	void setModelMats(struct ModelMats const& mats) const;
 
-	void bindUBO(std::string_view id, const struct HUBO& ubo) const;
+	void bindUBO(std::string_view id, struct HUBO const& ubo) const;
 };
 
 struct HVerts final
@@ -136,15 +128,26 @@ struct HUBO final
 	u32 byteCount = 0;
 };
 
-struct HMesh final
+struct Material
 {
-	struct Material
+	enum class Flag
 	{
-		LitTint noTexTint;
-		std::vector<HTexture> textures;
-		f32 shininess = 32.0f;
+		Lit = 0,
+		Textured,
+		Opaque,
+		_COUNT
 	};
 
+	using Flags = TFlags<(size_t)Flag::_COUNT>;
+
+	Albedo albedo;
+	std::vector<HTexture> textures;
+	f32 shininess = 32.0f;
+	Flags flags;
+};
+
+struct HMesh final
+{
 	Material material;
 	std::string name;
 	HVerts hVerts;

@@ -27,13 +27,13 @@ bool IsDebuggerAttached()
 #elif __linux__
 	char buf[4096];
 
-	const auto status_fd = ::open("/proc/self/status", O_RDONLY);
+	auto const status_fd = ::open("/proc/self/status", O_RDONLY);
 	if (status_fd == -1)
 	{
 		return false;
 	}
 
-	const auto num_read = ::read(status_fd, buf, sizeof(buf) - 1);
+	auto const num_read = ::read(status_fd, buf, sizeof(buf) - 1);
 	if (num_read <= 0)
 	{
 		return false;
@@ -41,13 +41,13 @@ bool IsDebuggerAttached()
 
 	buf[num_read] = '\0';
 	constexpr char tracerPidString[] = "TracerPid:";
-	const auto tracer_pid_ptr = ::strstr(buf, tracerPidString);
+	auto const tracer_pid_ptr = ::strstr(buf, tracerPidString);
 	if (!tracer_pid_ptr)
 	{
 		return false;
 	}
 
-	for (const char* characterPtr = tracer_pid_ptr + sizeof(tracerPidString) - 1; characterPtr <= buf + num_read; ++characterPtr)
+	for (char const* characterPtr = tracer_pid_ptr + sizeof(tracerPidString) - 1; characterPtr <= buf + num_read; ++characterPtr)
 	{
 		if (::isspace(*characterPtr))
 		{
@@ -74,7 +74,7 @@ void debugBreak()
 #endif
 }
 
-void assertMsg(bool expr, const char* message, const char* fileName, long lineNumber)
+void assertMsg(bool expr, char const* message, char const* fileName, long lineNumber)
 {
 	if (expr)
 	{

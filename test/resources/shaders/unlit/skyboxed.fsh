@@ -7,7 +7,6 @@ out vec4 fragColour;
 in vec3 texCoord;
 
 uniform samplerCube skybox;
-uniform sampler2D tex;
 
 #ifdef GL_ES
 	uniform vec4 tint;

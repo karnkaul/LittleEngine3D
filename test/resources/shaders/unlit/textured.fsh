@@ -9,10 +9,10 @@ in vec2 texCoord;
 struct Material
 {
 	sampler2D diffuse0;
+	int isOpaque;
 };
 
 uniform Material material;
-
 #ifdef GL_ES
 	uniform vec4 tint;
 #else
@@ -21,7 +21,11 @@ uniform Material material;
 
 void main()
 {
-	vec4 texColour = vec4(0.0);
-	texColour += max(texture(material.diffuse0, texCoord), 0.0);
-	fragColour = texColour * tint;
+	vec4 result = vec4(0.0);
+	result += max(texture(material.diffuse0, texCoord), 0.0);
+	if (material.isOpaque == 1)
+	{
+		result.a = 1.0;
+	}
+	fragColour = result * tint;
 }

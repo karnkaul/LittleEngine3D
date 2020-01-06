@@ -2,19 +2,21 @@
 
 namespace le
 {
-JobHandleBlock::JobHandleBlock(s64 jobID, std::future<void>&& future) : m_future(std::move(future)), m_jobID(jobID) {}
+JobHandleBlock::JobHandleBlock(s64 jobID, std::future<std::any>&& future) : m_future(std::move(future)), m_jobID(jobID) {}
 
 s64 JobHandleBlock::ID() const
 {
 	return m_jobID;
 }
 
-void JobHandleBlock::wait()
+std::any JobHandleBlock::wait()
 {
 	if (m_future.valid())
 	{
-		m_future.get();
+		return m_future.get();
 	}
+	std::any fail = false;
+	return fail;
 }
 
 bool JobHandleBlock::hasCompleted() const

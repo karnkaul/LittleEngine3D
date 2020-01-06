@@ -30,10 +30,10 @@ constexpr bool isDerived()
 }
 
 template <typename T>
-std::string_view Typename(const T& t)
+std::string_view Typename(T const& t)
 {
-	static const std::string_view PREFIX = "class le::";
-	static const size_t PREFIX_LEN = PREFIX.length();
+	static std::string_view const PREFIX = "class le::";
+	static size_t const PREFIX_LEN = PREFIX.length();
 	std::string_view name = typeid(t).name();
 	auto idx = name.find(PREFIX);
 	if (idx != std::string::npos)
