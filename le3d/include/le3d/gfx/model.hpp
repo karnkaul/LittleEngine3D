@@ -32,7 +32,8 @@ public:
 		struct Mesh
 		{
 			Vertices vertices;
-			LitTint noTexTint;
+			Albedo albedo;
+			Material::Flags flags;
 			std::string id;
 			std::vector<size_t> texIndices;
 			f32 shininess = 32.0f;
@@ -85,7 +86,7 @@ public:
 	Model& operator=(Model const&);
 
 public:
-	void setupModel(std::string name, Data const& data, Material::Flags flags);
+	void setupModel(std::string name, Data const& data);
 	void addFixture(HMesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void render(HShader const& shader, ModelMats const& mats);
 

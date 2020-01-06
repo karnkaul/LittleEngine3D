@@ -30,7 +30,8 @@ Model g_nullModel;
 namespace resources
 {
 HTexture g_blankTex1px;
-}
+HTexture g_noTex1px;
+} // namespace resources
 
 void FontAtlasData::deserialise(std::string json)
 {
@@ -184,6 +185,12 @@ HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> b
 		g_blankTex1px = gfx::gl::genTexture("blankTex", whitepx, TexType::Diffuse, sizeof(whitepx), 1, 1, false);
 		gfx::g_blankTexID = g_blankTex1px.glID;
 	}
+	if (g_noTex1px.glID <= 0)
+	{
+		u8 const nopx[] = {0x00, 0x00, 0x00, 0x00};
+		g_noTex1px = gfx::gl::genTexture("noTex", nopx, TexType::Diffuse, sizeof(nopx), 1, 1, false);
+		gfx::g_noTexID = g_noTex1px.glID;
+	}
 	ASSERT(g_textureMap.find(id) == g_textureMap.end(), "Texture already loaded!");
 	HTexture texture = gfx::gl::genTexture(id, std::move(bytes), type, bClampToEdge);
 	if (texture.glID > 0)
@@ -322,11 +329,11 @@ void resources::unloadAll<HFont>()
 	g_fontMap.clear();
 }
 
-Model& resources::loadModel(std::string id, Model::Data const& data, Material::Flags flags)
+Model& resources::loadModel(std::string id, Model::Data const& data)
 {
 	ASSERT(g_modelMap.find(id) == g_modelMap.end(), "Model already loaded!");
 	Model newModel;
-	newModel.setupModel(id, data, flags);
+	newModel.setupModel(id, data);
 	g_modelMap.emplace(id, std::move(newModel));
 	return g_modelMap[id];
 }

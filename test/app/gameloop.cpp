@@ -124,7 +124,7 @@ void runTest()
 	};
 
 	std::string modelPath = "models/plant";
-	std::string modelFile = "eb_house_plant_01";
+	std::string modelFile = "plant";
 	std::string materialFile = modelFile;
 	std::stringstream objBuf = utils::readFile(resourcePath(modelPath + "/" + modelFile + ".obj"));
 	std::stringstream mtlBuf = utils::readFile(resourcePath(modelPath + "/" + materialFile + ".mtl"));
@@ -143,13 +143,14 @@ void runTest()
 	f_litTex.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured)}, true);
 	Material::Flags f_litTexOpaque;
 	f_litTexOpaque.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured), s32(Material::Flag::Opaque)}, true);
-	Model& objModel = resources::loadModel("objModel", objData, modelFile == "nanosuit" ? f_litTexOpaque : f_litTex);
+	Model& objModel = resources::loadModel("objModel", objData);
 
-	auto& cubeMeshTexd = debug::Cube();
-	auto& quadMesh = debug::Quad();
+	HMesh cubeMeshTexd = debug::Cube();
+	HMesh quadMesh = debug::Quad();
 	quadMesh.material.textures = {resources::get<HTexture>("awesomeface")};
 	// quadMesh.textures = {bad};
 	cubeMeshTexd.material.textures = {resources::get<HTexture>("container2"), resources::get<HTexture>("container2_specular")};
+	cubeMeshTexd.material.albedo = {glm::vec3(0.4f), glm::vec3(0.5f), glm::vec3(1.0f)};
 	// cubeMesh.textures = {resources::getTexture("container2")};
 	HMesh blankCubeMesh = cubeMeshTexd;
 	blankCubeMesh.material.textures.clear();
@@ -157,9 +158,9 @@ void runTest()
 	Model cube;
 	Model blankCube;
 	Model cubeStack;
-	cube.setupModel("cube", {}, f_litTex);
-	cubeStack.setupModel("cubeStack", {}, f_litTex);
-	blankCube.setupModel("blankCube", {}, f_lit);
+	cube.setupModel("cube", {});
+	cubeStack.setupModel("cubeStack", {});
+	blankCube.setupModel("blankCube", {});
 	cube.addFixture(cubeMeshTexd);
 	cubeStack.addFixture(cubeMeshTexd);
 	blankCube.addFixture(blankCubeMesh);
@@ -167,7 +168,7 @@ void runTest()
 	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
 	cubeStack.addFixture(cubeMeshTexd, offset);
 	Model quad;
-	quad.setupModel("quad", {}, f_tex);
+	quad.setupModel("quad", {});
 	quad.addFixture(quadMesh);
 
 	// mesh.m_textures = {bad};

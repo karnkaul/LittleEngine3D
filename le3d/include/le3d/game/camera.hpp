@@ -50,7 +50,11 @@ public:
 	f32 m_joyLookSens = 50.0f;
 
 protected:
+#if defined(__arm__)
+	f32 m_minJoyRightDPosSqr = 0.5f;
+#else
 	f32 m_minJoyRightDPosSqr = 0.05f;
+#endif
 	f32 m_minCursorDPosSqr = 0.2f;
 	f32 m_pitch = 0.0f;
 	f32 m_yaw = 0.0f;

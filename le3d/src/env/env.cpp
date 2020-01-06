@@ -83,14 +83,20 @@ void env::setConfig(std::string json)
 			if (uniforms.contains("material"))
 			{
 				GData material = uniforms.getGData("material");
-				SetConfigStrIfPresent("shininess", material, g_config.uniforms.material.shininess);
-				SetConfigStrIfPresent("hasSpecular", material, g_config.uniforms.material.hasSpecular);
+				SetConfigStrIfPresent("isTextured", material, g_config.uniforms.material.isTextured);
+				SetConfigStrIfPresent("isLit", material, g_config.uniforms.material.isLit);
 				SetConfigStrIfPresent("isOpaque", material, g_config.uniforms.material.isOpaque);
+				SetConfigStrIfPresent("hasSpecular", material, g_config.uniforms.material.hasSpecular);
+				SetConfigStrIfPresent("shininess", material, g_config.uniforms.material.shininess);
 				SetConfigStrIfPresent("diffuseTexPrefix", material, g_config.uniforms.material.diffuseTexPrefix);
 				SetConfigStrIfPresent("specularTexPrefix", material, g_config.uniforms.material.specularTexPrefix);
-				SetConfigStrIfPresent("diffuseColour", material, g_config.uniforms.material.diffuseColour);
-				SetConfigStrIfPresent("specularColour", material, g_config.uniforms.material.specularColour);
-				SetConfigStrIfPresent("ambientColour", material, g_config.uniforms.material.ambientColour);
+				if (material.contains("albedo"))
+				{
+					GData albedo = material.getGData("albedo");
+					SetConfigStrIfPresent("ambient", albedo, g_config.uniforms.material.albedo.ambient);
+					SetConfigStrIfPresent("diffuse", albedo, g_config.uniforms.material.albedo.diffuse);
+					SetConfigStrIfPresent("specular", albedo, g_config.uniforms.material.albedo.specular);
+				}
 			}
 		}
 	}

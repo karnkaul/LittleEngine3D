@@ -21,7 +21,7 @@ This is essentially a v2 of [`LittleEngine`](https://github.com/karnkaul/LittleE
 	1. Run le3d-test (or custom executable target)
 
 ### Shaders
-LittleEngine3D uses forward rendering with a fixed number of point and directional lights. A mesh has a material which supports diffuse and specular textures and various built-in uniforms as defined in `env::g_config` (can be overridden).
+LittleEngine3D uses forward rendering with a fixed number of point and directional lights. Each `HMesh` contains one `Material` which supports diffuse and specular textures and various built-in uniforms as defined in `env::g_config` (can be overridden).
 
 #### Vertex Attributes
 The engine expects vertex shaders to use a specific layout when using `gfx::genVertices()`:
@@ -39,18 +39,19 @@ The engine will set these built-in uniforms (default names shown) when drawing a
 - Fragment:
 	- `vec4 tint`
 	- Material:
-		- `int material.isTextured`			// Whether to use sampler2Ds
-		- `int material.isLit`				// Whether to apply lighting
-		- `int material.isOpaque`			// Whether to force alpha as 1.0
-		- `float material.hasSpecular`		// Whether to use specular sampler2Ds
+		- `int material.isTextured`			// Whether shader should use sampler2Ds
+		- `int material.isLit`				// Whether shader should use lighting
+		- `int material.isOpaque`			// Whether shader should force alpha as 1.0
+		- `float material.hasSpecular`		// Whether shader should use specular texture(s)
 		- `float material.shininess`		// Specular shininess
-		- `vec4 material.ambient`			// Ambient colour (only if no textures)
-		- `vec4 material.diffuse`			// Diffuse colour (only if no textures)
-		- `vec4 material.specular`			// Specular colour (only if no textures)
-		- `sampler2D material.diffuseN`		// Diffuse textures
-		- `sampler2D material.specularN`	// Specular textures
+		- `sampler2D material.diffuseN`		// Diffuse texture(s)
+		- `sampler2D material.specularN`	// Specular texture(s)
+		- Albedo:
+			- `vec4 material.albedo.ambient`
+			- `vec4 material.albedo.diffuse`
+			- `vec4 material.albedo.specular`
 
-Monolithic shaders can be reused for multiple `Material`s (lit, textured, opaque, etc) by branching on the corresponding uniforms; individual shaders can skip declaring/using them entirely. Cubemaps like Skyboxes will require their own shader that declares a `samplerCube`.
+Monolithic shaders can be reused for multiple `Material`s (lit, textured, opaque, etc) by branching on the corresponding uniforms (individual shaders can skip declaring/using them entirely); however, there are no uniforms to indicate number of textures in use, for performance reasons / OpenGL 3.3 limitations (sampler arrays can only be indexed with constant expressions). Cubemaps like Skyboxes will require their own shader that declares a `samplerCube`.
 
 #### Lights and View/Projection/UI Matrices
 It is recommended to use UBOs for light data and view/projection matrices and share them across all shaders instead of setting individual uniforms on each shader. Use `resources::addUBO()` to auto-bind them to subsequent shaders created via `resources::loadShader()`, and `gfx::setUBO<T>()` to copy data (must be 16-aligned).

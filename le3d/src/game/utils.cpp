@@ -79,7 +79,7 @@ void debug::DArrow::setupDArrow(const glm::quat& orientation)
 	m_sphere.oWorld = mSp;
 	m_cone.mesh.material.flags = m_cube.mesh.material.flags = m_sphere.mesh.material.flags = {};
 	setTip(m_tip, true);
-	setupModel("dArrow", {}, {});
+	setupModel("dArrow", {});
 }
 
 void debug::DArrow::setTip(Tip tip, bool bForce)

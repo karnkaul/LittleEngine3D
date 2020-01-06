@@ -21,11 +21,11 @@ uniform Material material;
 
 void main()
 {
-	vec4 texColour = vec4(0.0);
-	texColour += max(texture(material.diffuse0, texCoord), 0.0);
+	vec4 result = vec4(0.0);
+	result += max(texture(material.diffuse0, texCoord), 0.0);
 	if (material.isOpaque == 1)
 	{
-		texColour.a = 1.0;
+		result.a = 1.0;
 	}
-	fragColour = texColour * tint;
+	fragColour = result * tint;
 }

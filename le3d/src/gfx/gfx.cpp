@@ -1,5 +1,6 @@
 #include <array>
 #include <cstddef>
+#include <sstream>
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <stb/stb_image.h>
@@ -15,11 +16,6 @@
 
 namespace le
 {
-namespace gfx
-{
-GLObj g_blankTexID = GLObj(1);
-} // namespace gfx
-
 namespace
 {
 s32 g_maxTexIdx = 0;
@@ -377,12 +373,9 @@ void gfx::gl::setMaterial(HShader const& shader, Material const& material)
 		if (bIsLit)
 		{
 			shader.setF32(u.material.shininess, material.shininess);
-			if (!bIsTextured)
-			{
-				shader.setV3(u.material.ambientColour, material.noTexTint.ambient);
-				shader.setV3(u.material.diffuseColour, material.noTexTint.diffuse);
-				shader.setV3(u.material.specularColour, material.noTexTint.specular);
-			}
+			shader.setV3(u.material.albedo.ambient, material.albedo.ambient);
+			shader.setV3(u.material.albedo.diffuse, material.albedo.diffuse);
+			shader.setV3(u.material.albedo.specular, material.albedo.specular);
 		}
 		if (bIsTextured)
 		{
@@ -467,12 +460,10 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 		setBlankTex(shader, 0, true);
 		++txID;
 	}
-	size_t const idLen = std::max(u.material.diffuseTexPrefix.size(), u.material.specularTexPrefix.size());
 	bool bHasSpecular = false;
 	for (auto const& texture : textures)
 	{
-		std::string id;
-		id.reserve(idLen + 2);
+		std::stringstream id;
 		std::string number;
 		number.reserve(2);
 		bool bContinue = false;
@@ -484,14 +475,14 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 		{
 		case TexType::Diffuse:
 		{
-			id += u.material.diffuseTexPrefix;
+			id << u.material.diffuseTexPrefix;
 			number = std::to_string(diffuse++);
 			break;
 		}
 		case TexType::Specular:
 		{
 			bHasSpecular = true;
-			id += u.material.specularTexPrefix;
+			id << u.material.specularTexPrefix;
 			number = std::to_string(specular++);
 			break;
 		}
@@ -510,12 +501,12 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 		{
 			continue;
 		}
-		id += number;
+		id << number;
 		if (texture.glID.handle > 0)
 		{
 			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
 			glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
-			shader.setS32(id, txID++);
+			shader.setS32(id.str(), txID++);
 		}
 		else
 		{
@@ -523,7 +514,7 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 			setBlankTex(shader, txID, true);
 		}
 	}
-	shader.setF32(u.material.hasSpecular, bHasSpecular ? 1.0f : 0.0f);
+	shader.setF32(u.material.hasSpecular,  bHasSpecular ? 1.0f : 0.0f);
 	for (; txID <= g_maxTexIdx; ++txID)
 	{
 		glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));

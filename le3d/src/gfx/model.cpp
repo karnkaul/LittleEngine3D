@@ -152,12 +152,33 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 				}
 				if (pMat)
 				{
-					meshData.noTexTint.ambient = {pMat->ambient[0], pMat->ambient[1], pMat->ambient[2]};
-					meshData.noTexTint.diffuse = {pMat->diffuse[0], pMat->diffuse[1], pMat->diffuse[2]};
-					meshData.noTexTint.specular = {pMat->specular[0], pMat->specular[1], pMat->specular[2]};
+					meshData.flags.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured), s32(Material::Flag::Opaque)}, true);
+					switch (pMat->illum)
+					{
+					default:
+						break;
+					case 0:
+					case 1:
+					{
+						meshData.flags.set(s32(Material::Flag::Lit), false);
+						break;
+					}
+					case 4:
+					{
+						meshData.flags.set(s32(Material::Flag::Opaque), false);
+						break;
+					}
+					}
+					meshData.albedo.ambient = {pMat->ambient[0], pMat->ambient[1], pMat->ambient[2]};
+					meshData.albedo.diffuse = {pMat->diffuse[0], pMat->diffuse[1], pMat->diffuse[2]};
+					meshData.albedo.specular = {pMat->specular[0], pMat->specular[1], pMat->specular[2]};
 					if (pMat->shininess >= 0.0f)
 					{
 						meshData.shininess = pMat->shininess;
+					}
+					if (pMat->diffuse_texname.empty())
+					{
+						meshData.flags.set(s32(Material::Flag::Textured), false);
 					}
 					if (!pMat->diffuse_texname.empty())
 					{
@@ -194,7 +215,7 @@ void Model::addFixture(HMesh const& mesh, std::optional<glm::mat4> model /* = st
 	m_fixtures.emplace_back(Fixture{mesh, model});
 }
 
-void Model::setupModel(std::string name, Data const& data, Material::Flags flags)
+void Model::setupModel(std::string name, Data const& data)
 {
 	m_name = std::move(name);
 	m_type = Typename(*this);
@@ -217,8 +238,8 @@ void Model::setupModel(std::string name, Data const& data, Material::Flags flags
 	}
 	for (auto const& meshData : data.meshes)
 	{
-		HMesh hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic, flags);
-		hMesh.material.noTexTint = meshData.noTexTint;
+		HMesh hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic, meshData.flags);
+		hMesh.material.albedo = meshData.albedo;
 		hMesh.material.shininess = meshData.shininess;
 		for (auto texIdx : meshData.texIndices)
 		{

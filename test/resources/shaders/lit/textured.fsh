@@ -12,8 +12,16 @@ in vec3 fragPos;
 in vec3 viewPos;
 in vec2 texCoord;
 
+struct Albedo
+{
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+};
+
 struct Material
 {
+	Albedo albedo;
 	sampler2D diffuse0;
 	sampler2D specular0;
 	float shininess;
@@ -93,8 +101,8 @@ void main()
 	vec3 norm = normalize(normal);
 	vec3 toView = normalize(viewPos - fragPos);
 	vec4 result = vec4(0.0f);
-	vec4 diffTexColour = texture(material.diffuse0, texCoord);
-	vec4 specTexColour = texture(material.specular0, texCoord) * material.hasSpecular;
+	vec4 diffTexColour = texture(material.diffuse0, texCoord) * vec4(material.albedo.diffuse + material.albedo.ambient, 1.0);
+	vec4 specTexColour = texture(material.specular0, texCoord) * vec4(material.albedo.specular, 1.0) * material.hasSpecular;
 	if (material.isOpaque == 1)
 	{
 		diffTexColour.a = 1.0;

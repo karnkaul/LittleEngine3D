@@ -60,7 +60,7 @@ bool operator==(Vertices::V2 const& lhs, Vertices::V2 const& rhs);
 bool operator!=(Vertices::V3 const& lhs, Vertices::V3 const& rhs);
 bool operator!=(Vertices::V2 const& lhs, Vertices::V2 const& rhs);
 
-struct LitTint final
+struct Albedo final
 {
 	glm::vec3 ambient = glm::vec3(1.0f);
 	glm::vec3 diffuse = glm::vec3(1.0f);
@@ -140,7 +140,7 @@ struct Material
 
 	using Flags = TFlags<(size_t)Flag::_COUNT>;
 
-	LitTint noTexTint;
+	Albedo albedo;
 	std::vector<HTexture> textures;
 	f32 shininess = 32.0f;
 	Flags flags;

@@ -19,17 +19,24 @@ struct EngineConfig
 		};
 		struct Material
 		{
+			struct Albedo
+			{
+				// vec3
+				std::string ambient = "material.albedo.ambient";
+				std::string diffuse = "material.albedo.diffuse";
+				std::string specular = "material.albedo.specular";
+			};
+
+			Albedo albedo;
 			// int
 			std::string isTextured = "material.isTextured";
 			std::string isLit = "material.isLit";
 			std::string isOpaque = "material.isOpaque";
-			// float
 			std::string hasSpecular = "material.hasSpecular";
+
+			// float
 			std::string shininess = "material.shininess";
-			// vec3
-			std::string diffuseColour = "material.diffuse";
-			std::string specularColour = "material.specular";
-			std::string ambientColour = "material.ambient";
+
 			// sampler2D
 			std::string diffuseTexPrefix = "material.diffuse";
 			std::string specularTexPrefix = "material.specular";

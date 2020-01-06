@@ -13,7 +13,8 @@ enum class Draw
 	Static
 };
 
-extern GLObj g_blankTexID;
+inline GLObj g_blankTexID = GLObj(1);
+inline GLObj g_noTexID = GLObj(2);
 
 namespace gl
 {
