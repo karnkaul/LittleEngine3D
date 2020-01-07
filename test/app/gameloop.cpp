@@ -123,27 +123,24 @@ void runTest()
 		gfx::gl::draw(light);
 	};
 
-	std::string modelPath = "models/plant";
-	std::string modelFile = "plant";
-	std::string materialFile = modelFile;
-	std::stringstream objBuf = utils::readFile(resourcePath(modelPath + "/" + modelFile + ".obj"));
-	std::stringstream mtlBuf = utils::readFile(resourcePath(modelPath + "/" + materialFile + ".mtl"));
-	Model::Data objData = Model::loadOBJ(objBuf, mtlBuf, modelPath, 0.05f);
-	objData.setTextureData([modelPath](std::string_view filename) -> std::vector<u8> {
-		std::string filepath = modelPath;
-		filepath += "/";
-		filepath += filename;
-		return utils::readBytes(resourcePath(filepath));
-	});
-	Material::Flags f_tex;
-	f_tex.set(s32(Material::Flag::Textured), true);
-	Material::Flags f_lit;
-	f_lit.set(s32(Material::Flag::Lit), true);
-	Material::Flags f_litTex;
-	f_litTex.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured)}, true);
-	Material::Flags f_litTexOpaque;
-	f_litTexOpaque.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured), s32(Material::Flag::Opaque)}, true);
-	Model& objModel = resources::loadModel("objModel", objData);
+	stdfs::path const modelFile = "plant";
+	stdfs::path const modelPath = "models" / modelFile;
+	stdfs::path materialFile = modelFile;
+	std::stringstream objBuf = utils::readFile(resourcePath((modelPath / modelFile).generic_string() + ".obj"));
+	std::stringstream mtlBuf = utils::readFile(resourcePath((modelPath / modelFile).generic_string() + ".mtl"));
+	Model::LoadRequest request(objBuf, mtlBuf);
+	request.getTexBytes = [modelPath](std::string_view filename) -> std::vector<u8> {
+		return utils::readBytes(resourcePath(modelPath / filename));
+	};
+	auto meshPrefix = modelPath.generic_string();
+	request.meshPrefix = meshPrefix;
+	request.scale = 0.1f;
+	/*Model::Data objData = Model::loadOBJ(request, true);
+	Model& objModel = resources::loadModel("objModel", objData);*/
+	Model::Data objData;
+	bool bObjSet = false;
+	auto loadObjData = [&]() { objData = Model::loadOBJ(request, false); };
+	auto hObjLoad = jobs::enqueue(loadObjData, modelPath.generic_string() + "-load");
 
 	HMesh cubeMeshTexd = debug::Cube();
 	HMesh quadMesh = debug::Quad();
@@ -209,7 +206,7 @@ void runTest()
 	{
 		Prop prop;
 		prop.setup("prop_" + std::to_string(i));
-		Model& m = i < 3 ? cube : objModel;
+		Model& m = cube;
 		prop.addModel(m);
 		std::string shader = "monolithic";
 		prop.setShader(resources::get<HShader>(shader));
@@ -273,6 +270,13 @@ void runTest()
 	glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
 	f32 uiAR = uiSpace.x / uiSpace.y;
 
+	size_t objTexIdx = 0;
+	auto loadObjTex = [&objData](size_t idx) -> bool {
+		auto& texData = objData.textures[idx];
+		texData.texture = gfx::gl::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
+		return idx == objData.textures.size() - 1;
+	};
+
 	while (!context::isClosing())
 	{
 		dt = Time::now() - t;
@@ -280,6 +284,19 @@ void runTest()
 		camera.tick(dt);
 		// context::glClearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Colour(50, 40, 10));
 		context::clearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		if (hObjLoad->hasCompleted() && !bObjSet)
+		{
+			if (loadObjTex(objTexIdx++))
+			{
+				bObjSet = true;
+				LOG_D("Obj ready!");
+				Model& objModel = resources::loadModel(modelPath.generic_string(), objData);
+				auto& p = prop0;
+				p.clearModels();
+				p.addModel(objModel);
+			}
+		}
 
 		prop0.m_transform.setOrientation(
 			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));

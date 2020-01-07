@@ -1,4 +1,5 @@
 #include <optional>
+#include <sstream>
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
@@ -92,23 +93,31 @@ JobCatalog* jobs::createCatalogue(std::string name)
 	}
 }
 
-void jobs::forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, size_t iterationsPerJob, size_t startIdx)
+std::vector<JobHandle> jobs::forEach(IndexedTask const& indexedTask)
 {
 	if (uManager)
 	{
-		uManager->forEach(indexedTask, iterationCount, iterationsPerJob, startIdx);
+		return uManager->forEach(indexedTask);
 	}
 	else
 	{
-		for (; startIdx < iterationCount * iterationsPerJob; ++startIdx)
+		for (size_t startIdx = indexedTask.startIdx; startIdx < indexedTask.iterationCount * indexedTask.iterationsPerJob; ++startIdx)
 		{
+			std::optional<std::string> oName;
+			if (!indexedTask.bSilent)
+			{
+				std::stringstream name;
+				name << indexedTask.name << startIdx << "-" << (startIdx + indexedTask.iterationsPerJob - 1);
+				oName = name.str();
+			}
 			doNow(std::packaged_task<std::any()>([&indexedTask, startIdx]() -> std::any {
-					  indexedTask(startIdx);
+					  indexedTask.task(startIdx);
 					  return {};
 				  }),
-				  std::nullopt);
+				  oName);
 		}
 	}
+	return {};
 }
 
 void jobs::waitAll(std::vector<JobHandle> const& handles)

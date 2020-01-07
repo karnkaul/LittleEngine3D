@@ -27,6 +27,7 @@ public:
 			std::string id;
 			std::string filename;
 			std::vector<u8> bytes;
+			HTexture texture;
 			TexType type;
 		};
 		struct Mesh
@@ -47,6 +48,23 @@ public:
 		void setTextureData(std::function<std::vector<u8>(std::string_view)> getTexBytes, bool bUseJobs = true);
 	};
 
+	struct LoadRequest
+	{
+		std::stringstream& objBuf;
+		std::stringstream& mtlBuf;
+		std::string_view meshPrefix;
+		std::function<std::vector<u8>(std::string_view)> getTexBytes;
+		f32 scale = 1.0f;
+
+		LoadRequest(std::stringstream& objBuf, std::stringstream& mtlBuf);
+	};
+
+	struct Fixture
+	{
+		HMesh mesh;
+		std::optional<glm::mat4> oWorld;
+	};
+
 	using Flags = TFlags<size_t(DrawFlag::_COUNT)>;
 
 #if defined(DEBUGGING)
@@ -54,13 +72,6 @@ public:
 	Flags m_renderFlags;
 	bool m_bDEBUG = false;
 #endif
-
-public:
-	struct Fixture
-	{
-		HMesh mesh;
-		std::optional<glm::mat4> oWorld;
-	};
 
 public:
 	std::string m_name;
@@ -75,7 +86,7 @@ private:
 	std::unordered_map<std::string, HTexture> m_loadedTextures;
 
 public:
-	static Data loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, std::string_view meshPrefix, f32 scale = 1.0f);
+	static Data loadOBJ(LoadRequest const& request, bool bUseJobs);
 
 public:
 	Model();

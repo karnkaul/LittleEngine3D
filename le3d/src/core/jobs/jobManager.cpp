@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <string>
+#include <sstream>
 #include "le3d/core/jobs/jobCatalogue.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
@@ -75,45 +76,56 @@ JobCatalog* JobManager::createCatalogue(std::string name)
 	return m_catalogs.back().get();
 }
 
-void JobManager::forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, size_t iterationsPerJob, size_t startIdx /* = 0 */)
+std::vector<JobHandle> JobManager::forEach(IndexedTask const& indexedTask)
 {
-	size_t idx = startIdx;
+	size_t idx = indexedTask.startIdx;
 	std::vector<JobHandle> handles;
-	u16 buckets = u16(iterationCount / iterationsPerJob);
+	u16 buckets = u16(indexedTask.iterationCount / indexedTask.iterationsPerJob);
 	for (u16 bucket = 0; bucket < buckets; ++bucket)
 	{
 		size_t start = idx;
-		size_t end = start + iterationsPerJob;
-		end = end < start ? start : end > iterationCount ? iterationCount : end;
+		size_t end = start + indexedTask.iterationsPerJob;
+		end = end < start ? start : end > indexedTask.iterationCount ? indexedTask.iterationCount : end;
+		std::string taskName;
+		if (!indexedTask.bSilent)
+		{
+			std::stringstream name;
+			name << indexedTask.name << start << "-" << (end - 1);
+			taskName = name.str();
+		}
 		handles.emplace_back(enqueue(
 			[start, end, &indexedTask]() -> std::any {
 				for (size_t i = start; i < end; ++i)
 				{
-					indexedTask(i);
+					indexedTask.task(i);
 				}
 				return {};
 			},
-			"", true));
-		idx += iterationsPerJob;
+			taskName, indexedTask.bSilent));
+		idx += indexedTask.iterationsPerJob;
 	}
-	if (idx < iterationCount)
+	if (idx < indexedTask.iterationCount)
 	{
 		size_t start = idx;
-		size_t end = iterationCount;
+		size_t end = indexedTask.iterationCount;
+		std::string taskName;
+		if (!indexedTask.bSilent)
+		{
+			std::stringstream name;
+			name << indexedTask.name << start << "-" << (end - 1);
+			taskName = name.str();
+		}
 		handles.emplace_back(enqueue(
 			[start, end, &indexedTask]() -> std::any {
 				for (size_t i = start; i < end; ++i)
 				{
-					indexedTask(i);
+					indexedTask.task(i);
 				}
 				return {};
 			},
-			"", true));
+			taskName, indexedTask.bSilent));
 	}
-	for (auto& handle : handles)
-	{
-		handle->wait();
-	}
+	return handles;
 }
 
 void JobManager::update()

@@ -1,3 +1,4 @@
+#include <mutex>
 #include <unordered_set>
 #include <tinyobjloader/tiny_obj_loader.h>
 #include "le3d/core/assert.hpp"
@@ -13,6 +14,8 @@
 
 namespace le
 {
+Model::LoadRequest::LoadRequest(std::stringstream& objBuf, std::stringstream& mtlBuf) : objBuf(objBuf), mtlBuf(mtlBuf) {}
+
 Model::Model() = default;
 Model::Model(Model&&) = default;
 Model& Model::operator=(Model&&) = default;
@@ -49,10 +52,12 @@ void Model::Data::setTextureData(std::function<std::vector<u8>(std::string_view)
 #endif
 }
 
-Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, std::string_view meshPrefix, f32 scale)
+Model::Data Model::loadOBJ(LoadRequest const& request, bool bUseJobs)
 {
+	std::mutex mutex;
+	using Lock = std::lock_guard<std::mutex>;
 	Data ret;
-	tinyobj::MaterialStreamReader reader(mtlBuf);
+	tinyobj::MaterialStreamReader reader(request.mtlBuf);
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
@@ -60,11 +65,21 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 #if defined(PROFILE_MODEL_LOADS)
 	Time dt = Time::now();
 #endif
-	bool bOK = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &objBuf, &reader);
+	bool bOK = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &request.objBuf, &reader);
 #if defined(PROFILE_MODEL_LOADS)
 	dt = Time::now() - dt;
-	LOG_I("[Profile] [%s] TinyObj load time: %.2fms", meshPrefix.data(), dt.assecs() * 1000);
+	LOG_I("[Profile] [%s] TinyObj load time: %.2fms", request.meshPrefix.data(), dt.assecs() * 1000);
 #endif
+	if (shapes.empty())
+	{
+		bOK = false;
+#if defined(DEBUGGING)
+		std::string msg = "No shapes parsed! Perhaps passed OBJ data is empty?";
+#else
+		std::string msg = "No shapes parsed!";
+#endif
+		LOG_W("[Resources] [%s] %s", request.meshPrefix.data(), msg.data());
+	}
 	if (!warn.empty())
 	{
 		LOG_W("[Resources] %s", warn.data());
@@ -75,7 +90,7 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 	}
 	if (bOK)
 	{
-		ret.name = meshPrefix;
+		ret.name = request.meshPrefix;
 #if defined(PROFILE_MODEL_LOADS)
 		dt = Time::now();
 #endif
@@ -96,14 +111,15 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 		};
 
 		std::unordered_set<std::string> meshIDs;
-		for (auto const& shape : shapes)
-		{
+		// for (auto const& shape : shapes)
+		auto processShape = [&](size_t i) {
+			auto const& shape = shapes[i];
 			Data::Mesh meshData;
 			for (auto const& idx : shape.mesh.indices)
 			{
-				f32 vx = attrib.vertices[3 * (size_t)idx.vertex_index + 0] * scale;
-				f32 vy = attrib.vertices[3 * (size_t)idx.vertex_index + 1] * scale;
-				f32 vz = attrib.vertices[3 * (size_t)idx.vertex_index + 2] * scale;
+				f32 vx = attrib.vertices[3 * (size_t)idx.vertex_index + 0] * request.scale;
+				f32 vy = attrib.vertices[3 * (size_t)idx.vertex_index + 1] * request.scale;
+				f32 vz = attrib.vertices[3 * (size_t)idx.vertex_index + 2] * request.scale;
 				f32 nx = attrib.normals.empty() || idx.normal_index < 0 ? 0.0f : attrib.normals[3 * (size_t)idx.normal_index + 0];
 				f32 ny = attrib.normals.empty() || idx.normal_index < 0 ? 0.0f : attrib.normals[3 * (size_t)idx.normal_index + 1];
 				f32 nz = attrib.normals.empty() || idx.normal_index < 0 ? 0.0f : attrib.normals[3 * (size_t)idx.normal_index + 2];
@@ -128,16 +144,14 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 					meshData.vertices.indices.push_back(meshData.vertices.addVertex({vx, vy, vz}, {nx, ny, nz}, glm::vec2(tx, ty)));
 				}
 			}
-			meshData.id.reserve(meshPrefix.length() + shape.name.length() + 1);
-			meshData.id += meshPrefix;
-			meshData.id += "-";
-			meshData.id += shape.name;
+			std::stringstream id;
+			id << request.meshPrefix << "-" << shape.name;
 			if (meshIDs.find(meshData.id) != meshIDs.end())
 			{
-				meshData.id += "_";
-				meshData.id += std::to_string(ret.meshes.size());
-				LOG_W("[Resources] [%s] Duplicate mesh name in [%s]!", shape.name.data(), meshPrefix.data());
+				id << "-" << ret.meshes.size();
+				LOG_W("[Resources] [%s] Duplicate mesh name in [%s]!", shape.name.data(), request.meshPrefix.data());
 			}
+			meshData.id = id.str();
 			meshIDs.emplace(meshData.id);
 			if (!shape.mesh.material_ids.empty())
 			{
@@ -182,30 +196,47 @@ Model::Data Model::loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf,
 					}
 					if (!pMat->diffuse_texname.empty())
 					{
-						std::string id;
-						id.reserve(pMat->diffuse_texname.length() + meshPrefix.length() + 1);
-						id += meshPrefix;
-						id += "-";
-						id += pMat->diffuse_texname;
-						meshData.texIndices.push_back(getTexIdx(pMat->diffuse_texname, std::move(id), TexType::Diffuse));
+						std::stringstream id;
+						id << request.meshPrefix << "-" << pMat->diffuse_texname;
+						meshData.texIndices.push_back(getTexIdx(pMat->diffuse_texname, id.str(), TexType::Diffuse));
 					}
 					if (!pMat->specular_texname.empty())
 					{
-						std::string id;
-						id.reserve(pMat->specular_texname.length() + meshPrefix.length() + 1);
-						id += meshPrefix;
-						id += "-";
-						id += pMat->specular_texname;
-						meshData.texIndices.push_back(getTexIdx(pMat->specular_texname, std::move(id), TexType::Specular));
+						std::stringstream id;
+						id << request.meshPrefix << "-" << pMat->specular_texname;
+						meshData.texIndices.push_back(getTexIdx(pMat->specular_texname, id.str(), TexType::Specular));
 					}
 				}
 			}
+			Lock lock(mutex);
 			ret.meshes.emplace_back(std::move(meshData));
+		};
+		if (bUseJobs)
+		{
+			IndexedTask loadShapes;
+			loadShapes.bSilent = false;
+			loadShapes.name = request.meshPrefix;
+			loadShapes.name += "-loadShapes";
+			loadShapes.iterationCount = shapes.size();
+			loadShapes.task = processShape;
+			auto handles = jobs::forEach(loadShapes);
+			jobs::waitAll(handles);
+		}
+		else
+		{
+			for (size_t i = 0; i < shapes.size(); ++i)
+			{
+				processShape(i);
+			}
 		}
 #if defined(PROFILE_MODEL_LOADS)
 		dt = Time::now() - dt;
-		LOG_I("[Profile] [%s] MeshData marshall time: %.2fms", meshPrefix.data(), dt.assecs() * 1000);
+		LOG_I("[Profile] [%s] MeshData marshall time: %.2fms", request.meshPrefix.data(), dt.assecs() * 1000);
 #endif
+		if (request.getTexBytes)
+		{
+			ret.setTextureData(request.getTexBytes, bUseJobs);
+		}
 	}
 	return ret;
 }
@@ -224,16 +255,26 @@ void Model::setupModel(std::string name, Data const& data)
 #endif
 	for (auto const& texData : data.textures)
 	{
-		ASSERT(!texData.bytes.empty(), "Texture has no data!");
-		if (texData.bytes.empty())
-		{
-			LOG_E("[Model] [%s] Data::Tex has no data!", texData.id.data());
-			continue;
-		}
 		auto search = m_loadedTextures.find(texData.id);
+		ASSERT(search == m_loadedTextures.end(), "Duplicate texture!");
 		if (search == m_loadedTextures.end())
 		{
-			m_loadedTextures[texData.id] = gfx::gl::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
+			if (texData.texture.glID.handle > 0)
+			{
+				m_loadedTextures[texData.id] = texData.texture;
+			}
+			else
+			{
+				ASSERT(!texData.bytes.empty(), "Texture has no data!");
+				if (texData.bytes.empty())
+				{
+					LOG_E("[Model] [%s] Data::Tex has no data!", texData.id.data());
+				}
+				else
+				{
+					m_loadedTextures[texData.id] = gfx::gl::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
+				}
+			}
 		}
 	}
 	for (auto const& meshData : data.meshes)

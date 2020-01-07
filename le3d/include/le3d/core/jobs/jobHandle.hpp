@@ -27,4 +27,14 @@ private:
 };
 
 using JobHandle = std::shared_ptr<JobHandleBlock>;
+
+struct IndexedTask
+{
+	std::function<void(size_t)> task;
+	std::string name;
+	size_t iterationCount = 0;
+	size_t iterationsPerJob = 1;
+	size_t startIdx = 0;
+	bool bSilent = true;
+};
 } // namespace le

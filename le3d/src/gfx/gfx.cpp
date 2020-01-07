@@ -514,7 +514,7 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 			setBlankTex(shader, txID, true);
 		}
 	}
-	shader.setF32(u.material.hasSpecular,  bHasSpecular ? 1.0f : 0.0f);
+	shader.setF32(u.material.hasSpecular, bHasSpecular ? 1.0f : 0.0f);
 	for (; txID <= g_maxTexIdx; ++txID)
 	{
 		glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));

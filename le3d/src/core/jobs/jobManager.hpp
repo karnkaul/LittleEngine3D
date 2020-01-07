@@ -53,7 +53,7 @@ public:
 public:
 	JobHandle enqueue(Task task, std::string name = "", bool bSilent = false);
 	JobCatalog* createCatalogue(std::string name);
-	void forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, size_t iterationsPerJob, size_t startIdx = 0);
+	std::vector<JobHandle> forEach(IndexedTask const& indexedTask);
 
 	void update();
 	bool areWorkersIdle() const;
