@@ -32,7 +32,7 @@ HVerts genVertices(Vertices const& vertices, Draw drawType = Draw::Dynamic, HSha
 void releaseVerts(HVerts& hVerts);
 
 HUBO genUBO(s64 size, u32 bindingPoint, Draw type);
-void releaseUBO(HUBO& ubo);
+void releaseUBO(HUBO& hUBO);
 
 void setMaterial(HShader const& shader, Material const& material);
 void draw(HVerts const& hVerts);

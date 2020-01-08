@@ -24,8 +24,8 @@ s32 g_maxTexIdx = 0;
 HTexture gfx::gl::genTexture(std::string name, u8 const* pData, TexType type, u8 ch, u16 w, u16 h, bool bClampToEdge)
 {
 	bool bAlpha = ch > 3;
-	Lock lock(contextImpl::g_glMutex);
 	GLObj hTex;
+	cxChk();
 	glChk(glGenTextures(1, &hTex.handle));
 	glChk(glActiveTexture(GL_TEXTURE0));
 	glChk(glBindTexture(GL_TEXTURE_2D, hTex));
@@ -58,6 +58,7 @@ HTexture gfx::gl::genTexture(std::string name, std::vector<u8> bytes, TexType ty
 	HTexture ret;
 	if (context::exists())
 	{
+		cxChk();
 		s32 w, h, ch;
 		stbi_set_flip_vertically_on_load(1);
 		auto* pData = stbi_load_from_memory(bytes.data(), (s32)bytes.size(), &w, &h, &ch, 0);
@@ -78,9 +79,9 @@ void gfx::gl::releaseTexture(std::vector<HTexture*> const& textures)
 {
 	if (context::exists())
 	{
+		cxChk();
 		std::vector<GLuint> texIDs;
 		texIDs.reserve(textures.size());
-		Lock lock(contextImpl::g_glMutex);
 #if defined(DEBUG_LOG)
 		u32 bytes = 0;
 #endif
@@ -114,7 +115,7 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> co
 	HCubemap ret;
 	if (context::exists())
 	{
-		Lock lock(contextImpl::g_glMutex);
+		cxChk();
 		glChk(glGenTextures(1, &ret.glID.handle));
 		glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, ret.glID.handle));
 		s32 w, h, ch;
@@ -156,7 +157,7 @@ void gfx::gl::releaseCubemap(HCubemap& cube)
 {
 	if (context::exists())
 	{
-		Lock lock(contextImpl::g_glMutex);
+		cxChk();
 		GLuint texID[] = {cube.glID.handle};
 		glChk(glDeleteTextures(1, texID));
 		auto size = utils::friendlySize(cube.byteCount);
@@ -167,73 +168,68 @@ void gfx::gl::releaseCubemap(HCubemap& cube)
 
 HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode)
 {
-	if (!context::exists())
+	HShader ret;
+	if (context::exists())
 	{
-		return {};
-	}
-
-	s32 success;
-	if (vertCode.empty())
-	{
-		LOG_E("[%s] Shader: Failed to compile vertex shader: empty input string!", id.data());
-		return {};
-	}
-	if (fragCode.empty())
-	{
-		LOG_E("[%s] Shader: Failed to compile fragment shader: empty input string!", id.data());
-		return {};
-	}
-
+		cxChk();
+		s32 success;
+		if (vertCode.empty())
+		{
+			LOG_E("[%s] Shader: Failed to compile vertex shader: empty input string!", id.data());
+			return ret;
+		}
+		if (fragCode.empty())
+		{
+			LOG_E("[%s] Shader: Failed to compile fragment shader: empty input string!", id.data());
+			return ret;
+		}
 #if defined(__arm__)
-	static std::string_view const VERSION = "#version 300 es\n";
+		static std::string_view const VERSION = "#version 300 es\n";
 #else
-	static std::string_view const VERSION = "#version 330 core\n";
+		static std::string_view const VERSION = "#version 330 core\n";
 #endif
-	Lock lock(contextImpl::g_glMutex);
-	u32 vsh = glCreateShader(GL_VERTEX_SHADER);
-	GLchar const* files[] = {VERSION.data(), vertCode.data()};
-	glShaderSource(vsh, (GLsizei)ARR_SIZE(files), files, nullptr);
-	glCompileShader(vsh);
-	std::array<char, 512> buf;
-	glGetShaderiv(vsh, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(vsh, (GLsizei)buf.size(), nullptr, buf.data());
-		LOG_E("[%s] (Shader) Failed to compile vertex shader!\n\t%s", id.data(), buf.data());
-		return {};
-	}
+		u32 vsh = glCreateShader(GL_VERTEX_SHADER);
+		GLchar const* files[] = {VERSION.data(), vertCode.data()};
+		glShaderSource(vsh, (GLsizei)ARR_SIZE(files), files, nullptr);
+		glCompileShader(vsh);
+		std::array<char, 512> buf;
+		glGetShaderiv(vsh, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(vsh, (GLsizei)buf.size(), nullptr, buf.data());
+			LOG_E("[%s] (Shader) Failed to compile vertex shader!\n\t%s", id.data(), buf.data());
+			return {};
+		}
+		u32 fsh = glCreateShader(GL_FRAGMENT_SHADER);
+		files[1] = fragCode.data();
+		glShaderSource(fsh, (GLsizei)ARR_SIZE(files), files, nullptr);
+		glCompileShader(fsh);
+		glGetShaderiv(fsh, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(fsh, (GLsizei)buf.size(), nullptr, buf.data());
+			LOG_E("[%s] (Shader) Failed to compile fragment shader!\n\t%s", id.data(), buf.data());
+			return {};
+		}
+		ret.glID = glCreateProgram();
+		glAttachShader(ret.glID, vsh);
+		glAttachShader(ret.glID, fsh);
+		glLinkProgram(ret.glID);
+		glGetProgramiv(ret.glID, GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			glGetProgramInfoLog(ret.glID, (GLsizei)buf.size(), nullptr, buf.data());
+			LOG_E("[%s] (Shader) Failed to link shaders!\n\t%s", id.data(), buf.data());
+			glDeleteProgram(ret.glID);
+			return {};
+		}
 
-	u32 fsh = glCreateShader(GL_FRAGMENT_SHADER);
-	files[1] = fragCode.data();
-	glShaderSource(fsh, (GLsizei)ARR_SIZE(files), files, nullptr);
-	glCompileShader(fsh);
-	glGetShaderiv(fsh, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(fsh, (GLsizei)buf.size(), nullptr, buf.data());
-		LOG_E("[%s] (Shader) Failed to compile fragment shader!\n\t%s", id.data(), buf.data());
-		return {};
+		glDeleteShader(vsh);
+		glDeleteShader(fsh);
+		LOG_I("== [%s] (Shader) created", id.data());
+		ret.id = std::move(id);
 	}
-
-	HShader program;
-	program.glID = glCreateProgram();
-	glAttachShader(program.glID, vsh);
-	glAttachShader(program.glID, fsh);
-	glLinkProgram(program.glID);
-	glGetProgramiv(program.glID, GL_LINK_STATUS, &success);
-	if (!success)
-	{
-		glGetProgramInfoLog(program.glID, (GLsizei)buf.size(), nullptr, buf.data());
-		LOG_E("[%s] (Shader) Failed to link shaders!\n\t%s", id.data(), buf.data());
-		glDeleteProgram(program.glID);
-		return {};
-	}
-
-	glDeleteShader(vsh);
-	glDeleteShader(fsh);
-	LOG_I("== [%s] (Shader) created", id.data());
-	program.id = std::move(id);
-	return program;
+	return ret;
 }
 
 void gfx::gl::releaseShader(HShader& shader)
@@ -248,10 +244,10 @@ HVerts gfx::gl::genVertices(Vertices const& vertices, Draw drawType, HShader con
 	HVerts hVerts;
 	if (context::exists())
 	{
+		cxChk();
 		ASSERT(vertices.normals.empty() || vertices.normals.size() == vertices.points.size(), "Point/normal count mismatch!");
 		ASSERT(vertices.texCoords.empty() || vertices.texCoords.size() == vertices.points.size(), "Point/UV count mismatch!");
 		GLenum const type = drawType == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenVertexArrays(1, &hVerts.vao.handle));
 		glChk(glGenBuffers(1, &hVerts.vbo.handle));
 		if (!vertices.indices.empty())
@@ -323,7 +319,7 @@ void gfx::gl::releaseVerts(HVerts& hVerts)
 {
 	if (context::exists() && hVerts.vao > 0)
 	{
-		Lock lock(contextImpl::g_glMutex);
+		cxChk();
 		glChk(glDeleteVertexArrays(1, &hVerts.vao.handle));
 		glDeleteBuffers(1, &hVerts.vbo.handle);
 		glChk(glDeleteBuffers(1, &hVerts.ebo.handle));
@@ -336,7 +332,7 @@ HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
 	HUBO ret;
 	if (context::exists())
 	{
-		Lock lock(contextImpl::g_glMutex);
+		cxChk();
 		glChk(glGenBuffers(1, &ret.ubo.handle));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, ret.ubo.handle));
 		GLenum drawType = type == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
@@ -349,37 +345,40 @@ HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
 	return ret;
 }
 
-void gfx::gl::releaseUBO(HUBO& ubo)
+void gfx::gl::releaseUBO(HUBO& hUBO)
 {
-	if (context::exists() && ubo.ubo > 0)
+	if (context::exists() && hUBO.ubo > 0)
 	{
-		Lock lock(contextImpl::g_glMutex);
-		glChk(glDeleteBuffers(1, &ubo.ubo.handle));
+		cxChk();
+		glChk(glDeleteBuffers(1, &hUBO.ubo.handle));
 	}
-	ubo = HUBO();
+	hUBO = HUBO();
 }
 
 void gfx::gl::setMaterial(HShader const& shader, Material const& material)
 {
-	auto const& u = env::g_config.uniforms;
-	ASSERT(shader.glID.handle > 0, "shader is null!");
+	if (context::exists())
 	{
-		Lock lock(contextImpl::g_glMutex);
-		shader.use();
-		bool const bIsLit = material.flags.isSet((s32)Material::Flag::Lit);
-		shader.setBool(u.material.isLit, bIsLit);
-		bool const bIsTextured = material.flags.isSet((s32)Material::Flag::Textured);
-		shader.setBool(u.material.isTextured, bIsTextured);
-		if (bIsLit)
+		auto const& u = env::g_config.uniforms;
+		ASSERT(shader.glID.handle > 0, "shader is null!");
 		{
-			shader.setF32(u.material.shininess, material.shininess);
-			shader.setV3(u.material.albedo.ambient, material.albedo.ambient);
-			shader.setV3(u.material.albedo.diffuse, material.albedo.diffuse);
-			shader.setV3(u.material.albedo.specular, material.albedo.specular);
-		}
-		if (bIsTextured)
-		{
-			shader.setBool(u.material.isOpaque, material.flags.isSet((s32)Material::Flag::Opaque));
+			cxChk();
+			shader.use();
+			bool const bIsLit = material.flags.isSet((s32)Material::Flag::Lit);
+			shader.setBool(u.material.isLit, bIsLit);
+			bool const bIsTextured = material.flags.isSet((s32)Material::Flag::Textured);
+			shader.setBool(u.material.isTextured, bIsTextured);
+			if (bIsLit)
+			{
+				shader.setF32(u.material.shininess, material.shininess);
+				shader.setV3(u.material.albedo.ambient, material.albedo.ambient);
+				shader.setV3(u.material.albedo.diffuse, material.albedo.diffuse);
+				shader.setV3(u.material.albedo.specular, material.albedo.specular);
+			}
+			if (bIsTextured)
+			{
+				shader.setBool(u.material.isOpaque, material.flags.isSet((s32)Material::Flag::Opaque));
+			}
 		}
 	}
 }
@@ -388,7 +387,7 @@ void gfx::gl::draw(HVerts const& hVerts)
 {
 	if (context::exists())
 	{
-		Lock lock(contextImpl::g_glMutex);
+		cxChk();
 		glChk(glBindVertexArray(hVerts.vao.handle));
 		if (hVerts.ebo.handle > 0)
 		{
@@ -407,6 +406,7 @@ void gfx::setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData)
 {
 	if (hUBO.ubo.handle > 0)
 	{
+		cxChk();
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, hUBO.ubo.handle));
 		glChk(glBufferSubData(GL_UNIFORM_BUFFER, offset, size, pData));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
@@ -416,7 +416,7 @@ void gfx::setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData)
 HMesh gfx::newMesh(std::string name, Vertices const& vertices, Draw type, Material::Flags flags, HShader const* pShader /* = nullptr */)
 {
 	HMesh mesh;
-	if (le::context::exists())
+	if (context::exists())
 	{
 		mesh.name = std::move(name);
 		mesh.hVerts = gl::genVertices(vertices, type, pShader);
@@ -444,119 +444,133 @@ void gfx::releaseMeshes(std::vector<HMesh*> const& meshes)
 
 bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textures, bool bSkipIfEmpty)
 {
-	if (bSkipIfEmpty && textures.empty())
-	{
-		shader.setS32(env::g_config.uniforms.material.isTextured, 0);
-		return false;
-	}
-	s32 txID = 0;
-	s32 diffuse = 0;
-	s32 specular = 0;
 	bool bResetTint = false;
-	auto const& u = env::g_config.uniforms;
-	if (textures.empty())
+	if (context::exists())
 	{
-		bResetTint = true;
-		setBlankTex(shader, 0, true);
-		++txID;
-	}
-	bool bHasSpecular = false;
-	for (auto const& texture : textures)
-	{
-		std::stringstream id;
-		std::string number;
-		number.reserve(2);
-		bool bContinue = false;
-		if (txID > g_maxTexIdx)
+		cxChk();
+		if (bSkipIfEmpty && textures.empty())
 		{
-			g_maxTexIdx = txID;
+			shader.setS32(env::g_config.uniforms.material.isTextured, 0);
+			return false;
 		}
-		switch (texture.type)
+		s32 txID = 0;
+		s32 diffuse = 0;
+		s32 specular = 0;
+		auto const& u = env::g_config.uniforms;
+		if (textures.empty())
 		{
-		case TexType::Diffuse:
-		{
-			id << u.material.diffuseTexPrefix;
-			number = std::to_string(diffuse++);
-			break;
+			bResetTint = true;
+			setBlankTex(shader, 0, true);
+			++txID;
 		}
-		case TexType::Specular:
+		bool bHasSpecular = false;
+		for (auto const& texture : textures)
 		{
-			bHasSpecular = true;
-			id << u.material.specularTexPrefix;
-			number = std::to_string(specular++);
-			break;
-		}
-		default:
-		{
-			if (txID == 0)
+			std::stringstream id;
+			std::string number;
+			number.reserve(2);
+			bool bContinue = false;
+			if (txID > g_maxTexIdx)
+			{
+				g_maxTexIdx = txID;
+			}
+			switch (texture.type)
+			{
+			case TexType::Diffuse:
+			{
+				id << u.material.diffuseTexPrefix;
+				number = std::to_string(diffuse++);
+				break;
+			}
+			case TexType::Specular:
+			{
+				bHasSpecular = true;
+				id << u.material.specularTexPrefix;
+				number = std::to_string(specular++);
+				break;
+			}
+			default:
+			{
+				if (txID == 0)
+				{
+					bResetTint = true;
+					setBlankTex(shader, txID, true);
+				}
+				bContinue = true;
+				break;
+			}
+			}
+			if (bContinue)
+			{
+				continue;
+			}
+			id << number;
+			if (texture.glID.handle > 0)
+			{
+				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+				glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
+				shader.setS32(id.str(), txID++);
+			}
+			else
 			{
 				bResetTint = true;
 				setBlankTex(shader, txID, true);
 			}
-			bContinue = true;
-			break;
 		}
-		}
-		if (bContinue)
-		{
-			continue;
-		}
-		id << number;
-		if (texture.glID.handle > 0)
+		shader.setF32(u.material.hasSpecular, bHasSpecular ? 1.0f : 0.0f);
+		for (; txID <= g_maxTexIdx; ++txID)
 		{
 			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-			glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
-			shader.setS32(id.str(), txID++);
+			glChk(glBindTexture(GL_TEXTURE_2D, 0));
 		}
-		else
-		{
-			bResetTint = true;
-			setBlankTex(shader, txID, true);
-		}
-	}
-	shader.setF32(u.material.hasSpecular, bHasSpecular ? 1.0f : 0.0f);
-	for (; txID <= g_maxTexIdx; ++txID)
-	{
-		glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-		glChk(glBindTexture(GL_TEXTURE_2D, 0));
 	}
 	return bResetTint;
 }
 
 void gfx::setBlankTex(HShader const& shader, s32 txID, bool bMagenta)
 {
-	if (bMagenta)
+	if (context::exists())
 	{
-		shader.setV4(env::g_config.uniforms.tint, Colour::Magenta);
+		cxChk();
+		if (bMagenta)
+		{
+			shader.setV4(env::g_config.uniforms.tint, Colour::Magenta);
+		}
+		glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
+		glChk(glBindTexture(GL_TEXTURE_2D, gfx::g_blankTexID.handle));
 	}
-	glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-	glChk(glBindTexture(GL_TEXTURE_2D, gfx::g_blankTexID.handle));
 }
 
 void gfx::unsetTextures(s32 lastTexID /* = 0 */)
 {
-	auto resetTex = [](s32 id) {
-		glChk(glActiveTexture(GL_TEXTURE0 + (u32)id));
-		glChk(glBindTexture(GL_TEXTURE_2D, 0));
-	};
-	if (lastTexID < 0)
+	if (context::exists())
 	{
-		lastTexID = g_maxTexIdx;
-	}
-	for (s32 i = 0; i < g_maxTexIdx && i < lastTexID; ++i)
-	{
-		resetTex(i);
+		cxChk();
+		auto resetTex = [](s32 id) {
+			glChk(glActiveTexture(GL_TEXTURE0 + (u32)id));
+			glChk(glBindTexture(GL_TEXTURE_2D, 0));
+		};
+		if (lastTexID < 0)
+		{
+			lastTexID = g_maxTexIdx;
+		}
+		for (s32 i = 0; i < g_maxTexIdx && i < lastTexID; ++i)
+		{
+			resetTex(i);
+		}
 	}
 }
 
 void gfx::drawMesh(HMesh const& mesh, HShader const& shader)
 {
+	cxChk();
 	gl::setMaterial(shader, mesh.material);
 	gl::draw(mesh.hVerts);
 }
 
 void gfx::drawMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader)
 {
+	cxChk();
 	gl::setMaterial(shader, mesh.material);
 	for (auto const& mat : mats)
 	{
@@ -613,8 +627,8 @@ HVerts gfx::tutorial::newLight(HVerts const& hVBO)
 	HVerts ret;
 	if (context::exists())
 	{
+		cxChk();
 		ret = hVBO;
-		Lock lock(contextImpl::g_glMutex);
 		glChk(glGenVertexArrays(1, &ret.vao.handle));
 		glChk(glBindVertexArray(ret.vao));
 		glChk(glBindBuffer(GL_ARRAY_BUFFER, ret.vbo));

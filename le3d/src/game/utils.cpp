@@ -79,7 +79,7 @@ void debug::DArrow::setupDArrow(const glm::quat& orientation)
 	m_sphere.oWorld = mSp;
 	m_cone.mesh.material.flags = m_cube.mesh.material.flags = m_sphere.mesh.material.flags = {};
 	setTip(m_tip, true);
-	setupModel("dArrow", {});
+	setupModel("dArrow");
 }
 
 void debug::DArrow::setTip(Tip tip, bool bForce)
@@ -406,18 +406,18 @@ void debug::renderString(Text2D const& text, HShader const& shader, HFont const&
 
 void debug::renderFPS(HFont const& font, HShader const& shader, f32 const uiAR)
 {
-	static Time frameTime = Time::now();
+	static Time frameTime = Time::elapsed();
 	static Time totalDT;
 	static u16 frames = 0;
 	static u16 fps = 0;
-	Time dt = Time::now() - frameTime;
+	Time dt = Time::elapsed() - frameTime;
 	totalDT += dt;
 	++frames;
 	if (dt > Time::secs(1.0f))
 	{
 		fps = frames;
 		frames = 0;
-		frameTime = Time::now();
+		frameTime = Time::elapsed();
 	}
 	g_fpsStyle.text = "FPS ";
 	g_fpsStyle.text += std::to_string(fps == 0 ? frames : fps);

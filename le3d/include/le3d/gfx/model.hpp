@@ -27,13 +27,14 @@ public:
 			std::string id;
 			std::string filename;
 			std::vector<u8> bytes;
-			HTexture texture;
+			HTexture hTex;
 			TexType type;
 		};
 		struct Mesh
 		{
-			Vertices vertices;
+			HMesh hMesh;
 			Albedo albedo;
+			Vertices vertices;
 			Material::Flags flags;
 			std::string id;
 			std::vector<size_t> texIndices;
@@ -44,8 +45,10 @@ public:
 		std::vector<Tex> textures;
 		std::vector<Mesh> meshes;
 
-		// Callback parameter: string_view filename
-		void setTextureData(std::function<std::vector<u8>(std::string_view)> getTexBytes, bool bUseJobs = true);
+		// Returns true if all textures loaded
+		bool loadTextures(u16 count);
+		// Returns true if all meshes loaded
+		bool loadMeshes(u16 count);
 	};
 
 	struct LoadRequest
@@ -53,6 +56,7 @@ public:
 		std::stringstream& objBuf;
 		std::stringstream& mtlBuf;
 		std::string_view meshPrefix;
+		// Callback parameter: string_view filename
 		std::function<std::vector<u8>(std::string_view)> getTexBytes;
 		f32 scale = 1.0f;
 
@@ -86,7 +90,7 @@ private:
 	std::unordered_map<std::string, HTexture> m_loadedTextures;
 
 public:
-	static Data loadOBJ(LoadRequest const& request, bool bUseJobs);
+	static Data loadOBJ(LoadRequest const& request);
 
 public:
 	Model();
@@ -97,7 +101,8 @@ public:
 	Model& operator=(Model const&);
 
 public:
-	void setupModel(std::string name, Data const& data);
+	void setupModel(std::string name);
+	void setupModel(Data const& data);
 	void addFixture(HMesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void render(HShader const& shader, ModelMats const& mats);
 

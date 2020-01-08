@@ -15,12 +15,6 @@
 
 namespace le
 {
-namespace contextImpl
-{
-std::thread::id g_contextThreadID;
-std::mutex g_glMutex;
-} // namespace contextImpl
-
 using namespace contextImpl;
 
 namespace
@@ -32,7 +26,6 @@ GLFWwindow* g_pRenderWindow = nullptr;
 
 void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 {
-	Lock lock(g_glMutex);
 	if (pWindow == g_pRenderWindow)
 	{
 		g_windowSize = {width, height};
@@ -47,6 +40,16 @@ void onError(s32 code, char const* szDesc)
 	LOG_E("GLFW Error [%d]: %s", code, szDesc);
 }
 } // namespace
+
+void contextImpl::checkContextThread()
+{
+	auto const& tid = std::this_thread::get_id();
+	ASSERT(tid == g_contextThreadID, "Non-context thread attempting access!");
+	if (tid != g_contextThreadID)
+	{
+		LOG_E("[Context] Invalid thread id attempting to access context!");
+	}
+}
 
 context::Wrapper::Wrapper(bool bValid) : m_bValid(bValid) {}
 context::Wrapper::~Wrapper()
@@ -136,25 +139,22 @@ context::Wrapper context::create(Settings const& settings)
 		return {};
 	}
 	glfwSetWindowPos(g_pRenderWindow, cX, cY);
-	{
-		Lock lock(g_glMutex);
-		glfwMakeContextCurrent(g_pRenderWindow);
+	glfwMakeContextCurrent(g_pRenderWindow);
 #if defined(FORCE_NO_VSYNC)
-		bVSYNC = false;
+	bVSYNC = false;
 #endif
-		LOGIF_I(!bVSYNC, "[Context] Vsync disabled unless overridden by driver");
-		glfwSwapInterval(bVSYNC ? 1 : 0);
-		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-		{
-			LOG_E("Failed to initialise GLAD!");
-			return {};
-		}
-		inputImpl::init(*g_pRenderWindow);
-		g_contextThreadID = std::this_thread::get_id();
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	LOGIF_I(!bVSYNC, "[Context] Vsync disabled unless overridden by driver");
+	glfwSwapInterval(bVSYNC ? 1 : 0);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		LOG_E("Failed to initialise GLAD!");
+		return {};
 	}
+	inputImpl::init(*g_pRenderWindow);
+	g_contextThreadID = std::this_thread::get_id();
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glframeBufferResizeCallback(g_pRenderWindow, width, height);
 	glfwSetFramebufferSizeCallback(g_pRenderWindow, &glframeBufferResizeCallback);
 	if (settings.env.jobWorkerCount > 0)
@@ -167,23 +167,26 @@ context::Wrapper context::create(Settings const& settings)
 
 void context::destroy()
 {
-	le::resources::unloadAll();
-	Lock lock(g_glMutex);
-	if (g_pRenderWindow)
+	if (context::exists())
 	{
-		glfwSetWindowShouldClose(g_pRenderWindow, true);
-		while (!glfwWindowShouldClose(g_pRenderWindow))
+		cxChk();
+		le::resources::unloadAll();
+		if (g_pRenderWindow)
 		{
-			glfwPollEvents();
+			glfwSetWindowShouldClose(g_pRenderWindow, true);
+			while (!glfwWindowShouldClose(g_pRenderWindow))
+			{
+				glfwPollEvents();
+			}
 		}
+		glfwTerminate();
+		jobs::cleanup();
+		g_pRenderWindow = nullptr;
+		g_windowSize = glm::vec2(0.0f);
+		g_contextThreadID = std::thread::id();
+		LOG_D("Context destroyed");
+		g_uFileLogger = nullptr;
 	}
-	glfwTerminate();
-	jobs::cleanup();
-	g_pRenderWindow = nullptr;
-	g_windowSize = glm::vec2(0.0f);
-	g_contextThreadID = std::thread::id();
-	LOG_D("Context destroyed");
-	g_uFileLogger = nullptr;
 }
 
 bool context::exists()
@@ -198,9 +201,12 @@ bool context::isClosing()
 
 void context::clearFlags(u32 flags, Colour colour /* = Colour::Black */)
 {
-	Lock lock(g_glMutex);
-	glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
-	glClear(flags);
+	if (context::exists())
+	{
+		cxChk();
+		glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
+		glClear(flags);
+	}
 }
 
 void context::pollEvents()

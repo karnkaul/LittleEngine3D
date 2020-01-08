@@ -76,7 +76,7 @@ void runTest()
 	Entity::s_gizmoShader = monolithic;
 #endif
 #if defined(DEBUG_LOG)
-	Time _t = Time::now();
+	Time _t = Time::elapsed();
 #endif
 	std::vector<u8> l, r, u, d, f, b;
 	std::vector<JobHandle> jobHandles;
@@ -98,7 +98,7 @@ void runTest()
 		skybox = resources::createSkybox("skybox", {r, l, u, d, f, b});
 	}
 #if defined(DEBUG_LOG)
-	Time _dt = Time::now() - _t;
+	Time _dt = Time::elapsed() - _t;
 	LOG_D("Skybox time: %.2fms", _dt.assecs() * 1000);
 #endif
 
@@ -139,7 +139,7 @@ void runTest()
 	Model& objModel = resources::loadModel("objModel", objData);*/
 	Model::Data objData;
 	bool bObjSet = false;
-	auto loadObjData = [&]() { objData = Model::loadOBJ(request, false); };
+	auto loadObjData = [&]() { objData = Model::loadOBJ(request); };
 	auto hObjLoad = jobs::enqueue(loadObjData, modelPath.generic_string() + "-load");
 
 	HMesh cubeMeshTexd = debug::Cube();
@@ -155,9 +155,9 @@ void runTest()
 	Model cube;
 	Model blankCube;
 	Model cubeStack;
-	cube.setupModel("cube", {});
-	cubeStack.setupModel("cubeStack", {});
-	blankCube.setupModel("blankCube", {});
+	cube.setupModel("cube");
+	cubeStack.setupModel("cubeStack");
+	blankCube.setupModel("blankCube");
 	cube.addFixture(cubeMeshTexd);
 	cubeStack.addFixture(cubeMeshTexd);
 	blankCube.addFixture(blankCubeMesh);
@@ -165,7 +165,7 @@ void runTest()
 	offset = glm::translate(offset, glm::vec3(0.0f, 2.0f, 0.0f));
 	cubeStack.addFixture(cubeMeshTexd, offset);
 	Model quad;
-	quad.setupModel("quad", {});
+	quad.setupModel("quad");
 	quad.addFixture(quadMesh);
 
 	// mesh.m_textures = {bad};
@@ -263,31 +263,23 @@ void runTest()
 #if defined(DEBUGGING)
 	auto test = input::registerFiledrop([](stdfs::path const& path) { LOG_D("File path: %s", path.generic_string().data()); });
 #endif
-	Time::reset();
 	Time dt;
-	Time t = Time::now();
+	Time t = Time::elapsed();
 
 	glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
 	f32 uiAR = uiSpace.x / uiSpace.y;
 
-	size_t objTexIdx = 0;
-	auto loadObjTex = [&objData](size_t idx) -> bool {
-		auto& texData = objData.textures[idx];
-		texData.texture = gfx::gl::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
-		return idx == objData.textures.size() - 1;
-	};
-
 	while (!context::isClosing())
 	{
-		dt = Time::now() - t;
-		t = Time::now();
+		dt = Time::elapsed() - t;
+		t = Time::elapsed();
 		camera.tick(dt);
 		// context::glClearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Colour(50, 40, 10));
 		context::clearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		if (hObjLoad->hasCompleted() && !bObjSet)
 		{
-			if (loadObjTex(objTexIdx++))
+			if (objData.loadTextures(1) && objData.loadMeshes(1))
 			{
 				bObjSet = true;
 				LOG_D("Obj ready!");
@@ -377,12 +369,14 @@ void runTest()
 		context::pollEvents();
 	}
 
+	hObjLoad->wait();
 	resources::destroySkybox(skybox);
 }
 } // namespace
 
 s32 gameloop::run(s32 argc, char const** argv)
 {
+	Time::reset();
 	context::Settings settings;
 	settings.title = "LE3D Test";
 	settings.bVSYNC = false;

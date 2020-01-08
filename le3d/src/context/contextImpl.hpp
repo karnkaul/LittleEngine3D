@@ -6,9 +6,20 @@ namespace le
 {
 using Lock = std::lock_guard<std::mutex>;
 
+#if defined DEBUGGING
+#define cxChk()                                \
+	do                                         \
+	{                                          \
+		le::contextImpl::checkContextThread(); \
+	} while (0);
+#else
+#define cxChk()
+#endif
+
 namespace contextImpl
 {
-extern std::thread::id g_contextThreadID;
-extern std::mutex g_glMutex;
+inline std::thread::id g_contextThreadID;
+
+void checkContextThread();
 } // namespace contextImpl
 } // namespace le

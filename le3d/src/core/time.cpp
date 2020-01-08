@@ -6,9 +6,7 @@ namespace le
 {
 namespace
 {
-using namespace std::chrono;
-
-auto epoch = high_resolution_clock::now();
+static auto s_localEpoch = stdch::high_resolution_clock::now();
 } // namespace
 
 Time const Time::Zero = Time(0);
@@ -52,9 +50,14 @@ Time Time::secs(f32 seconds)
 	return Time(s64(seconds));
 }
 
-Time Time::now()
+Time Time::elapsed()
 {
-	return Time(stdch::duration_cast<stdch::microseconds>(stdch::high_resolution_clock::now() - epoch).count());
+	return Time(stdch::duration_cast<stdch::microseconds>(stdch::high_resolution_clock::now() - s_localEpoch).count());
+}
+
+Time Time::sinceEpoch()
+{
+	return Time(stdch::duration_cast<stdch::microseconds>(stdch::high_resolution_clock::now().time_since_epoch()).count());
 }
 
 Time Time::clamp(Time val, Time min, Time max)
@@ -72,7 +75,7 @@ Time Time::clamp(Time val, Time min, Time max)
 
 void Time::reset()
 {
-	epoch = stdch::high_resolution_clock::now();
+	s_localEpoch = stdch::high_resolution_clock::now();
 }
 
 Time& Time::scale(f32 magnitude)

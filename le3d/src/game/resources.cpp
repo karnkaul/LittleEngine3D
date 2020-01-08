@@ -333,7 +333,7 @@ Model& resources::loadModel(std::string id, Model::Data const& data)
 {
 	ASSERT(g_modelMap.find(id) == g_modelMap.end(), "Model already loaded!");
 	Model newModel;
-	newModel.setupModel(id, data);
+	newModel.setupModel(data);
 	g_modelMap.emplace(id, std::move(newModel));
 	return g_modelMap[id];
 }
