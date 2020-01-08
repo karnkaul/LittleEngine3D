@@ -17,8 +17,8 @@ struct Callbacks
 	OnResize onResize;
 };
 
-extern Callbacks g_callbacks;
-extern GLFWwindow* g_pRenderWindow;
+inline Callbacks g_callbacks;
+inline GLFWwindow* g_pRenderWindow = nullptr;
 void init(GLFWwindow& window);
 } // namespace inputImpl
 } // namespace le

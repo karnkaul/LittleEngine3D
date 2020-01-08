@@ -11,6 +11,7 @@
 #include "le3d/core/utils.hpp"
 #include "le3d/env/env.hpp"
 #include "le3d/env/threads.hpp"
+#include "le3d/game/asyncModelLoader.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
@@ -123,25 +124,20 @@ void runTest()
 		gfx::gl::draw(light);
 	};
 
-	stdfs::path const modelFile = "plant";
-	stdfs::path const modelPath = "models" / modelFile;
-	stdfs::path materialFile = modelFile;
-	std::stringstream objBuf = utils::readFile(resourcePath((modelPath / modelFile).generic_string() + ".obj"));
-	std::stringstream mtlBuf = utils::readFile(resourcePath((modelPath / modelFile).generic_string() + ".mtl"));
-	Model::LoadRequest request(objBuf, mtlBuf);
-	request.getTexBytes = [modelPath](std::string_view filename) -> std::vector<u8> {
-		return utils::readBytes(resourcePath(modelPath / filename));
-	};
-	auto meshPrefix = modelPath.generic_string();
-	request.meshPrefix = meshPrefix;
-	request.scale = 0.1f;
-	/*Model::Data objData = Model::loadOBJ(request, true);
-	Model& objModel = resources::loadModel("objModel", objData);*/
-	Model::Data objData;
-	bool bObjSet = false;
-	auto loadObjData = [&]() { objData = Model::loadOBJ(request); };
-	auto hObjLoad = jobs::enqueue(loadObjData, modelPath.generic_string() + "-load");
-
+	stdfs::path const modelsRoot = "models";
+	stdfs::path const model0Path = "fox";
+	stdfs::path const model1Path = "plant";
+	stdfs::path const model2Path = "";
+	AsyncModelsLoader::Data loadData;
+	loadData.idPrefix = "models";
+	loadData.jsonRoots = {model0Path, model1Path};
+	if (!model2Path.empty())
+	{
+		loadData.jsonRoots.push_back(model2Path);
+	}
+	loadData.getData = [](stdfs::path const& path) -> std::stringstream { return utils::readFile(resourcePath(path)); };
+	loadData.getBytes = [](stdfs::path const& path) -> std::vector<u8> { return utils::readBytes(resourcePath(path)); };
+	AsyncModelsLoader modelsLoader(loadData);
 	HMesh cubeMeshTexd = debug::Cube();
 	HMesh quadMesh = debug::Quad();
 	quadMesh.material.textures = {resources::get<HTexture>("awesomeface")};
@@ -152,6 +148,9 @@ void runTest()
 	HMesh blankCubeMesh = cubeMeshTexd;
 	blankCubeMesh.material.textures.clear();
 	blankCubeMesh.material.flags.set(s32(Material::Flag::Textured), false);
+	HMesh sphereMesh = gfx::createCubedSphere(1.0f, "testSphere", 8, {});
+	sphereMesh.material = cubeMeshTexd.material;
+
 	Model cube;
 	Model blankCube;
 	Model cubeStack;
@@ -277,16 +276,19 @@ void runTest()
 		// context::glClearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Colour(50, 40, 10));
 		context::clearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		if (hObjLoad->hasCompleted() && !bObjSet)
+		if (!modelsLoader.done())
 		{
-			if (objData.loadTextures(1) && objData.loadMeshes(1))
+			if (modelsLoader.loadNext())
 			{
-				bObjSet = true;
-				LOG_D("Obj ready!");
-				Model& objModel = resources::loadModel(modelPath.generic_string(), objData);
-				auto& p = prop0;
-				p.clearModels();
-				p.addModel(objModel);
+				prop0.clearModels();
+				prop0.addModel(resources::get<Model>("models/" + model0Path.string()));
+				props[4].clearModels();
+				props[4].addModel(resources::get<Model>("models/" + model1Path.string()));
+				if (resources::isLoaded<Model>("models/" + model2Path.string()))
+				{
+					props[0].clearModels();
+					props[0].addModel(resources::get<Model>("models/" + model2Path.string()));
+				}
 			}
 		}
 
@@ -336,7 +338,7 @@ void runTest()
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
-		renderMeshes(debug::Sphere(), {sphereMat}, litTinted);
+		renderMeshes(sphereMesh, {sphereMat}, monolithic);
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -368,8 +370,12 @@ void runTest()
 		context::swapBuffers();
 		context::pollEvents();
 	}
-
-	hObjLoad->wait();
+	gfx::releaseMeshes({&sphereMesh});
+	/*if (uLoader)
+	{
+		uLoader->wait();
+	}*/
+	modelsLoader.waitAll();
 	resources::destroySkybox(skybox);
 }
 } // namespace

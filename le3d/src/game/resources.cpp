@@ -27,12 +27,6 @@ HUBO g_nullUBO;
 Model g_nullModel;
 } // namespace
 
-namespace resources
-{
-HTexture g_blankTex1px;
-HTexture g_noTex1px;
-} // namespace resources
-
 void FontAtlasData::deserialise(std::string json)
 {
 	GData data(std::move(json));
@@ -64,6 +58,7 @@ HUBO& resources::get<HUBO>(std::string const& id)
 	{
 		return search->second;
 	}
+	LOG_W("[Resources] [%s] HUBO not found!", id.data());
 	return g_nullUBO;
 }
 
@@ -115,7 +110,7 @@ u32 resources::count<HUBO>()
 	return (u32)g_uboMap.size();
 }
 
-HShader& resources::loadShader(std::string id, std::string_view vertCode, std::string_view fragCode)
+HShader& resources::loadShader(std::string const& id, std::string_view vertCode, std::string_view fragCode)
 {
 	ASSERT(g_shaderMap.find(id) == g_shaderMap.end(), "Shader ID already loaded!");
 	HShader shader = gfx::gl::genShader(id, vertCode, fragCode);
@@ -129,6 +124,7 @@ HShader& resources::loadShader(std::string id, std::string_view vertCode, std::s
 		return g_shaderMap[id];
 	}
 	ASSERT(false, "Failed to load shader!");
+	LOG_E("[Resources] Failed to load shader!");
 	return g_nullShader;
 }
 
@@ -140,6 +136,7 @@ HShader& resources::get<HShader>(std::string const& id)
 	{
 		return g_shaderMap[id];
 	}
+	LOG_W("[Resources] [%s] Shader not found!", id.data());
 	return g_nullShader;
 }
 
@@ -177,7 +174,7 @@ u32 resources::count<HShader>()
 	return (u32)g_shaderMap.size();
 }
 
-HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> bytes, bool bClampToEdge)
+HTexture& resources::loadTexture(std::string const& id, TexType type, std::vector<u8> bytes, bool bClampToEdge)
 {
 	if (g_blankTex1px.glID <= 0)
 	{
@@ -199,6 +196,7 @@ HTexture& resources::loadTexture(std::string id, TexType type, std::vector<u8> b
 		return g_textureMap[id];
 	}
 	ASSERT(false, "Failed to load texture!");
+	LOG_E("[Resources] [%s] Failed to load texture!", id.data());
 	return g_blankTex1px;
 }
 
@@ -210,6 +208,7 @@ HTexture& resources::get<HTexture>(std::string const& id)
 	{
 		return g_textureMap[id];
 	}
+	LOG_W("[Resources] [%s] HTexture not found!", id.data());
 	return g_blankTex1px;
 }
 
@@ -251,15 +250,15 @@ u32 resources::count<HTexture>()
 	return (u32)g_textureMap.size();
 }
 
-Skybox resources::createSkybox(std::string name, std::array<std::vector<u8>, 6> rludfb)
+Skybox resources::createSkybox(std::string const& name, std::array<std::vector<u8>, 6> rludfb)
 {
 	Skybox ret;
 	ret.cubemap = gfx::gl::genCubemap(name + "_map", std::move(rludfb));
 	Material::Flags flags;
 	flags.set(s32(Material::Flag::Textured), true);
 	ret.mesh = gfx::createCube(1.0f, name + "_mesh", flags);
-	ret.name = std::move(name);
-	LOG_D("[%s] Skybox created", ret.name.data());
+	ret.name = name;
+	LOG_D("[%s] Skybox created", name.data());
 	return ret;
 }
 
@@ -271,10 +270,10 @@ void resources::destroySkybox(Skybox& skybox)
 	skybox = Skybox();
 }
 
-HFont& resources::loadFont(std::string id, FontAtlasData atlas)
+HFont& resources::loadFont(std::string const& id, FontAtlasData atlas)
 {
 	ASSERT(g_fontMap.find(id) == g_fontMap.end(), "Font already loaded!");
-	HFont font = gfx::newFont(std::move(id), std::move(atlas.bytes), atlas.cellSize);
+	HFont font = gfx::newFont(id, std::move(atlas.bytes), atlas.cellSize);
 	if (font.sheet.glID > 0 && font.quad.hVerts.vao > 0)
 	{
 		font.colsRows = atlas.colsRows;
@@ -283,6 +282,8 @@ HFont& resources::loadFont(std::string id, FontAtlasData atlas)
 		g_fontMap.emplace(id, std::move(font));
 		return g_fontMap[id];
 	}
+	ASSERT(false, "Failed to load font!");
+	LOG_E("[Resources] [%s] Failed to load font!", id.data());
 	return g_nullFont;
 }
 
@@ -329,7 +330,7 @@ void resources::unloadAll<HFont>()
 	g_fontMap.clear();
 }
 
-Model& resources::loadModel(std::string id, Model::Data const& data)
+Model& resources::loadModel(std::string const& id, Model::Data const& data)
 {
 	ASSERT(g_modelMap.find(id) == g_modelMap.end(), "Model already loaded!");
 	Model newModel;
@@ -346,6 +347,7 @@ Model& resources::get<Model>(std::string const& id)
 	{
 		return search->second;
 	}
+	LOG_W("[Resources] [%s] Model not found!", id.data());
 	return g_nullModel;
 }
 

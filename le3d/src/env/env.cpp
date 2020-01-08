@@ -10,12 +10,6 @@
 
 namespace le
 {
-namespace env
-{
-EngineConfig g_config;
-std::string g_EOL = "\n";
-} // namespace env
-
 namespace
 {
 stdfs::path g_exeLocation;

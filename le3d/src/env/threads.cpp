@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "le3d/core/assert.hpp"
 #include "le3d/env/threads.hpp"
+#include "env/threadsImpl.hpp"
 
 namespace le
 {
@@ -11,11 +12,6 @@ namespace
 s32 g_nextID = 0;
 std::unordered_map<s32, std::unique_ptr<std::thread>> g_threadMap;
 } // namespace
-
-namespace threadsImpl
-{
-u32 g_maxThreads = std::thread::hardware_concurrency();
-}
 
 using namespace threadsImpl;
 

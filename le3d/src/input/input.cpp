@@ -7,12 +7,6 @@
 
 namespace le
 {
-namespace inputImpl
-{
-Callbacks g_callbacks;
-GLFWwindow* g_pRenderWindow = nullptr;
-} // namespace inputImpl
-
 using namespace inputImpl;
 
 namespace

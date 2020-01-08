@@ -3,7 +3,6 @@
 #include <sstream>
 #include <vector>
 #include <unordered_map>
-#include "le3d/defines.hpp"
 #include "colour.hpp"
 #include "gfxtypes.hpp"
 #include "utils.hpp"
@@ -55,7 +54,7 @@ public:
 	{
 		std::stringstream& objBuf;
 		std::stringstream& mtlBuf;
-		std::string_view meshPrefix;
+		std::string meshPrefix;
 		// Callback parameter: string_view filename
 		std::function<std::vector<u8>(std::string_view)> getTexBytes;
 		f32 scale = 1.0f;

@@ -5,9 +5,9 @@
 #include "le3d/env/env.hpp"
 #include "le3d/gfx/model.hpp"
 #include "le3d/game/resources.hpp"
-
+#include "le3d/defines.hpp"
 #if defined(PROFILE_MODEL_LOADS)
-#include "le3d/core/time.hpp"
+#include "le3d/core/profiler.hpp"
 #endif
 
 namespace le
@@ -41,14 +41,13 @@ private:
 OBJParser::OBJParser(Model::LoadRequest const& loadRequest) : m_reader(loadRequest.mtlBuf), m_request(loadRequest)
 {
 	std::string warn, err;
+	bool bOK = false;
+	{
 #if defined(PROFILE_MODEL_LOADS)
-	Time dt = Time::elapsed();
+		Profiler pr(m_request.meshPrefix + "-TinyObj", LogLevel::Info);
 #endif
-	bool bOK = tinyobj::LoadObj(&m_attrib, &m_shapes, &m_materials, &warn, &err, &m_request.objBuf, &m_reader);
-#if defined(PROFILE_MODEL_LOADS)
-	dt = Time::elapsed() - dt;
-	LOG_I("[Profile] [%s] TinyObj load time: %.2fms", m_request.meshPrefix.data(), dt.assecs() * 1000);
-#endif
+		bOK = tinyobj::LoadObj(&m_attrib, &m_shapes, &m_materials, &warn, &err, &m_request.objBuf, &m_reader);
+	}
 	if (m_shapes.empty())
 	{
 		bOK = false;
@@ -57,44 +56,37 @@ OBJParser::OBJParser(Model::LoadRequest const& loadRequest) : m_reader(loadReque
 #else
 		std::string msg = "No shapes parsed!";
 #endif
-		LOG_W("[Resources] [%s] %s", m_request.meshPrefix.data(), msg.data());
+		LOG_W("[Model::Data] [%s] %s", m_request.meshPrefix.data(), msg.data());
 	}
 	if (!warn.empty())
 	{
-		LOG_W("[Resources] %s", warn.data());
+		LOG_W("[Model::Data] %s", warn.data());
 	}
 	if (!err.empty())
 	{
-		LOG_E("[Resources] %s", err.data());
+		LOG_E("[Model::Data] %s", err.data());
 	}
 	if (bOK)
 	{
 		m_data.name = m_request.meshPrefix;
-#if defined(PROFILE_MODEL_LOADS)
-		dt = Time::elapsed();
-#endif
-		for (auto const& shape : m_shapes)
 		{
-			m_data.meshes.emplace_back(processShape(shape));
-		}
 #if defined(PROFILE_MODEL_LOADS)
-		dt = Time::elapsed() - dt;
-		LOG_I("[Profile] [%s] MeshData marshall time: %.2fms", m_request.meshPrefix.data(), dt.assecs() * 1000);
+			Profiler pr(m_request.meshPrefix + "-MeshData", LogLevel::Info);
 #endif
+			for (auto const& shape : m_shapes)
+			{
+				m_data.meshes.emplace_back(processShape(shape));
+			}
+		}
 		if (m_request.getTexBytes)
 		{
 #if defined(PROFILE_MODEL_LOADS)
-			dt = Time::elapsed();
+			Profiler pr(m_request.meshPrefix + "-TexData", LogLevel::Info);
 #endif
 			for (size_t i = 0; i < m_data.textures.size(); ++i)
 			{
 				m_data.textures[i].bytes = m_request.getTexBytes(m_data.textures[i].filename);
 			}
-#if defined(PROFILE_MODEL_LOADS)
-			dt = Time::elapsed() - dt;
-			LOGIF_I(dt > Time::Zero && !m_data.name.empty(), "[Profile] [%s] TexData marshall time: %.2fms", m_data.name.data(),
-					dt.assecs() * 1000);
-#endif
 		}
 	}
 }
@@ -132,7 +124,7 @@ void OBJParser::setName(Model::Data::Mesh& outMesh, tinyobj::shape_t const& shap
 	if (m_meshIDs.find(outMesh.id) != m_meshIDs.end())
 	{
 		id << "-" << m_data.meshes.size();
-		LOG_W("[Resources] [%s] Duplicate mesh name in [%s]!", shape.name.data(), m_request.meshPrefix.data());
+		LOG_W("[Model::Data] [%s] Duplicate mesh name in [%s]!", shape.name.data(), m_request.meshPrefix.data());
 	}
 	outMesh.id = id.str();
 	m_meshIDs.emplace(outMesh.id);
@@ -315,68 +307,65 @@ void Model::setupModel(Data const& data)
 		m_name = data.name;
 	}
 	m_type = Typename(*this);
-#if defined(PROFILE_MODEL_LOADS)
-	Time dt = Time::elapsed();
-#endif
-	for (auto const& texData : data.textures)
 	{
-		auto search = m_loadedTextures.find(texData.id);
-		ASSERT(search == m_loadedTextures.end(), "Duplicate texture!");
-		if (search == m_loadedTextures.end())
+#if defined(PROFILE_MODEL_LOADS)
+		Profiler pr(data.name + "-Model", LogLevel::Info);
+#endif
+		for (auto const& texData : data.textures)
 		{
-			if (texData.hTex.glID.handle > 0)
+			auto search = m_loadedTextures.find(texData.id);
+			ASSERT(search == m_loadedTextures.end(), "Duplicate texture!");
+			if (search == m_loadedTextures.end())
 			{
-				m_loadedTextures[texData.id] = texData.hTex;
-			}
-			else
-			{
-				ASSERT(!texData.bytes.empty(), "Texture has no data!");
-				if (texData.bytes.empty())
+				if (texData.hTex.glID.handle > 0)
 				{
-					LOG_E("[Model] [%s] Data::Tex has no data!", texData.id.data());
+					m_loadedTextures[texData.id] = texData.hTex;
 				}
 				else
 				{
-					m_loadedTextures[texData.id] = gfx::gl::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
+					ASSERT(!texData.bytes.empty(), "Texture has no data!");
+					if (texData.bytes.empty())
+					{
+						LOG_E("[Model::Data] [%s] Data::Tex has no data!", texData.id.data());
+					}
+					else
+					{
+						m_loadedTextures[texData.id] = gfx::gl::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
+					}
 				}
 			}
 		}
-	}
-	for (auto const& meshData : data.meshes)
-	{
-		HMesh hMesh;
-		if (meshData.hMesh.hVerts.vao.handle > 0)
+		for (auto const& meshData : data.meshes)
 		{
-			hMesh = meshData.hMesh;
-		}
-		else
-		{
-			hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic, meshData.flags);
-			hMesh.material.albedo = meshData.albedo;
-			hMesh.material.shininess = meshData.shininess;
-		}
-		for (auto texIdx : meshData.texIndices)
-		{
-			auto const& texData = data.textures[texIdx];
-			auto search = m_loadedTextures.find(texData.id);
-			if (search != m_loadedTextures.end())
+			HMesh hMesh;
+			if (meshData.hMesh.hVerts.vao.handle > 0)
 			{
-				hMesh.material.textures.push_back(search->second);
+				hMesh = meshData.hMesh;
 			}
 			else
 			{
-				LOG_E("[Model] [%s] Texture missing for mesh [%s]!", texData.id.data(), meshData.id.data());
+				hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic, meshData.flags);
+				hMesh.material.albedo = meshData.albedo;
+				hMesh.material.shininess = meshData.shininess;
 			}
+			for (auto texIdx : meshData.texIndices)
+			{
+				auto const& texData = data.textures[texIdx];
+				auto search = m_loadedTextures.find(texData.id);
+				if (search != m_loadedTextures.end())
+				{
+					hMesh.material.textures.push_back(search->second);
+				}
+				else
+				{
+					LOG_E("[Model::Data] [%s] Texture missing for mesh [%s]!", texData.id.data(), meshData.id.data());
+				}
+			}
+			addFixture(hMesh);
+			m_loadedMeshes.emplace_back(std::move(hMesh));
 		}
-		addFixture(hMesh);
-		m_loadedMeshes.emplace_back(std::move(hMesh));
 	}
-#if defined(PROFILE_MODEL_LOADS)
-	dt = Time::elapsed() - dt;
-	LOGIF_I(dt > Time::Zero && !data.name.empty(), "[Profile] [%s] Model::Data => Model setup time: %.2fms", data.name.data(),
-			dt.assecs() * 1000);
-#endif
-	LOGIF_W(data.meshes.empty(), "[%s] Model: No meshes present in passed data!", m_name.data());
+	LOGIF_W(data.meshes.empty(), "[Model::Data] [%s] Model: No meshes present in passed data!", m_name.data());
 	LOG_D("[%s] %s setup", m_name.data(), m_type.data());
 }
 

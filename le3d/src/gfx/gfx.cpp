@@ -41,8 +41,12 @@ HTexture gfx::gl::genTexture(std::string name, u8 const* pData, TexType type, u8
 	}
 	glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+
+#if defined(__arm__)
 	glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_RGBA : GL_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pData));
-#if !defined(__arm__)
+#else
+	glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_COMPRESSED_RGBA : GL_COMPRESSED_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB,
+					   GL_UNSIGNED_BYTE, pData));
 	glChk(glGenerateMipmap(GL_TEXTURE_2D));
 #endif
 	glChk(glBindTexture(GL_TEXTURE_2D, 0));
