@@ -26,10 +26,10 @@ std::vector<std::string> utils::readLines(stdfs::path const& path)
 	return ret;
 }
 
-std::vector<u8> utils::readBytes(stdfs::path const& path)
+bytestream utils::readBytes(stdfs::path const& path)
 {
 	std::ifstream file(path, std::ios::binary);
-	std::vector<u8> buf;
+	bytestream buf;
 	if (file.good())
 	{
 		buf = std::vector<u8>(std::istreambuf_iterator<char>(file), {});
@@ -130,7 +130,7 @@ f64 toF64(std::string input, f64 defaultValue)
 	return ret;
 }
 
-std::string toText(std::vector<u8> rawBuffer)
+std::string toText(bytestream rawBuffer)
 {
 	std::vector<char> charBuffer(rawBuffer.size() + 1, 0);
 	for (size_t i = 0; i < rawBuffer.size(); ++i)

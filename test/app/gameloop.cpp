@@ -11,7 +11,7 @@
 #include "le3d/core/utils.hpp"
 #include "le3d/env/env.hpp"
 #include "le3d/env/threads.hpp"
-#include "le3d/game/asyncModelLoader.hpp"
+#include "le3d/game/asyncLoader.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
@@ -37,6 +37,16 @@ stdfs::path const resourcesPath = "../test/resources";
 stdfs::path resourcePath(stdfs::path const& id)
 {
 	return env::dirPath(env::Dir::Executable) / resourcesPath / id;
+}
+
+std::stringstream fileToStream(stdfs::path const& id)
+{
+	return utils::readFile(resourcePath(id));
+}
+
+bytestream fileToBytes(stdfs::path const& id)
+{
+	return utils::readBytes(resourcePath(id));
 }
 
 void runTest()
@@ -76,32 +86,15 @@ void runTest()
 #if defined(DEBUGGING)
 	Entity::s_gizmoShader = monolithic;
 #endif
-#if defined(DEBUG_LOG)
-	Time _t = Time::elapsed();
-#endif
-	std::vector<u8> l, r, u, d, f, b;
-	std::vector<JobHandle> jobHandles;
 	Skybox skybox;
-	{
-		/*auto r = readBytes(resourcePath("textures/skybox/right.jpg"));
-		auto l = readBytes(resourcePath("textures/skybox/left.jpg"));
-		auto u = readBytes(resourcePath("textures/skybox/up.jpg"));
-		auto d = readBytes(resourcePath("textures/skybox/down.jpg"));
-		auto f = readBytes(resourcePath("textures/skybox/front.jpg"));
-		auto b = readBytes(resourcePath("textures/skybox/back.jpg"));*/
-		jobHandles.push_back(jobs::enqueue([&l]() { l = readBytes(resourcePath("textures/skybox/left.jpg")); }, "skybox_l"));
-		jobHandles.push_back(jobs::enqueue([&r]() { r = readBytes(resourcePath("textures/skybox/right.jpg")); }, "skybox_r"));
-		jobHandles.push_back(jobs::enqueue([&u]() { u = readBytes(resourcePath("textures/skybox/up.jpg")); }, "skybox_u"));
-		jobHandles.push_back(jobs::enqueue([&d]() { d = readBytes(resourcePath("textures/skybox/down.jpg")); }, "skybox_d"));
-		jobHandles.push_back(jobs::enqueue([&f]() { f = readBytes(resourcePath("textures/skybox/front.jpg")); }, "skybox_f"));
-		jobHandles.push_back(jobs::enqueue([&b]() { b = readBytes(resourcePath("textures/skybox/back.jpg")); }, "skybox_b"));
-		jobs::waitAll(jobHandles);
-		skybox = resources::createSkybox("skybox", {r, l, u, d, f, b});
-	}
-#if defined(DEBUG_LOG)
-	Time _dt = Time::elapsed() - _t;
-	LOG_D("Skybox time: %.2fms", _dt.assecs() * 1000);
-#endif
+	ResourceLoadRequest skyboxRequest;
+	skyboxRequest.getBytes = &fileToBytes;
+	skyboxRequest.idPrefix = "textures/skybox";
+	skyboxRequest.resourceIDs = {"left.jpg", "right.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"};
+	AsyncSkyboxLoader skyboxLoader(std::move(skyboxRequest));
+	/*skyboxLoader.waitAll();
+	ASSERT(skyboxLoader.loadNext(), "Skybox not loaded!");
+	skybox = std::move(skyboxLoader.m_skybox);*/
 
 	glm::vec3 pl0Pos(0.0f, 0.0f, 2.0f);
 	glm::vec3 pl1Pos(-4.0f, 2.0f, 2.0f);
@@ -124,20 +117,21 @@ void runTest()
 		gfx::gl::draw(light);
 	};
 
+	bool bModelsSwapped = false;
 	stdfs::path const modelsRoot = "models";
 	stdfs::path const model0Path = "fox";
 	stdfs::path const model1Path = "plant";
 	stdfs::path const model2Path = "";
-	AsyncModelsLoader::Data loadData;
-	loadData.idPrefix = "models";
-	loadData.jsonRoots = {model0Path, model1Path};
+	ResourceLoadRequest rlRequest;
+	rlRequest.idPrefix = "models";
+	rlRequest.resourceIDs = {model0Path, model1Path};
 	if (!model2Path.empty())
 	{
-		loadData.jsonRoots.push_back(model2Path);
+		rlRequest.resourceIDs.push_back(model2Path);
 	}
-	loadData.getData = [](stdfs::path const& path) -> std::stringstream { return utils::readFile(resourcePath(path)); };
-	loadData.getBytes = [](stdfs::path const& path) -> std::vector<u8> { return utils::readBytes(resourcePath(path)); };
-	AsyncModelsLoader modelsLoader(loadData);
+	rlRequest.getData = &fileToStream;
+	rlRequest.getBytes = &fileToBytes;
+	AsyncModelsLoader modelsLoader(std::move(rlRequest));
 	HMesh cubeMeshTexd = debug::Cube();
 	HMesh quadMesh = debug::Quad();
 	quadMesh.material.textures = {resources::get<HTexture>("awesomeface")};
@@ -276,10 +270,11 @@ void runTest()
 		// context::glClearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Colour(50, 40, 10));
 		context::clearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		if (!modelsLoader.done())
+		if (!bModelsSwapped)
 		{
 			if (modelsLoader.loadNext())
 			{
+				bModelsSwapped = true;
 				prop0.clearModels();
 				prop0.addModel(resources::get<Model>("models/" + model0Path.string()));
 				props[4].clearModels();
@@ -289,6 +284,13 @@ void runTest()
 					props[0].clearModels();
 					props[0].addModel(resources::get<Model>("models/" + model2Path.string()));
 				}
+			}
+		}
+		if (skybox.cubemap.byteCount == 0)
+		{
+			if (skyboxLoader.loadNext())
+			{
+				skybox = std::move(skyboxLoader.m_skybox);
 			}
 		}
 
@@ -371,10 +373,6 @@ void runTest()
 		context::pollEvents();
 	}
 	gfx::releaseMeshes({&sphereMesh});
-	/*if (uLoader)
-	{
-		uLoader->wait();
-	}*/
 	modelsLoader.waitAll();
 	resources::destroySkybox(skybox);
 }
@@ -382,7 +380,6 @@ void runTest()
 
 s32 gameloop::run(s32 argc, char const** argv)
 {
-	Time::reset();
 	context::Settings settings;
 	settings.title = "LE3D Test";
 	settings.bVSYNC = false;

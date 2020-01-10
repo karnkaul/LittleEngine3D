@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "le3d/stdtypes.hpp"
 #include "le3d/core/tZero.hpp"
 
@@ -8,7 +9,7 @@ using HThread = TZero<s32>;
 
 namespace threads
 {
-HThread newThread(Task task);
+HThread newThread(std::function<void()> task);
 void join(HThread& id);
 void join(std::vector<HThread*> const& ids);
 void joinAll();

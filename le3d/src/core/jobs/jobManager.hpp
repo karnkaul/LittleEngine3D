@@ -25,7 +25,7 @@ private:
 	public:
 		std::string m_logName;
 		std::string m_exception;
-		JobHandle m_sHandle;
+		std::shared_ptr<HJob> m_shJob;
 		s64 m_id = -1;
 		bool m_bSilent = true;
 
@@ -51,9 +51,9 @@ public:
 	~JobManager();
 
 public:
-	JobHandle enqueue(Task task, std::string name = "", bool bSilent = false);
+	std::shared_ptr<HJob> enqueue(Task task, std::string name = "", bool bSilent = false);
 	JobCatalog* createCatalogue(std::string name);
-	std::vector<JobHandle> forEach(IndexedTask const& indexedTask);
+	std::vector<std::shared_ptr<HJob>> forEach(IndexedTask const& indexedTask);
 
 	void update();
 	bool areWorkersIdle() const;

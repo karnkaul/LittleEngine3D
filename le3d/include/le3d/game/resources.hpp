@@ -11,7 +11,7 @@ struct FontAtlasData final
 	glm::ivec2 cellSize = glm::ivec2(0);
 	glm::ivec2 colsRows = glm::ivec2(0);
 	glm::ivec2 offset = glm::ivec2(0);
-	std::vector<u8> bytes;
+	bytestream bytes;
 	u8 startCode = 32;
 
 	void deserialise(std::string json);
@@ -71,7 +71,7 @@ void unloadAll<HShader>();
 template <>
 u32 count<HShader>();
 
-HTexture& loadTexture(std::string const& id, TexType type, std::vector<u8> bytes, bool bClampToEdge);
+HTexture& loadTexture(std::string const& id, TexType type, bytestream bytes, bool bClampToEdge);
 template <>
 HTexture& get<HTexture>(std::string const& id);
 template <>
@@ -83,7 +83,7 @@ void unloadAll<HTexture>();
 template <>
 u32 count<HTexture>();
 
-Skybox createSkybox(std::string const& name, std::array<std::vector<u8>, 6> rltbfb);
+Skybox createSkybox(std::string const& name, std::array<bytestream, 6> rltbfb);
 void destroySkybox(Skybox& skybox);
 
 HFont& loadFont(std::string const& id, FontAtlasData atlas);

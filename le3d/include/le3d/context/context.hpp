@@ -63,6 +63,7 @@ void clearFlags(u32 flags, Colour colour = Colour::Black);
 void pollEvents();
 void swapBuffers();
 
+u64 swapCount();
 f32 nativeAR();
 glm::vec2 size();
 glm::vec2 project(glm::vec2 nPos, glm::vec2 space);

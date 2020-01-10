@@ -5,13 +5,13 @@
 
 namespace le
 {
-struct Profiler final
+struct Profiler
 {
 	std::string id;
 	LogLevel level = LogLevel::Debug;
 	Time dt;
 
 	Profiler(std::string_view id, LogLevel level = LogLevel::Debug);
-	~Profiler();
+	virtual ~Profiler();
 };
 } // namespace le

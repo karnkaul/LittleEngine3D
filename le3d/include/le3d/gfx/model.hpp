@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <optional>
 #include <sstream>
 #include <vector>
@@ -25,7 +26,7 @@ public:
 		{
 			std::string id;
 			std::string filename;
-			std::vector<u8> bytes;
+			bytestream bytes;
 			HTexture hTex;
 			TexType type;
 		};
@@ -56,7 +57,7 @@ public:
 		std::stringstream& mtlBuf;
 		std::string meshPrefix;
 		// Callback parameter: string_view filename
-		std::function<std::vector<u8>(std::string_view)> getTexBytes;
+		std::function<bytestream(std::string_view)> getTexBytes;
 		f32 scale = 1.0f;
 
 		LoadRequest(std::stringstream& objBuf, std::stringstream& mtlBuf);

@@ -19,10 +19,10 @@ inline GLObj g_noTexID = GLObj(2);
 namespace gl
 {
 HTexture genTexture(std::string name, u8 const* pData, TexType type, u8 ch, u16 w, u16 h, bool bClampToEdge);
-HTexture genTexture(std::string name, std::vector<u8> image, TexType type, bool bClampToEdge);
+HTexture genTexture(std::string name, bytestream image, TexType type, bool bClampToEdge);
 void releaseTexture(std::vector<HTexture*> const& textures);
 
-HCubemap genCubemap(std::string name, std::array<std::vector<u8>, 6> const& rltbfb);
+HCubemap genCubemap(std::string name, std::array<bytestream, 6> const& rludfb);
 void releaseCubemap(HCubemap& cube);
 
 HShader genShader(std::string id, std::string_view vertCode, std::string_view fragCode);
@@ -59,7 +59,7 @@ void drawMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HShader c
 
 void renderMesh(HMesh const& mesh, HShader const& shader);
 
-HFont newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cellSize);
+HFont newFont(std::string name, bytestream spritesheet, glm::ivec2 cellSize);
 void releaseFonts(std::vector<HFont*> const& fonts);
 
 namespace tutorial

@@ -26,8 +26,14 @@ Text2D g_versionStyle = {
 
 void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 {
+	if (skybox.cubemap.byteCount == 0 || skybox.mesh.hVerts.byteCount == 0)
+	{
+		return;
+	}
 	glChk(glDepthMask(GL_FALSE));
+	shader.use();
 	shader.setV4(env::g_config.uniforms.tint, tint);
+	glChk(glActiveTexture(GL_TEXTURE0));
 	glChk(glBindVertexArray(skybox.mesh.hVerts.vao.handle));
 	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemap.glID.handle));
 	if (skybox.mesh.hVerts.ebo.handle > 0)

@@ -57,7 +57,7 @@ HTexture gfx::gl::genTexture(std::string name, u8 const* pData, TexType type, u8
 	return {std::move(name), glm::ivec2(w, h), size, type, std::move(hTex)};
 }
 
-HTexture gfx::gl::genTexture(std::string name, std::vector<u8> bytes, TexType type, bool bClampToEdge)
+HTexture gfx::gl::genTexture(std::string name, bytestream bytes, TexType type, bool bClampToEdge)
 {
 	HTexture ret;
 	if (context::exists())
@@ -114,7 +114,7 @@ void gfx::gl::releaseTexture(std::vector<HTexture*> const& textures)
 	}
 }
 
-HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> const& rlupfb)
+HCubemap gfx::gl::genCubemap(std::string name, std::array<bytestream, 6> const& rludfb)
 {
 	HCubemap ret;
 	if (context::exists())
@@ -126,7 +126,7 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> co
 		u32 idx = 0;
 		u32 inTotal = 0;
 		stbi_set_flip_vertically_on_load(0);
-		for (auto const& side : rlupfb)
+		for (auto const& side : rludfb)
 		{
 			auto pData = stbi_load_from_memory(side.data(), (s32)side.size(), &w, &h, &ch, 0);
 			if (pData)
@@ -150,6 +150,7 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<std::vector<u8>, 6> co
 		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 		glChk(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
 		ret.id = std::move(name);
+		ret.size = {w, h};
 		auto fsize = utils::friendlySize(ret.byteCount);
 		auto fin = utils::friendlySize(inTotal);
 		LOG_I("== [%s] [%.1f%s => %.1f%s] Cubemap created", ret.id.data(), fin.first, fin.second.data(), fsize.first, fsize.second.data());
@@ -583,7 +584,7 @@ void gfx::drawMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HSha
 	}
 }
 
-HFont gfx::newFont(std::string name, std::vector<u8> spritesheet, glm::ivec2 cellSize)
+HFont gfx::newFont(std::string name, bytestream spritesheet, glm::ivec2 cellSize)
 {
 	HFont ret;
 	if (context::exists())

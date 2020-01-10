@@ -1,27 +1,29 @@
 #pragma once
 #include <cstdint>
-#include <functional>
 #if __MINGW32__
 #define __STDC_FORMAT_MACROS
 #endif
 #include <inttypes.h>
+#include <string>
 #include <type_traits>
+#include <vector>
 
-#define ARR_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
-#define SIZEOF_VEC(vec) (vec.empty() ? 0 : vec.size() * sizeof(vec[0]))
+#define ARR_SIZE(arr) sizeof(arr) / sizeof(arr[0])
 
-using u8 = uint8_t;
-using s8 = int8_t;
-using u16 = uint16_t;
-using s16 = int16_t;
-using u32 = uint32_t;
-using u64 = uint64_t;
-using s32 = int32_t;
-using s64 = int64_t;
+namespace le
+{
+using u8 = std::uint8_t;
+using s8 = std::int8_t;
+using u16 = std::uint16_t;
+using s16 = std::int16_t;
+using u32 = std::uint32_t;
+using u64 = std::uint64_t;
+using s32 = std::int32_t;
+using s64 = std::int64_t;
 using f32 = float;
 using f64 = double;
 using size_t = std::size_t;
-using Task = std::function<void()>;
+using bytestream = std::vector<u8>;
 
 template <typename Base, typename Derived>
 constexpr bool isDerived()
@@ -42,3 +44,4 @@ std::string_view Typename(T const& t)
 	}
 	return name;
 }
+} // namespace le

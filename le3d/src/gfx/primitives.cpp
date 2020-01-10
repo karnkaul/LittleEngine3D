@@ -1,5 +1,5 @@
 /// Note: When viewing the source on GitHub' s web interface, add "?ts=4" to the URL to have it use the correct tab spacing (4).
-
+#include <functional>
 #include "le3d/core/assert.hpp"
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/gfx.hpp"

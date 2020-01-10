@@ -23,6 +23,7 @@ std::unique_ptr<FileLogger> g_uFileLogger;
 glm::vec2 g_windowSize;
 f32 g_nativeAR = 1.0f;
 GLFWwindow* g_pRenderWindow = nullptr;
+u64 g_swapCount = 0;
 
 void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 {
@@ -183,6 +184,7 @@ void context::destroy()
 		jobs::cleanup();
 		g_pRenderWindow = nullptr;
 		g_windowSize = glm::vec2(0.0f);
+		g_swapCount = 0;
 		g_contextThreadID = std::thread::id();
 		LOG_D("Context destroyed");
 		g_uFileLogger = nullptr;
@@ -222,7 +224,13 @@ void context::swapBuffers()
 	if (g_pRenderWindow)
 	{
 		glfwSwapBuffers(g_pRenderWindow);
+		++g_swapCount;
 	}
+}
+
+u64 context::swapCount()
+{
+	return g_swapCount;
 }
 
 f32 context::nativeAR()

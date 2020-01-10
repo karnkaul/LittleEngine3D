@@ -15,7 +15,7 @@ std::unordered_map<s32, std::unique_ptr<std::thread>> g_threadMap;
 
 using namespace threadsImpl;
 
-HThread threads::newThread(Task task)
+HThread threads::newThread(std::function<void()> task)
 {
 	g_threadMap.emplace(++g_nextID, std::make_unique<std::thread>(task));
 	return HThread(g_nextID);

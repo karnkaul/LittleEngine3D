@@ -12,11 +12,11 @@ namespace
 {
 std::unique_ptr<JobManager> uManager;
 
-JobHandle doNow(std::packaged_task<std::any()> task, std::optional<std::string> oName)
+std::shared_ptr<HJob> doNow(std::packaged_task<std::any()> task, std::optional<std::string> oName)
 {
 	std::string name = oName ? *oName : "unnamed";
 	LOG_E("[Jobs] Not initialised! Running [%s] Task on this thread!", name.data());
-	JobHandle ret = std::make_shared<JobHandleBlock>(-1, task.get_future());
+	std::shared_ptr<HJob> ret = std::make_shared<HJob>(-1, task.get_future());
 	task();
 	if (oName)
 	{
@@ -51,7 +51,7 @@ void jobs::cleanup()
 	g_pJobManager = nullptr;
 }
 
-JobHandle jobs::enqueue(std::function<std::any()> task, std::string name /* = "" */, bool bSilent /* = false */)
+std::shared_ptr<HJob> jobs::enqueue(std::function<std::any()> task, std::string name /* = "" */, bool bSilent /* = false */)
 {
 	if (uManager)
 	{
@@ -63,7 +63,7 @@ JobHandle jobs::enqueue(std::function<std::any()> task, std::string name /* = ""
 	}
 }
 
-JobHandle jobs::enqueue(std::function<void()> task, std::string name /* = "" */, bool bSilent /* = false */)
+std::shared_ptr<HJob> jobs::enqueue(std::function<void()> task, std::string name /* = "" */, bool bSilent /* = false */)
 {
 	auto doTask = [task]() -> std::any {
 		task();
@@ -93,7 +93,7 @@ JobCatalog* jobs::createCatalogue(std::string name)
 	}
 }
 
-std::vector<JobHandle> jobs::forEach(IndexedTask const& indexedTask)
+std::vector<std::shared_ptr<HJob>> jobs::forEach(IndexedTask const& indexedTask)
 {
 	if (uManager)
 	{
@@ -120,7 +120,7 @@ std::vector<JobHandle> jobs::forEach(IndexedTask const& indexedTask)
 	return {};
 }
 
-void jobs::waitAll(std::vector<JobHandle> const& handles)
+void jobs::waitAll(std::vector<std::shared_ptr<HJob>> const& handles)
 {
 	for (auto& handle : handles)
 	{

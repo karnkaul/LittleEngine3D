@@ -23,7 +23,7 @@ JobManager::Job::Job(s64 id, Task task, std::string name, bool bSilent) : m_task
 		m_logName += std::move(name);
 	}
 	m_logName += "]";
-	m_sHandle = std::make_shared<JobHandleBlock>(id, m_task.get_future());
+	m_shJob = std::make_shared<HJob>(id, m_task.get_future());
 }
 
 void JobManager::Job::run()
@@ -57,13 +57,13 @@ JobManager::~JobManager()
 	m_jobWorkers.clear();
 }
 
-JobHandle JobManager::enqueue(Task task, std::string name, bool bSilent)
+std::shared_ptr<HJob> JobManager::enqueue(Task task, std::string name, bool bSilent)
 {
-	JobHandle ret;
+	std::shared_ptr<HJob> ret;
 	{
 		Lock lock(m_wakeMutex);
 		m_jobQueue.emplace(++m_nextJobID, std::move(task), std::move(name), bSilent);
-		ret = m_jobQueue.back().m_sHandle;
+		ret = m_jobQueue.back().m_shJob;
 	}
 	// Wake a sleeping worker
 	m_wakeCV.notify_one();
@@ -76,10 +76,10 @@ JobCatalog* JobManager::createCatalogue(std::string name)
 	return m_catalogs.back().get();
 }
 
-std::vector<JobHandle> JobManager::forEach(IndexedTask const& indexedTask)
+std::vector<std::shared_ptr<HJob>> JobManager::forEach(IndexedTask const& indexedTask)
 {
 	size_t idx = indexedTask.startIdx;
-	std::vector<JobHandle> handles;
+	std::vector<std::shared_ptr<HJob>> handles;
 	u16 buckets = u16(indexedTask.iterationCount / indexedTask.iterationsPerJob);
 	for (u16 bucket = 0; bucket < buckets; ++bucket)
 	{
