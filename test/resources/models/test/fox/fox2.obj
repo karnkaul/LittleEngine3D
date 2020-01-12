@@ -1,6 +1,6 @@
 # Blender v2.74 (sub 0) OBJ File: ''
 # www.blender.org
-mtllib fox.mtl
+mtllib fox_mat.mtl
 o fox1
 v 10.013863 57.761101 8.092894
 v 11.597156 30.546070 -26.744658

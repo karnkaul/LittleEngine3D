@@ -79,7 +79,7 @@ public:
 
 public:
 	std::string m_name;
-	std::string_view m_type;
+	std::string m_type;
 	Colour m_tint = Colour::White;
 
 protected:

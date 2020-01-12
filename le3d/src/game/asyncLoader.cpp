@@ -42,7 +42,7 @@ AsyncModelsLoader::AsyncModelsLoader(ResourceLoadRequest request) : TLoader<Mode
 	{
 		for (auto const& modelRoot : m_rlRequest.resourceIDs)
 		{
-			auto jsonPath = m_rlRequest.idPrefix / modelRoot / modelRoot;
+			auto jsonPath = m_rlRequest.idPrefix / modelRoot / modelRoot.filename();
 			jsonPath += ".json";
 			GData gData(m_rlRequest.getData(jsonPath).str());
 			if (gData.fieldCount() == 0 || !gData.contains("mtl") || !gData.contains("obj"))
@@ -65,7 +65,7 @@ AsyncModelsLoader::AsyncModelsLoader(ResourceLoadRequest request) : TLoader<Mode
 					mlr.getTexBytes = [this, prefix](std::string_view filename) -> bytestream {
 						return m_rlRequest.getBytes(prefix / filename);
 					};
-					mlr.meshPrefix = (m_rlRequest.idPrefix / stdfs::path(id)).generic_string();
+					mlr.meshPrefix = (m_rlRequest.idPrefix / modelRoot.parent_path() / stdfs::path(id)).generic_string();
 					mlr.scale = scale;
 					sRequest->data = Model::loadOBJ(mlr);
 				};
@@ -81,9 +81,18 @@ AsyncModelsLoader::AsyncModelsLoader(ResourceLoadRequest request) : TLoader<Mode
 	// GData data()
 }
 
-bool AsyncModelsLoader::onLoadNext(std::shared_ptr<TLoadRequest<Model::Data>> const& sRequest, u16 count)
+AsyncModelsLoader::LoadNextState AsyncModelsLoader::onLoadNext(std::shared_ptr<TLoadRequest<Model::Data>> const& sRequest, u16 count)
 {
-	return sRequest->data.loadMeshes(count) && sRequest->data.loadTextures(count);
+	auto& d = sRequest->data;
+	if (d.loadMeshes(0) && d.loadTextures(0))
+	{
+		return LoadNextState::Idle;
+	}
+	if (d.loadMeshes(count) && d.loadTextures(count))
+	{
+		return LoadNextState::Loaded;
+	}
+	return LoadNextState::Loading;
 }
 
 void AsyncModelsLoader::onDone()

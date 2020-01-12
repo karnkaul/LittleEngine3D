@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <memory>
 #include <glm/glm.hpp>
 #include "le3d/stdtypes.hpp"
 #include "le3d/gfx/colour.hpp"
@@ -40,24 +41,14 @@ struct Settings
 	bool bVSYNC = true;
 };
 
-struct Wrapper final
+struct HContext final
 {
-private:
-	bool const m_bValid = false;
-
-public:
-	Wrapper(bool bValid = false);
-	Wrapper(Wrapper const&) = delete;
-	Wrapper& operator=(Wrapper const&) = delete;
-	~Wrapper();
-
-	operator bool() const;
+	~HContext();
 };
 
-Wrapper create(Settings const& pSettings);
-void destroy();
-
-bool exists();
+std::unique_ptr<HContext> create(Settings const& settings);
+bool isAlive();
+void close();
 bool isClosing();
 void clearFlags(u32 flags, Colour colour = Colour::Black);
 void pollEvents();

@@ -90,7 +90,7 @@ void runTest()
 	ResourceLoadRequest skyboxRequest;
 	skyboxRequest.getBytes = &fileToBytes;
 	skyboxRequest.idPrefix = "textures/skybox";
-	skyboxRequest.resourceIDs = {"left.jpg", "right.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"};
+	skyboxRequest.resourceIDs = {"right.jpg", "left.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"};
 	AsyncSkyboxLoader skyboxLoader(std::move(skyboxRequest));
 	/*skyboxLoader.waitAll();
 	ASSERT(skyboxLoader.loadNext(), "Skybox not loaded!");
@@ -119,7 +119,7 @@ void runTest()
 
 	bool bModelsSwapped = false;
 	stdfs::path const modelsRoot = "models";
-	stdfs::path const model0Path = "fox";
+	stdfs::path const model0Path = "test/fox";
 	stdfs::path const model1Path = "plant";
 	stdfs::path const model2Path = "";
 	ResourceLoadRequest rlRequest;
@@ -214,6 +214,11 @@ void runTest()
 	tOnInput = input::registerInput([&](s32 key, s32 action, s32 mods) {
 		if (action == GLFW_RELEASE)
 		{
+			if (key == GLFW_KEY_ESCAPE)
+			{
+				context::close();
+				return;
+			}
 			if (key == GLFW_KEY_W && mods & GLFW_MOD_CONTROL)
 			{
 				bWireframe = !bWireframe;
@@ -262,7 +267,7 @@ void runTest()
 	glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
 	f32 uiAR = uiSpace.x / uiSpace.y;
 
-	while (!context::isClosing())
+	while (context::isAlive())
 	{
 		dt = Time::elapsed() - t;
 		t = Time::elapsed();
@@ -272,7 +277,7 @@ void runTest()
 
 		if (!bModelsSwapped)
 		{
-			if (modelsLoader.loadNext())
+			if (modelsLoader.loadNext() == AsyncLoadState::Idle)
 			{
 				bModelsSwapped = true;
 				prop0.clearModels();
@@ -288,7 +293,7 @@ void runTest()
 		}
 		if (skybox.cubemap.byteCount == 0)
 		{
-			if (skyboxLoader.loadNext())
+			if (skyboxLoader.loadNext() == AsyncLoadState::Idle)
 			{
 				skybox = std::move(skyboxLoader.m_skybox);
 			}
@@ -386,7 +391,7 @@ s32 gameloop::run(s32 argc, char const** argv)
 	settings.env.args = {argc, argv};
 	settings.env.jobWorkerCount = 4;
 	// settings.type = context::Type::BorderlessFullscreen;
-	if (auto wContext = context::create(settings))
+	if (auto uContext = context::create(settings))
 	{
 		runTest();
 		return 0;

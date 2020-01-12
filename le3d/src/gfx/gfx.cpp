@@ -60,7 +60,7 @@ HTexture gfx::gl::genTexture(std::string name, u8 const* pData, TexType type, u8
 HTexture gfx::gl::genTexture(std::string name, bytestream bytes, TexType type, bool bClampToEdge)
 {
 	HTexture ret;
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		s32 w, h, ch;
@@ -81,7 +81,7 @@ HTexture gfx::gl::genTexture(std::string name, bytestream bytes, TexType type, b
 
 void gfx::gl::releaseTexture(std::vector<HTexture*> const& textures)
 {
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		std::vector<GLuint> texIDs;
@@ -117,7 +117,7 @@ void gfx::gl::releaseTexture(std::vector<HTexture*> const& textures)
 HCubemap gfx::gl::genCubemap(std::string name, std::array<bytestream, 6> const& rludfb)
 {
 	HCubemap ret;
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		glChk(glGenTextures(1, &ret.glID.handle));
@@ -160,7 +160,7 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<bytestream, 6> const& 
 
 void gfx::gl::releaseCubemap(HCubemap& cube)
 {
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		GLuint texID[] = {cube.glID.handle};
@@ -174,7 +174,7 @@ void gfx::gl::releaseCubemap(HCubemap& cube)
 HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode)
 {
 	HShader ret;
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		s32 success;
@@ -247,7 +247,7 @@ void gfx::gl::releaseShader(HShader& shader)
 HVerts gfx::gl::genVertices(Vertices const& vertices, Draw drawType, HShader const* pShader)
 {
 	HVerts hVerts;
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		ASSERT(vertices.normals.empty() || vertices.normals.size() == vertices.points.size(), "Point/normal count mismatch!");
@@ -322,7 +322,7 @@ HVerts gfx::gl::genVertices(Vertices const& vertices, Draw drawType, HShader con
 
 void gfx::gl::releaseVerts(HVerts& hVerts)
 {
-	if (context::exists() && hVerts.vao > 0)
+	if (context::isAlive() && hVerts.vao > 0)
 	{
 		cxChk();
 		glChk(glDeleteVertexArrays(1, &hVerts.vao.handle));
@@ -335,7 +335,7 @@ void gfx::gl::releaseVerts(HVerts& hVerts)
 HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
 {
 	HUBO ret;
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		glChk(glGenBuffers(1, &ret.ubo.handle));
@@ -352,7 +352,7 @@ HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
 
 void gfx::gl::releaseUBO(HUBO& hUBO)
 {
-	if (context::exists() && hUBO.ubo > 0)
+	if (context::isAlive() && hUBO.ubo > 0)
 	{
 		cxChk();
 		glChk(glDeleteBuffers(1, &hUBO.ubo.handle));
@@ -362,7 +362,7 @@ void gfx::gl::releaseUBO(HUBO& hUBO)
 
 void gfx::gl::setMaterial(HShader const& shader, Material const& material)
 {
-	if (context::exists())
+	if (context::isAlive())
 	{
 		auto const& u = env::g_config.uniforms;
 		ASSERT(shader.glID.handle > 0, "shader is null!");
@@ -390,7 +390,7 @@ void gfx::gl::setMaterial(HShader const& shader, Material const& material)
 
 void gfx::gl::draw(HVerts const& hVerts)
 {
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		glChk(glBindVertexArray(hVerts.vao.handle));
@@ -421,7 +421,7 @@ void gfx::setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData)
 HMesh gfx::newMesh(std::string name, Vertices const& vertices, Draw type, Material::Flags flags, HShader const* pShader /* = nullptr */)
 {
 	HMesh mesh;
-	if (context::exists())
+	if (context::isAlive())
 	{
 		mesh.name = std::move(name);
 		mesh.hVerts = gl::genVertices(vertices, type, pShader);
@@ -437,7 +437,7 @@ void gfx::releaseMeshes(std::vector<HMesh*> const& meshes)
 {
 	for (auto pMesh : meshes)
 	{
-		if (pMesh->hVerts.vao > 0 && context::exists())
+		if (pMesh->hVerts.vao > 0 && context::isAlive())
 		{
 			auto size = utils::friendlySize(pMesh->hVerts.byteCount);
 			LOG_I("-- [%s] [%.1f%s] Mesh destroyed", pMesh->name.data(), size.first, size.second.data());
@@ -450,7 +450,7 @@ void gfx::releaseMeshes(std::vector<HMesh*> const& meshes)
 bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textures, bool bSkipIfEmpty)
 {
 	bool bResetTint = false;
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		if (bSkipIfEmpty && textures.empty())
@@ -534,7 +534,7 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 
 void gfx::setBlankTex(HShader const& shader, s32 txID, bool bMagenta)
 {
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		if (bMagenta)
@@ -548,7 +548,7 @@ void gfx::setBlankTex(HShader const& shader, s32 txID, bool bMagenta)
 
 void gfx::unsetTextures(s32 lastTexID /* = 0 */)
 {
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		auto resetTex = [](s32 id) {
@@ -587,7 +587,7 @@ void gfx::drawMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HSha
 HFont gfx::newFont(std::string name, bytestream spritesheet, glm::ivec2 cellSize)
 {
 	HFont ret;
-	if (context::exists())
+	if (context::isAlive())
 	{
 		Vertices vertices;
 		f32 cellAR = (f32)cellSize.x / cellSize.y;
@@ -606,7 +606,7 @@ HFont gfx::newFont(std::string name, bytestream spritesheet, glm::ivec2 cellSize
 
 void gfx::releaseFonts(std::vector<HFont*> const& fonts)
 {
-	if (context::exists())
+	if (context::isAlive())
 	{
 		std::vector<HMesh*> meshes;
 		std::vector<HTexture*> textures;
@@ -630,7 +630,7 @@ void gfx::releaseFonts(std::vector<HFont*> const& fonts)
 HVerts gfx::tutorial::newLight(HVerts const& hVBO)
 {
 	HVerts ret;
-	if (context::exists())
+	if (context::isAlive())
 	{
 		cxChk();
 		ret = hVBO;

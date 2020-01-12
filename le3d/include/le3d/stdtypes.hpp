@@ -32,16 +32,22 @@ constexpr bool isDerived()
 }
 
 template <typename T>
-std::string_view Typename(T const& t)
+std::string Typename(T const& t)
 {
+	std::string name = typeid(t).name();
+#if defined(__linux__)
+	static size_t const PREFIX = 5;
+	static size_t const TAIL = 1;
+	name = name.substr(PREFIX, name.length() - (PREFIX + TAIL));
+#else
 	static std::string_view const PREFIX = "class le::";
 	static size_t const PREFIX_LEN = PREFIX.length();
-	std::string_view name = typeid(t).name();
 	auto idx = name.find(PREFIX);
 	if (idx != std::string::npos)
 	{
-		name = name.substr(PREFIX_LEN, name.length() - PREFIX_LEN);
+		name = name.substr(PREFIX_LEN);
 	}
+#endif
 	return name;
 }
 } // namespace le
