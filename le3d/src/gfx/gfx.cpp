@@ -23,38 +23,43 @@ s32 g_maxTexIdx = 0;
 
 HTexture gfx::gl::genTexture(std::string name, u8 const* pData, TexType type, u8 ch, u16 w, u16 h, bool bClampToEdge)
 {
-	bool bAlpha = ch > 3;
-	GLObj hTex;
-	cxChk();
-	glChk(glGenTextures(1, &hTex.handle));
-	glChk(glActiveTexture(GL_TEXTURE0));
-	glChk(glBindTexture(GL_TEXTURE_2D, hTex));
-	if (bClampToEdge)
+	if (context::isAlive())
 	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	}
-	else
-	{
-		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-	}
-	glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+		bool bAlpha = ch > 3;
+		GLObj hTex;
+		cxChk();
+		glChk(glGenTextures(1, &hTex.handle));
+		glChk(glActiveTexture(GL_TEXTURE0));
+		glChk(glBindTexture(GL_TEXTURE_2D, hTex));
+		if (bClampToEdge)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+		else
+		{
+			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+		}
+		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
 #if defined(__arm__)
-	glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_RGBA : GL_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pData));
+		glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_RGBA : GL_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pData));
 #else
-	glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_COMPRESSED_RGBA : GL_COMPRESSED_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB,
-					   GL_UNSIGNED_BYTE, pData));
-	glChk(glGenerateMipmap(GL_TEXTURE_2D));
+		glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_COMPRESSED_RGBA : GL_COMPRESSED_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB,
+						   GL_UNSIGNED_BYTE, pData));
+		glChk(glGenerateMipmap(GL_TEXTURE_2D));
 #endif
-	glChk(glBindTexture(GL_TEXTURE_2D, 0));
-	std::string_view typeStr = type == TexType::Diffuse ? "Diffuse" : "Specular";
-	u32 size = u32(w * h * ch);
-	auto fsize = utils::friendlySize(size);
-	LOG_I("== [%s] [%.1f%s] (%s) Texture created", name.data(), fsize.first, fsize.second.data(), typeStr.data());
-	return {std::move(name), glm::ivec2(w, h), size, type, std::move(hTex)};
+		glChk(glBindTexture(GL_TEXTURE_2D, 0));
+		std::string_view typeStr = type == TexType::Diffuse ? "Diffuse" : "Specular";
+		u32 size = u32(w * h * ch);
+		auto fsize = utils::friendlySize(size);
+		LOG_I("== [%s] [%.1f%s] (%s) [%s] created", name.data(), fsize.first, fsize.second.data(), typeStr.data(),
+			  Typename<HTexture>().data());
+		return {std::move(name), glm::ivec2(w, h), size, type, std::move(hTex)};
+	}
+	return {};
 }
 
 HTexture gfx::gl::genTexture(std::string name, bytestream bytes, TexType type, bool bClampToEdge)
@@ -79,33 +84,48 @@ HTexture gfx::gl::genTexture(std::string name, bytestream bytes, TexType type, b
 	return ret;
 }
 
-void gfx::gl::releaseTexture(std::vector<HTexture*> const& textures)
+void gfx::gl::releaseTexture(HTexture& outTexture)
 {
-	if (context::isAlive())
+	if (contextImpl::exists())
 	{
 		cxChk();
-		std::vector<GLuint> texIDs;
-		texIDs.reserve(textures.size());
-#if defined(DEBUG_LOG)
-		u32 bytes = 0;
-#endif
-		for (auto pTexture : textures)
+		if (outTexture.glID > 0)
 		{
-			ASSERT(pTexture, "Texture is null!");
-			if (pTexture->glID > 0)
-			{
-				texIDs.push_back(pTexture->glID);
-#if defined(DEBUG_LOG)
-				bytes += pTexture->byteCount;
-#endif
-				auto size = utils::friendlySize(pTexture->byteCount);
-				LOG_I("-- [%s] [%.1f%s] Texture destroyed", pTexture->id.data(), size.first, size.second.data());
-			}
-			*pTexture = HTexture();
+			auto size = utils::friendlySize(outTexture.byteCount);
+			LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outTexture.id.data(), size.first, size.second.data(), Typename<HTexture>().data());
 		}
+		GLuint t[] = {outTexture.glID};
+		glChk(glDeleteTextures(1, t));
+	}
+	outTexture = HTexture();
+}
+
+void gfx::gl::releaseTextures(std::vector<HTexture>& outTextures)
+{
+	std::vector<GLuint> texIDs;
+	texIDs.reserve(outTextures.size());
+#if defined(DEBUG_LOG)
+	u32 bytes = 0;
+#endif
+	for (auto& texture : outTextures)
+	{
+		if (texture.glID.handle > 0)
+		{
+			texIDs.push_back(texture.glID.handle);
+#if defined(DEBUG_LOG)
+			bytes += texture.byteCount;
+#endif
+			auto size = utils::friendlySize(texture.byteCount);
+			LOG_I("-- [%s] [%.1f%s] [%s] destroyed", texture.id.data(), size.first, size.second.data(), Typename<HTexture>().data());
+		}
+		texture = HTexture();
+	}
+	if (contextImpl::exists())
+	{
+		cxChk();
 		glChk(glDeleteTextures((GLsizei)texIDs.size(), texIDs.data()));
 #if defined(DEBUG_LOG)
-		if (textures.size() > 1)
+		if (outTextures.size() > 1)
 		{
 			auto size = utils::friendlySize(bytes);
 			LOG_D("[%.1f%s] Texture VRAM released", size.first, size.second.data());
@@ -153,22 +173,23 @@ HCubemap gfx::gl::genCubemap(std::string name, std::array<bytestream, 6> const& 
 		ret.size = {w, h};
 		auto fsize = utils::friendlySize(ret.byteCount);
 		auto fin = utils::friendlySize(inTotal);
-		LOG_I("== [%s] [%.1f%s => %.1f%s] Cubemap created", ret.id.data(), fin.first, fin.second.data(), fsize.first, fsize.second.data());
+		LOG_I("== [%s] [%.1f%s => %.1f%s] [%s] created", ret.id.data(), fin.first, fin.second.data(), fsize.first, fsize.second.data(),
+			  Typename<HCubemap>().data());
 	}
 	return ret;
 }
 
-void gfx::gl::releaseCubemap(HCubemap& cube)
+void gfx::gl::releaseCubemap(HCubemap& outCube)
 {
-	if (context::isAlive())
+	if (contextImpl::exists() && outCube.glID > 0)
 	{
 		cxChk();
-		GLuint texID[] = {cube.glID.handle};
+		GLuint texID[] = {outCube.glID.handle};
 		glChk(glDeleteTextures(1, texID));
-		auto size = utils::friendlySize(cube.byteCount);
-		LOG_I("-- [%s] [%.1f%s] Cubemap destroyed", cube.id.data(), size.first, size.second.data());
+		auto size = utils::friendlySize(outCube.byteCount);
+		LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outCube.id.data(), size.first, size.second.data(), Typename<HCubemap>().data());
 	}
-	cube = HCubemap();
+	outCube = HCubemap();
 }
 
 HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::string_view fragCode)
@@ -180,12 +201,12 @@ HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::strin
 		s32 success;
 		if (vertCode.empty())
 		{
-			LOG_E("[%s] Shader: Failed to compile vertex shader: empty input string!", id.data());
+			LOG_E("[%s] (Shader) Failed to compile vertex shader: empty input string!", id.data());
 			return ret;
 		}
 		if (fragCode.empty())
 		{
-			LOG_E("[%s] Shader: Failed to compile fragment shader: empty input string!", id.data());
+			LOG_E("[%s] (Shader) Failed to compile fragment shader: empty input string!", id.data());
 			return ret;
 		}
 #if defined(__arm__)
@@ -231,17 +252,21 @@ HShader gfx::gl::genShader(std::string id, std::string_view vertCode, std::strin
 
 		glDeleteShader(vsh);
 		glDeleteShader(fsh);
-		LOG_I("== [%s] (Shader) created", id.data());
+		LOG_I("== [%s] [%s] created", id.data(), Typename<HShader>().data());
 		ret.id = std::move(id);
 	}
 	return ret;
 }
 
-void gfx::gl::releaseShader(HShader& shader)
+void gfx::gl::releaseShader(HShader& outShader)
 {
-	LOG_I("-- [%s] Shader destroyed", shader.id.data());
-	glChk(glDeleteProgram(shader.glID));
-	shader = HShader();
+	if (contextImpl::exists() && outShader.glID > 0)
+	{
+		cxChk();
+		LOG_I("-- [%s] [%s] destroyed", outShader.id.data(), Typename<HShader>().data());
+		glChk(glDeleteProgram(outShader.glID));
+	}
+	outShader = HShader();
 }
 
 HVerts gfx::gl::genVertices(Vertices const& vertices, Draw drawType, HShader const* pShader)
@@ -320,16 +345,16 @@ HVerts gfx::gl::genVertices(Vertices const& vertices, Draw drawType, HShader con
 	return hVerts;
 }
 
-void gfx::gl::releaseVerts(HVerts& hVerts)
+void gfx::gl::releaseVerts(HVerts& outhVerts)
 {
-	if (context::isAlive() && hVerts.vao > 0)
+	if (contextImpl::exists() && outhVerts.vao > 0)
 	{
 		cxChk();
-		glChk(glDeleteVertexArrays(1, &hVerts.vao.handle));
-		glDeleteBuffers(1, &hVerts.vbo.handle);
-		glChk(glDeleteBuffers(1, &hVerts.ebo.handle));
+		glChk(glDeleteVertexArrays(1, &outhVerts.vao.handle));
+		glDeleteBuffers(1, &outhVerts.vbo.handle);
+		glChk(glDeleteBuffers(1, &outhVerts.ebo.handle));
 	}
-	hVerts = HVerts();
+	outhVerts = HVerts();
 }
 
 HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
@@ -350,14 +375,14 @@ HUBO gfx::gl::genUBO(s64 size, u32 bindingPoint, Draw type)
 	return ret;
 }
 
-void gfx::gl::releaseUBO(HUBO& hUBO)
+void gfx::gl::releaseUBO(HUBO& outhUBO)
 {
-	if (context::isAlive() && hUBO.ubo > 0)
+	if (contextImpl::exists() && outhUBO.ubo > 0)
 	{
 		cxChk();
-		glChk(glDeleteBuffers(1, &hUBO.ubo.handle));
+		glChk(glDeleteBuffers(1, &outhUBO.ubo.handle));
 	}
-	hUBO = HUBO();
+	outhUBO = HUBO();
 }
 
 void gfx::gl::setMaterial(HShader const& shader, Material const& material)
@@ -409,7 +434,7 @@ void gfx::gl::draw(HVerts const& hVerts)
 
 void gfx::setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData)
 {
-	if (hUBO.ubo.handle > 0)
+	if (hUBO.ubo.handle > 0 && context::isAlive())
 	{
 		cxChk();
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, hUBO.ubo.handle));
@@ -423,28 +448,27 @@ HMesh gfx::newMesh(std::string name, Vertices const& vertices, Draw type, Materi
 	HMesh mesh;
 	if (context::isAlive())
 	{
+		cxChk();
 		mesh.name = std::move(name);
 		mesh.hVerts = gl::genVertices(vertices, type, pShader);
 		auto size = utils::friendlySize(mesh.hVerts.byteCount);
-		LOGIF_I(!mesh.name.empty(), "== [%s] [%.1f%s] Mesh set up (%u vertices)", mesh.name.data(), size.first, size.second.data(),
-				mesh.hVerts.vCount);
+		LOGIF_I(!mesh.name.empty(), "== [%s] [%.1f%s] [%s] set up (%u vertices)", mesh.name.data(), size.first, size.second.data(),
+				Typename<HMesh>().data(), mesh.hVerts.vCount);
 		mesh.material.flags = flags;
 	}
 	return mesh;
 }
 
-void gfx::releaseMeshes(std::vector<HMesh*> const& meshes)
+void gfx::releaseMesh(HMesh& outhMesh)
 {
-	for (auto pMesh : meshes)
+	if (outhMesh.hVerts.vao.handle > 0 && contextImpl::exists())
 	{
-		if (pMesh->hVerts.vao > 0 && context::isAlive())
-		{
-			auto size = utils::friendlySize(pMesh->hVerts.byteCount);
-			LOG_I("-- [%s] [%.1f%s] Mesh destroyed", pMesh->name.data(), size.first, size.second.data());
-			gl::releaseVerts(pMesh->hVerts);
-		}
-		*pMesh = HMesh();
+		cxChk();
+		auto size = utils::friendlySize(outhMesh.hVerts.byteCount);
+		LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outhMesh.name.data(), size.first, size.second.data(), Typename<HMesh>().data());
+		gl::releaseVerts(outhMesh.hVerts);
 	}
+	outhMesh = HMesh();
 }
 
 bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textures, bool bSkipIfEmpty)
@@ -589,6 +613,7 @@ HFont gfx::newFont(std::string name, bytestream spritesheet, glm::ivec2 cellSize
 	HFont ret;
 	if (context::isAlive())
 	{
+		cxChk();
 		Vertices vertices;
 		f32 cellAR = (f32)cellSize.x / cellSize.y;
 		f32 width = cellAR < 1.0f ? 1.0f * cellAR : 1.0f;
@@ -599,32 +624,21 @@ HFont gfx::newFont(std::string name, bytestream spritesheet, glm::ivec2 cellSize
 		ret.sheet = gl::genTexture(name + "_sheet", std::move(spritesheet), TexType::Diffuse, true);
 		ret.name = std::move(name);
 		ret.cellSize = cellSize;
-		LOG_I("== [%s] Font created", ret.name.data());
+		LOG_I("== [%s] [%s] created", ret.name.data(), Typename<HFont>().data());
 	}
 	return ret;
 }
 
-void gfx::releaseFonts(std::vector<HFont*> const& fonts)
+void gfx::releaseFont(HFont& outhFont)
 {
-	if (context::isAlive())
+	if (contextImpl::exists() && outhFont.quad.hVerts.vao.handle > 0 && outhFont.sheet.glID.handle > 0)
 	{
-		std::vector<HMesh*> meshes;
-		std::vector<HTexture*> textures;
-		meshes.reserve(fonts.size());
-		textures.reserve(fonts.size());
-		for (auto pFont : fonts)
-		{
-			meshes.push_back(&pFont->quad);
-			textures.push_back(&pFont->sheet);
-		}
-		releaseMeshes(meshes);
-		gl::releaseTexture(textures);
-		for (auto pFont : fonts)
-		{
-			LOG_I("-- [%s] Font destroyed", pFont->name.data());
-			*pFont = HFont();
-		}
+		cxChk();
+		releaseMesh(outhFont.quad);
+		gl::releaseTexture(outhFont.sheet);
+		LOG_I("-- [%s] [%s] destroyed", outhFont.name.data(), Typename<HFont>().data());
 	}
+	outhFont = HFont();
 }
 
 HVerts gfx::tutorial::newLight(HVerts const& hVBO)

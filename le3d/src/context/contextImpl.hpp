@@ -21,7 +21,7 @@ namespace contextImpl
 inline std::thread::id g_contextThreadID;
 
 void checkContextThread();
-
+bool exists();
 void destroy();
 } // namespace contextImpl
 } // namespace le

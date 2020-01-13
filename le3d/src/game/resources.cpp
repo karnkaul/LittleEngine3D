@@ -44,7 +44,8 @@ HUBO& resources::addUBO(std::string id, s64 size, u32 bindingPoint, gfx::Draw ty
 	{
 		g_uboMap.emplace(id, hUBO);
 		auto size = utils::friendlySize(hUBO.byteCount);
-		LOG_I("== [%s] [%.1f%s] UBO (%d) added for future shaders", id.data(), size.first, size.second.data(), hUBO.bindingPoint);
+		LOG_I("== [%s] [%.1f%s] [%s] (%d) added for future shaders", id.data(), size.first, size.second.data(), Typename<HUBO>().data(),
+			  hUBO.bindingPoint);
 		return g_uboMap[id];
 	}
 	return g_nullUBO;
@@ -58,7 +59,7 @@ HUBO& resources::get<HUBO>(std::string const& id)
 	{
 		return search->second;
 	}
-	LOG_W("[Resources] [%s] HUBO not found!", id.data());
+	LOG_W("[Resources] [%s] [%s] not found!", id.data(), Typename<HUBO>().data());
 	return g_nullUBO;
 }
 
@@ -84,7 +85,8 @@ bool resources::unload<HUBO>(HUBO& hUBO)
 		std::string id = search->first;
 		g_uboMap.erase(search);
 		auto size = utils::friendlySize(hUBO.byteCount);
-		LOG_I("-- [%s] [%.1f%s] UBO (%d) destroyed", id.data(), size.first, size.second.data(), hUBO.bindingPoint);
+		LOG_I("-- [%s] [%.1f%s] [%s] (%d) destroyed", id.data(), size.first, size.second.data(), Typename<HUBO>().data(),
+			  hUBO.bindingPoint);
 		gfx::gl::releaseUBO(hUBO);
 		return true;
 	}
@@ -98,7 +100,8 @@ void resources::unloadAll<HUBO>()
 	{
 		auto& hUBO = kvp.second;
 		auto size = utils::friendlySize(hUBO.byteCount);
-		LOG_I("-- [%s] [%.1f%s] UBO (%d) destroyed", kvp.first.data(), size.first, size.second.data(), hUBO.bindingPoint);
+		LOG_I("-- [%s] [%.1f%s] [%s] (%d) destroyed", kvp.first.data(), size.first, size.second.data(), Typename<HUBO>().data(),
+			  hUBO.bindingPoint);
 		gfx::gl::releaseUBO(hUBO);
 	}
 	g_uboMap.clear();
@@ -124,7 +127,7 @@ HShader& resources::loadShader(std::string const& id, std::string_view vertCode,
 		return g_shaderMap[id];
 	}
 	ASSERT(false, "Failed to load shader!");
-	LOG_E("[Resources] Failed to load shader!");
+	LOG_E("[Resources] Failed to load %s [%s]!", Typename<HShader>().data(), id.data());
 	return g_nullShader;
 }
 
@@ -136,7 +139,7 @@ HShader& resources::get<HShader>(std::string const& id)
 	{
 		return g_shaderMap[id];
 	}
-	LOG_W("[Resources] [%s] Shader not found!", id.data());
+	LOG_W("[Resources] [%s] [%s] not found!", id.data(), Typename<HShader>().data());
 	return g_nullShader;
 }
 
@@ -196,7 +199,7 @@ HTexture& resources::loadTexture(std::string const& id, TexType type, bytestream
 		return g_textureMap[id];
 	}
 	ASSERT(false, "Failed to load texture!");
-	LOG_E("[Resources] [%s] Failed to load texture!", id.data());
+	LOG_E("[Resources] [%s] Failed to load %s!", id.data(), Typename<HTexture>().data());
 	return g_blankTex1px;
 }
 
@@ -208,7 +211,7 @@ HTexture& resources::get<HTexture>(std::string const& id)
 	{
 		return g_textureMap[id];
 	}
-	LOG_W("[Resources] [%s] HTexture not found!", id.data());
+	LOG_W("[Resources] [%s] [%s] not found!", id.data(), Typename<HTexture>().data());
 	return g_blankTex1px;
 }
 
@@ -224,7 +227,7 @@ bool resources::unload<HTexture>(HTexture& texture)
 	auto search = g_textureMap.find(texture.id);
 	if (search != g_textureMap.end())
 	{
-		gfx::gl::releaseTexture({&search->second});
+		gfx::gl::releaseTexture(search->second);
 		g_textureMap.erase(search);
 		return true;
 	}
@@ -234,13 +237,13 @@ bool resources::unload<HTexture>(HTexture& texture)
 template <>
 void resources::unloadAll<HTexture>()
 {
-	std::vector<HTexture*> toDel;
+	std::vector<HTexture> toDel;
 	toDel.reserve(g_textureMap.size());
 	for (auto& kvp : g_textureMap)
 	{
-		toDel.push_back(&kvp.second);
+		toDel.push_back(kvp.second);
 	}
-	gfx::gl::releaseTexture(toDel);
+	gfx::gl::releaseTextures(toDel);
 	g_textureMap.clear();
 }
 
@@ -258,15 +261,15 @@ Skybox resources::createSkybox(std::string const& name, std::array<bytestream, 6
 	flags.set(s32(Material::Flag::Textured), true);
 	ret.mesh = gfx::createCube(1.0f, name + "_mesh", flags);
 	ret.name = name;
-	LOG_D("[%s] Skybox created", name.data());
+	LOG_D("[%s] [%s] created", name.data(), Typename<Skybox>().data());
 	return ret;
 }
 
 void resources::destroySkybox(Skybox& skybox)
 {
-	LOG_D("[%s] Skybox destroyed", skybox.name.data());
+	LOG_D("[%s] [%s] destroyed", skybox.name.data(), Typename<Skybox>().data());
 	gfx::gl::releaseCubemap(skybox.cubemap);
-	gfx::releaseMeshes({&skybox.mesh});
+	gfx::releaseMesh(skybox.mesh);
 	skybox = Skybox();
 }
 
@@ -283,7 +286,7 @@ HFont& resources::loadFont(std::string const& id, FontAtlasData atlas)
 		return g_fontMap[id];
 	}
 	ASSERT(false, "Failed to load font!");
-	LOG_E("[Resources] [%s] Failed to load font!", id.data());
+	LOG_E("[Resources] [%s] Failed to load %s!", id.data(), Typename<HFont>().data());
 	return g_nullFont;
 }
 
@@ -295,6 +298,7 @@ HFont& resources::get<HFont>(std::string const& id)
 	{
 		return search->second;
 	}
+	LOG_W("[Resources] [%s] [%s] not found!", id.data(), Typename<HFont>().data());
 	return g_nullFont;
 }
 
@@ -310,7 +314,7 @@ bool resources::unload<HFont>(HFont& font)
 	auto search = g_fontMap.find(font.name);
 	if (search != g_fontMap.end())
 	{
-		gfx::releaseFonts({&search->second});
+		gfx::releaseFont(search->second);
 		g_fontMap.erase(search);
 		return true;
 	}
@@ -320,13 +324,12 @@ bool resources::unload<HFont>(HFont& font)
 template <>
 void resources::unloadAll<HFont>()
 {
-	std::vector<HFont*> toDel;
+	std::vector<HFont> toDel;
 	toDel.reserve(g_fontMap.size());
 	for (auto& kvp : g_fontMap)
 	{
-		toDel.push_back(&kvp.second);
+		gfx::releaseFont(kvp.second);
 	}
-	gfx::releaseFonts(toDel);
 	g_fontMap.clear();
 }
 
@@ -347,7 +350,7 @@ Model& resources::get<Model>(std::string const& id)
 	{
 		return search->second;
 	}
-	LOG_W("[Resources] [%s] Model not found!", id.data());
+	LOG_W("[Resources] [%s] [%s] not found!", id.data(), Typename<Model>().data());
 	return g_nullModel;
 }
 
@@ -389,7 +392,7 @@ void resources::unloadAll()
 	unloadAll<HTexture>();
 	if (g_blankTex1px.glID > 0)
 	{
-		gfx::gl::releaseTexture({&g_blankTex1px});
+		gfx::gl::releaseTexture(g_blankTex1px);
 	}
 	unloadAll<HUBO>();
 	unloadAll<HShader>();

@@ -15,8 +15,6 @@
 
 namespace le
 {
-using namespace contextImpl;
-
 namespace
 {
 struct LEContext
@@ -26,6 +24,7 @@ struct LEContext
 	GLFWwindow* pWindow = nullptr;
 	f32 nativeAR = 1.0f;
 	u64 swapCount = 0;
+	bool bJoinThreadsOnDestroy = true;
 };
 
 LEContext g_context;
@@ -102,11 +101,11 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 		return {};
 	}
 	GLFWmonitor* pTarget = nullptr;
-	u16 height = settings.height;
-	u16 width = settings.width;
-	s32 screenIdx = settings.screenID < screenCount ? (s32)settings.screenID : -1;
-	bool bVSYNC = settings.bVSYNC;
-	switch (settings.type)
+	u16 height = settings.window.height;
+	u16 width = settings.window.width;
+	s32 screenIdx = settings.window.screenID < screenCount ? (s32)settings.window.screenID : -1;
+	bool bVSYNC = settings.window.bVSYNC;
+	switch (settings.window.type)
 	{
 	case Type::BorderedWindow:
 	{
@@ -139,7 +138,7 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
 	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-	g_context.pWindow = glfwCreateWindow(width, height, settings.title.data(), pTarget, nullptr);
+	g_context.pWindow = glfwCreateWindow(width, height, settings.window.title.data(), pTarget, nullptr);
 	if (!g_context.pWindow)
 	{
 		LOG_E("Failed to create window!");
@@ -157,7 +156,7 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 		return {};
 	}
 	inputImpl::init(*g_context.pWindow);
-	g_contextThreadID = std::this_thread::get_id();
+	contextImpl::g_contextThreadID = std::this_thread::get_id();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -171,6 +170,7 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 	glfwSetWindowCloseCallback(g_context.pWindow, &windowCloseCallback);
 	LOGIF_I(!bVSYNC, "[Context] Vsync disabled unless overridden by driver");
 	LOG_D("Context created");
+	g_context.bJoinThreadsOnDestroy = settings.bJoinThreadsOnDestroy;
 	g_context.uFileLogger = std::move(uFileLogger);
 	return std::make_unique<HContext>();
 }
@@ -250,6 +250,11 @@ glm::vec2 context::worldToScreen(glm::vec2 world)
 	return g_context.size == glm::vec2(0.0f) ? g_context.size : glm::vec2(world.x / g_context.size.x, world.y / g_context.size.y);
 }
 
+bool contextImpl::exists()
+{
+	return g_context.pWindow != nullptr;
+}
+
 void contextImpl::destroy()
 {
 	if (g_context.pWindow)
@@ -268,9 +273,14 @@ void contextImpl::destroy()
 		}
 		glfwTerminate();
 		jobs::cleanup();
+		bool bJoinThreads = g_context.bJoinThreadsOnDestroy;
 		g_contextThreadID = std::thread::id();
 		LOG_D("Context destroyed");
 		g_context = LEContext();
+		if (bJoinThreads)
+		{
+			threads::joinAll();
+		}
 	}
 }
 } // namespace le

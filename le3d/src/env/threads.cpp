@@ -1,4 +1,3 @@
-#include <memory>
 #include <thread>
 #include <unordered_map>
 #include "le3d/core/assert.hpp"
@@ -10,14 +9,14 @@ namespace le
 namespace
 {
 s32 g_nextID = 0;
-std::unordered_map<s32, std::unique_ptr<std::thread>> g_threadMap;
+std::unordered_map<s32, std::thread> g_threadMap;
 } // namespace
 
 using namespace threadsImpl;
 
 HThread threads::newThread(std::function<void()> task)
 {
-	g_threadMap.emplace(++g_nextID, std::make_unique<std::thread>(task));
+	g_threadMap.emplace(++g_nextID, std::thread(task));
 	return HThread(g_nextID);
 }
 
@@ -26,34 +25,26 @@ void threads::join(HThread& id)
 	auto search = g_threadMap.find(id);
 	if (search != g_threadMap.end())
 	{
-		auto& uThread = search->second;
-		if (uThread->joinable())
+		auto& thread = search->second;
+		if (thread.joinable())
 		{
-			uThread->join();
+			thread.join();
 		}
 	}
 	id = HThread();
-}
-
-void threads::join(std::vector<HThread*> const& ids)
-{
-	for (auto pID : ids)
-	{
-		ASSERT(pID, "Thread handle is null!");
-		join(*pID);
-	}
 }
 
 void threads::joinAll()
 {
 	for (auto& kvp : g_threadMap)
 	{
-		auto& uThread = kvp.second;
-		if (uThread->joinable())
+		auto& thread = kvp.second;
+		if (thread.joinable())
 		{
-			uThread->join();
+			thread.join();
 		}
 	}
+	g_threadMap.clear();
 }
 
 u32 threads::maxHardwareThreads()

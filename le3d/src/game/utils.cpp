@@ -438,12 +438,10 @@ void debug::renderVersion(HFont const& font, HShader const& shader, f32 const ui
 void debug::unloadAll()
 {
 	g_debugArrow.release();
-	std::vector<HMesh*> meshes;
 	for (auto& kvp : g_debugMeshes)
 	{
-		meshes.push_back(&kvp.second);
+		gfx::releaseMesh(kvp.second);
 	}
-	gfx::releaseMeshes(meshes);
 	g_debugMeshes.clear();
 }
 } // namespace le

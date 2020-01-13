@@ -297,7 +297,7 @@ void Model::setupModel(std::string name)
 {
 	m_name = std::move(name);
 	m_type = Typename(*this);
-	LOG_D("[%s] %s setup", m_name.data(), m_type.data());
+	LOG_D("[%s] [%s] setup", m_name.data(), m_type.data());
 }
 
 void Model::setupModel(Data const& data)
@@ -430,23 +430,20 @@ u32 Model::meshCount() const
 
 void Model::release()
 {
-	std::vector<HMesh*> meshes;
-	std::vector<HTexture*> textures;
-	meshes.reserve(m_loadedMeshes.size());
+	std::vector<HTexture> textures;
 	textures.reserve(m_loadedTextures.size());
-	for (auto& mesh : m_loadedMeshes)
-	{
-		meshes.push_back(&mesh);
-	}
 	for (auto& kvp : m_loadedTextures)
 	{
-		textures.push_back(&kvp.second);
+		textures.push_back(kvp.second);
 	}
-	gfx::releaseMeshes(meshes);
-	gfx::gl::releaseTexture(textures);
+	gfx::gl::releaseTextures(textures);
+	for (auto& hMesh : m_loadedMeshes)
+	{
+		gfx::releaseMesh(hMesh);
+	}
 	m_loadedMeshes.clear();
 	m_loadedTextures.clear();
-	LOGIF_D(!m_fixtures.empty(), "[%s] %s destroyed", m_name.data(), m_type.data());
+	LOGIF_D(!m_fixtures.empty(), "[%s] [%s] destroyed", m_name.data(), m_type.data());
 	m_fixtures.clear();
 	m_name.clear();
 }

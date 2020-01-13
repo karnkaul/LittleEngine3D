@@ -377,7 +377,7 @@ void runTest()
 		context::swapBuffers();
 		context::pollEvents();
 	}
-	gfx::releaseMeshes({&sphereMesh});
+	gfx::releaseMesh(sphereMesh);
 	modelsLoader.waitAll();
 	resources::destroySkybox(skybox);
 }
@@ -386,8 +386,9 @@ void runTest()
 s32 gameloop::run(s32 argc, char const** argv)
 {
 	context::Settings settings;
-	settings.title = "LE3D Test";
-	settings.bVSYNC = false;
+	settings.window.title = "LE3D Test";
+	settings.window.bVSYNC = false;
+	// settings.window.width = 3000;
 	settings.env.args = {argc, argv};
 	settings.env.jobWorkerCount = 4;
 	// settings.type = context::Type::BorderlessFullscreen;

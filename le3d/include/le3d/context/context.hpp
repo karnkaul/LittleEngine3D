@@ -30,15 +30,21 @@ struct Settings
 		env::Args args;
 		u16 jobWorkerCount = 2;
 	};
+	struct WindowOpts
+	{
+		std::string title = "LittleEngine3D";
+		Type type = Type::BorderedWindow;
+		u16 width = 1280;
+		u16 height = 720;
+		u16 screenID = 0;
+		bool bVSYNC = true;
+	};
 
+	WindowOpts window;
 	LogOpts log;
 	EnvOpts env;
-	std::string title = "LittleEngine3D";
-	Type type = Type::BorderedWindow;
-	u16 width = 1280;
-	u16 height = 720;
-	u16 screenID = 0;
-	bool bVSYNC = true;
+	// Invokes `threads::joinAll()` on context destruction
+	bool bJoinThreadsOnDestroy = true;
 };
 
 struct HContext final

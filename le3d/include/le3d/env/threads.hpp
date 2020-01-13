@@ -11,7 +11,6 @@ namespace threads
 {
 HThread newThread(std::function<void()> task);
 void join(HThread& id);
-void join(std::vector<HThread*> const& ids);
 void joinAll();
 
 u32 maxHardwareThreads();

@@ -100,6 +100,7 @@ stdfs::path env::dirPath(Dir dir)
 {
 	switch (dir)
 	{
+	default:
 	case env::Dir::Working:
 		if (g_workingDir.empty())
 		{

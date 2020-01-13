@@ -24,8 +24,7 @@ AsyncSkyboxLoader::AsyncSkyboxLoader(ResourceLoadRequest request) : TLoader<byte
 
 void AsyncSkyboxLoader::onDone()
 {
-	auto& v = m_tRequests;
-	ASSERT(v.size() == 6, "Invalid skybox texture ID count!");
+	ASSERT(m_tRequests.size() == 6, "Invalid skybox texture ID count!");
 	std::array<bytestream, 6> bytes;
 	size_t idx = 0;
 	for (auto& request : m_tRequests)

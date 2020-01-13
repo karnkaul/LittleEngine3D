@@ -24,7 +24,7 @@ FileLogger::FileLogger(std::filesystem::path path)
 		return;
 	}
 	oFile.close();
-	m_id = threads::newThread([&]() {
+	m_hThread = threads::newThread([&]() {
 		while (m_bLog.load(std::memory_order_relaxed))
 		{
 			dumpToFile();
@@ -38,7 +38,7 @@ FileLogger::FileLogger(std::filesystem::path path)
 FileLogger::~FileLogger()
 {
 	m_bLog.store(false);
-	threads::join(m_id);
+	threads::join(m_hThread);
 }
 
 void FileLogger::dumpToFile()

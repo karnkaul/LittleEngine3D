@@ -10,7 +10,7 @@ class FileLogger final
 {
 private:
 	std::filesystem::path m_path;
-	HThread m_id;
+	HThread m_hThread;
 	std::atomic<bool> m_bLog;
 
 public:
