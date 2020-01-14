@@ -8,7 +8,7 @@ class Object
 {
 public:
 	std::string m_name;
-	std::string_view m_type;
+	std::string m_type;
 	bool m_bLogThis = true;
 
 public:

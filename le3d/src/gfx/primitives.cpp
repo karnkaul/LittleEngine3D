@@ -1,5 +1,5 @@
 /// Note: When viewing the source on GitHub' s web interface, add "?ts=4" to the URL to have it use the correct tab spacing (4).
-
+#include <functional>
 #include "le3d/core/assert.hpp"
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/gfx.hpp"
@@ -244,18 +244,23 @@ HMesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Mater
 	u32 qCount = (u32)(quadsPerSide * quadsPerSide);
 	verts.reserve(qCount * 4 * 6, qCount * 6 * 6);
 	glm::vec3 const bl(-1.0f, -1.0f, 1.0f);
-	std::vector<glm::vec3> points;
+	std::vector<std::pair<glm::vec3, glm::vec2>> points;
 	points.reserve(4 * qCount);
 	f32 const s = 2.0f / quadsPerSide;
+	f32 const duv = 1.0f / quadsPerSide;
+	f32 u = 0.0f;
+	f32 v = 0.0f;
 	for (s32 row = 0; row < quadsPerSide; ++row)
 	{
+		v = row * duv;
 		for (s32 col = 0; col < quadsPerSide; ++col)
 		{
-			glm::vec3 const o = s * glm::vec3((f32)row, (f32)col, 0.0f);
-			points.push_back(bl + o);
-			points.push_back(bl + glm::vec3(s, 0.0f, 0.0f) + o);
-			points.push_back(bl + glm::vec3(s, s, 0.0f) + o);
-			points.push_back(bl + glm::vec3(0.0f, s, 0.0f) + o);
+			u = col * duv;
+			glm::vec3 const o = s * glm::vec3((f32)col, (f32)row, 0.0f);
+			points.emplace_back(std::make_pair(glm::vec3(bl + o), glm::vec2(u, v)));
+			points.push_back(std::make_pair(glm::vec3(bl + glm::vec3(s, 0.0f, 0.0f) + o), glm::vec2(u + duv, v)));
+			points.push_back(std::make_pair(glm::vec3(bl + glm::vec3(s, s, 0.0f) + o), glm::vec2(u + duv, v + duv)));
+			points.push_back(std::make_pair(glm::vec3(bl + glm::vec3(0.0f, s, 0.0f) + o), glm::vec2(u, v + duv)));
 		}
 	}
 	auto addSide = [&points, &verts, diam](std::function<glm::vec3(glm::vec3 const&)> transform) {
@@ -270,8 +275,8 @@ HMesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Mater
 				iV.clear();
 			}
 			++idx;
-			auto pt = transform(p) * diam * 0.5f;
-			iV.push_back(verts.addVertex(pt, pt));
+			auto pt = transform(p.first) * diam * 0.5f;
+			iV.push_back(verts.addVertex(pt, pt, p.second));
 		}
 		if (iV.size() == 4)
 		{

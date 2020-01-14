@@ -9,13 +9,9 @@ endif()
 
 set(LE3D_EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build" CACHE STRING "" FORCE)
 
-set(SOURCES
-	app/gameloop.hpp
-	app/gameloop.cpp
-	app/ubotypes.hpp
-	main.cpp
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+	"${CMAKE_CURRENT_SOURCE_DIR}/*.*pp"
 )
-list(TRANSFORM SOURCES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 set(EXE_NAME ${PROJECT_NAME}-$<CONFIG>${EXE_SUFFIX})
 add_le3d_executable(${PROJECT_NAME} ${EXE_NAME} "${SOURCES}" "${GLOBAL_INCLUDE_PATHS}")

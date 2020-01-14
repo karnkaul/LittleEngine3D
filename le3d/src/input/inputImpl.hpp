@@ -15,10 +15,11 @@ struct Callbacks
 	OnFiledrop onFiledrop;
 	OnFocus onFocus;
 	OnResize onResize;
+	OnClosed onClosed;
 };
 
-extern Callbacks g_callbacks;
-extern GLFWwindow* g_pRenderWindow;
+inline Callbacks g_callbacks;
 void init(GLFWwindow& window);
+void clear();
 } // namespace inputImpl
 } // namespace le

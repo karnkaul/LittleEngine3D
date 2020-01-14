@@ -53,8 +53,8 @@ struct EngineConfig
 
 namespace env
 {
-extern EngineConfig g_config;
-extern std::string g_EOL;
+inline EngineConfig g_config;
+inline std::string g_EOL = "\n";
 
 enum class Dir
 {

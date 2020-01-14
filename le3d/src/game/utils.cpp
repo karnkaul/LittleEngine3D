@@ -26,8 +26,14 @@ Text2D g_versionStyle = {
 
 void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 {
+	if (skybox.cubemap.byteCount == 0 || skybox.mesh.hVerts.byteCount == 0)
+	{
+		return;
+	}
 	glChk(glDepthMask(GL_FALSE));
+	shader.use();
 	shader.setV4(env::g_config.uniforms.tint, tint);
+	glChk(glActiveTexture(GL_TEXTURE0));
 	glChk(glBindVertexArray(skybox.mesh.hVerts.vao.handle));
 	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemap.glID.handle));
 	if (skybox.mesh.hVerts.ebo.handle > 0)
@@ -79,7 +85,7 @@ void debug::DArrow::setupDArrow(const glm::quat& orientation)
 	m_sphere.oWorld = mSp;
 	m_cone.mesh.material.flags = m_cube.mesh.material.flags = m_sphere.mesh.material.flags = {};
 	setTip(m_tip, true);
-	setupModel("dArrow", {});
+	setupModel("dArrow");
 }
 
 void debug::DArrow::setTip(Tip tip, bool bForce)
@@ -406,18 +412,18 @@ void debug::renderString(Text2D const& text, HShader const& shader, HFont const&
 
 void debug::renderFPS(HFont const& font, HShader const& shader, f32 const uiAR)
 {
-	static Time frameTime = Time::now();
+	static Time frameTime = Time::elapsed();
 	static Time totalDT;
 	static u16 frames = 0;
 	static u16 fps = 0;
-	Time dt = Time::now() - frameTime;
+	Time dt = Time::elapsed() - frameTime;
 	totalDT += dt;
 	++frames;
 	if (dt > Time::secs(1.0f))
 	{
 		fps = frames;
 		frames = 0;
-		frameTime = Time::now();
+		frameTime = Time::elapsed();
 	}
 	g_fpsStyle.text = "FPS ";
 	g_fpsStyle.text += std::to_string(fps == 0 ? frames : fps);
@@ -432,12 +438,10 @@ void debug::renderVersion(HFont const& font, HShader const& shader, f32 const ui
 void debug::unloadAll()
 {
 	g_debugArrow.release();
-	std::vector<HMesh*> meshes;
 	for (auto& kvp : g_debugMeshes)
 	{
-		meshes.push_back(&kvp.second);
+		gfx::releaseMesh(kvp.second);
 	}
-	gfx::releaseMeshes(meshes);
 	g_debugMeshes.clear();
 }
 } // namespace le

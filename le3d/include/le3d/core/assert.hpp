@@ -1,5 +1,14 @@
 #pragma once
-#include "le3d/defines.hpp"
+
+/**
+ * Variable     : ASSERTS
+ * Description  : Used to log time taken to load meshes, textures, etc from model data
+ */
+#if defined(DEBUGGING)
+#if !defined(ASSERTS)
+#define ASSERTS
+#endif
+#endif
 
 #if defined(ASSERTS)
 #define ASSERT(predicate, errorMessage) le::assertMsg(!!(predicate), #errorMessage, __FILE__, __LINE__)

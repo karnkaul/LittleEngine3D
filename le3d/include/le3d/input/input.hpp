@@ -19,6 +19,7 @@ using OnMouse = Delegate<f64, f64>;
 using OnFocus = Delegate<bool>;
 using OnFiledrop = Delegate<stdfs::path const&>;
 using OnResize = Delegate<s32, s32>;
+using OnClosed = Delegate<>;
 
 enum class CursorMode
 {
@@ -62,6 +63,7 @@ OnFiledrop::Token registerFiledrop(OnFiledrop::Callback callback);
 OnFocus::Token registerFocus(OnFocus::Callback callback);
 // Callback parameters: (s32 x, s32 y)
 OnResize::Token registerResize(OnResize::Callback callback);
+OnClosed::Token registerClosed(OnClosed::Callback callback);
 
 void setCursorMode(CursorMode mode);
 CursorMode cursorMode();

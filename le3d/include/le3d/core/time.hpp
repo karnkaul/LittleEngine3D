@@ -18,7 +18,8 @@ public:
 	static Time musecs(s64 microSeconds);
 	static Time msecs(s32 milliSeconds);
 	static Time secs(f32 seconds);
-	static Time now();
+	static Time elapsed();
+	static Time sinceEpoch();
 	static Time clamp(Time val, Time min, Time max);
 	static void reset();
 

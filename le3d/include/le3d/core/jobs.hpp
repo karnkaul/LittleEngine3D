@@ -10,12 +10,12 @@ namespace jobs
 void init(u32 workerCount);
 void cleanup();
 
-JobHandle enqueue(std::function<std::any()> task, std::string name = "", bool bSilent = false);
-JobHandle enqueue(std::function<void()> task, std::string name = "", bool bSilent = false);
+std::shared_ptr<HJob> enqueue(std::function<std::any()> task, std::string name = "", bool bSilent = false);
+std::shared_ptr<HJob> enqueue(std::function<void()> task, std::string name = "", bool bSilent = false);
 JobCatalog* createCatalogue(std::string name);
-void forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, size_t iterationsPerJob, size_t startIdx = 0);
+std::vector<std::shared_ptr<HJob>> forEach(IndexedTask const& indexedTask);
 
-void waitAll(std::vector<JobHandle> const& handles);
+void waitAll(std::vector<std::shared_ptr<HJob>> const& handles);
 
 void update();
 bool areWorkersIdle();

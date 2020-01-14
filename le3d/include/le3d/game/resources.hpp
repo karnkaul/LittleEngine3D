@@ -11,7 +11,7 @@ struct FontAtlasData final
 	glm::ivec2 cellSize = glm::ivec2(0);
 	glm::ivec2 colsRows = glm::ivec2(0);
 	glm::ivec2 offset = glm::ivec2(0);
-	std::vector<u8> bytes;
+	bytestream bytes;
 	u8 startCode = 32;
 
 	void deserialise(std::string json);
@@ -26,7 +26,8 @@ struct Skybox final
 
 namespace resources
 {
-extern HTexture g_blankTex1px;
+inline HTexture g_blankTex1px;
+inline HTexture g_noTex1px;
 
 /// Supported types:
 // - HFont
@@ -58,7 +59,7 @@ void unloadAll<HUBO>();
 template <>
 u32 count<HUBO>();
 
-HShader& loadShader(std::string id, std::string_view vertCode, std::string_view fragCode);
+HShader& loadShader(std::string const& id, std::string_view vertCode, std::string_view fragCode);
 template <>
 HShader& get<HShader>(std::string const& id);
 template <>
@@ -70,7 +71,7 @@ void unloadAll<HShader>();
 template <>
 u32 count<HShader>();
 
-HTexture& loadTexture(std::string id, TexType type, std::vector<u8> bytes, bool bClampToEdge);
+HTexture& loadTexture(std::string const& id, TexType type, bytestream bytes, bool bClampToEdge);
 template <>
 HTexture& get<HTexture>(std::string const& id);
 template <>
@@ -82,10 +83,10 @@ void unloadAll<HTexture>();
 template <>
 u32 count<HTexture>();
 
-Skybox createSkybox(std::string name, std::array<std::vector<u8>, 6> rltbfb);
+Skybox createSkybox(std::string const& name, std::array<bytestream, 6> rltbfb);
 void destroySkybox(Skybox& skybox);
 
-HFont& loadFont(std::string id, FontAtlasData atlas);
+HFont& loadFont(std::string const& id, FontAtlasData atlas);
 template <>
 HFont& get<HFont>(std::string const& id);
 template <>
@@ -97,7 +98,7 @@ void unloadAll<HFont>();
 template <>
 u32 count<HFont>();
 
-Model& loadModel(std::string id, Model::Data const& data);
+Model& loadModel(std::string const& id, Model::Data const& data);
 template <>
 Model& get<Model>(std::string const& id);
 template <>

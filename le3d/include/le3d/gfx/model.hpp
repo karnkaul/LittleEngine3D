@@ -1,9 +1,9 @@
 #pragma once
+#include <functional>
 #include <optional>
 #include <sstream>
 #include <vector>
 #include <unordered_map>
-#include "le3d/defines.hpp"
 #include "colour.hpp"
 #include "gfxtypes.hpp"
 #include "utils.hpp"
@@ -26,13 +26,15 @@ public:
 		{
 			std::string id;
 			std::string filename;
-			std::vector<u8> bytes;
+			bytestream bytes;
+			HTexture hTex;
 			TexType type;
 		};
 		struct Mesh
 		{
-			Vertices vertices;
+			HMesh hMesh;
 			Albedo albedo;
+			Vertices vertices;
 			Material::Flags flags;
 			std::string id;
 			std::vector<size_t> texIndices;
@@ -43,8 +45,28 @@ public:
 		std::vector<Tex> textures;
 		std::vector<Mesh> meshes;
 
+		// Returns true if all textures loaded
+		bool loadTextures(u16 count);
+		// Returns true if all meshes loaded
+		bool loadMeshes(u16 count);
+	};
+
+	struct LoadRequest
+	{
+		std::stringstream& objBuf;
+		std::stringstream& mtlBuf;
+		std::string meshPrefix;
 		// Callback parameter: string_view filename
-		void setTextureData(std::function<std::vector<u8>(std::string_view)> getTexBytes, bool bUseJobs = true);
+		std::function<bytestream(std::string_view)> getTexBytes;
+		f32 scale = 1.0f;
+
+		LoadRequest(std::stringstream& objBuf, std::stringstream& mtlBuf);
+	};
+
+	struct Fixture
+	{
+		HMesh mesh;
+		std::optional<glm::mat4> oWorld;
 	};
 
 	using Flags = TFlags<size_t(DrawFlag::_COUNT)>;
@@ -56,15 +78,8 @@ public:
 #endif
 
 public:
-	struct Fixture
-	{
-		HMesh mesh;
-		std::optional<glm::mat4> oWorld;
-	};
-
-public:
 	std::string m_name;
-	std::string_view m_type;
+	std::string m_type;
 	Colour m_tint = Colour::White;
 
 protected:
@@ -75,7 +90,7 @@ private:
 	std::unordered_map<std::string, HTexture> m_loadedTextures;
 
 public:
-	static Data loadOBJ(std::stringstream& objBuf, std::stringstream& mtlBuf, std::string_view meshPrefix, f32 scale = 1.0f);
+	static Data loadOBJ(LoadRequest const& request);
 
 public:
 	Model();
@@ -86,7 +101,8 @@ public:
 	Model& operator=(Model const&);
 
 public:
-	void setupModel(std::string name, Data const& data);
+	void setupModel(std::string name);
+	void setupModel(Data const& data);
 	void addFixture(HMesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void render(HShader const& shader, ModelMats const& mats);
 

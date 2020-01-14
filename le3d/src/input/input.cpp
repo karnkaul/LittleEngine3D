@@ -7,32 +7,26 @@
 
 namespace le
 {
-namespace inputImpl
-{
-Callbacks g_callbacks;
-GLFWwindow* g_pRenderWindow = nullptr;
-} // namespace inputImpl
-
 using namespace inputImpl;
+
+namespace
+{
+GLFWwindow* g_pWindow = nullptr;
+}
 
 namespace
 {
 void onKey(GLFWwindow* pWindow, s32 key, s32 /*scancode*/, s32 action, s32 mods)
 {
-	if (pWindow == g_pRenderWindow)
+	if (pWindow == g_pWindow)
 	{
-		if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
-		{
-			glfwSetWindowShouldClose(pWindow, true);
-		}
-
 		g_callbacks.onInput(key, action, mods);
 	}
 }
 
 void onMouseButton(GLFWwindow* pWindow, s32 key, s32 action, s32 mods)
 {
-	if (pWindow == g_pRenderWindow)
+	if (pWindow == g_pWindow)
 	{
 		g_callbacks.onInput(key, action, mods);
 	}
@@ -40,7 +34,7 @@ void onMouseButton(GLFWwindow* pWindow, s32 key, s32 action, s32 mods)
 
 void onText(GLFWwindow* pWindow, u32 codepoint)
 {
-	if (pWindow == g_pRenderWindow)
+	if (pWindow == g_pWindow)
 	{
 		g_callbacks.onText(static_cast<char>(codepoint));
 	}
@@ -48,7 +42,7 @@ void onText(GLFWwindow* pWindow, u32 codepoint)
 
 void onMouse(GLFWwindow* pWindow, f64 x, f64 y)
 {
-	if (pWindow == g_pRenderWindow)
+	if (pWindow == g_pWindow)
 	{
 		g_callbacks.onMouse(x, y);
 	}
@@ -56,7 +50,7 @@ void onMouse(GLFWwindow* pWindow, f64 x, f64 y)
 
 void onScroll(GLFWwindow* pWindow, f64 dx, f64 dy)
 {
-	if (pWindow == g_pRenderWindow)
+	if (pWindow == g_pWindow)
 	{
 		g_callbacks.onScroll(dx, dy);
 	}
@@ -64,7 +58,7 @@ void onScroll(GLFWwindow* pWindow, f64 dx, f64 dy)
 
 void onFiledrop(GLFWwindow* pWindow, s32 count, char const** szPaths)
 {
-	if (pWindow == g_pRenderWindow)
+	if (pWindow == g_pWindow)
 	{
 		for (s32 idx = 0; idx < count; ++idx)
 		{
@@ -76,7 +70,7 @@ void onFiledrop(GLFWwindow* pWindow, s32 count, char const** szPaths)
 
 void onFocus(GLFWwindow* pWindow, s32 entered)
 {
-	if (pWindow == g_pRenderWindow)
+	if (pWindow == g_pWindow)
 	{
 		g_callbacks.onFocus(entered != 0);
 	}
@@ -137,11 +131,16 @@ OnResize::Token input::registerResize(OnResize::Callback callback)
 	return g_callbacks.onResize.subscribe(callback);
 }
 
+OnClosed::Token input::registerClosed(OnClosed::Callback callback)
+{
+	return g_callbacks.onClosed.subscribe(callback);
+}
+
 void input::setCursorMode(CursorMode mode)
 {
-	if (context::exists())
+	if (context::isAlive())
 	{
-		s32 val = glfwGetInputMode(g_pRenderWindow, GLFW_CURSOR);
+		s32 val;
 		switch (mode)
 		{
 		case CursorMode::Default:
@@ -157,18 +156,19 @@ void input::setCursorMode(CursorMode mode)
 			break;
 
 		default:
+			val = glfwGetInputMode(g_pWindow, GLFW_CURSOR);
 			break;
 		}
-		glfwSetInputMode(g_pRenderWindow, GLFW_CURSOR, val);
+		glfwSetInputMode(g_pWindow, GLFW_CURSOR, val);
 	}
 }
 
 CursorMode input::cursorMode()
 {
 	CursorMode ret = CursorMode::Default;
-	if (context::exists())
+	if (context::isAlive())
 	{
-		s32 val = glfwGetInputMode(g_pRenderWindow, GLFW_CURSOR);
+		s32 val = glfwGetInputMode(g_pWindow, GLFW_CURSOR);
 		switch (val)
 		{
 		case GLFW_CURSOR_NORMAL:
@@ -192,10 +192,10 @@ CursorMode input::cursorMode()
 
 glm::vec2 input::cursorPos()
 {
-	if (context::exists())
+	if (context::isAlive())
 	{
 		f64 x, y;
-		glfwGetCursorPos(g_pRenderWindow, &x, &y);
+		glfwGetCursorPos(g_pWindow, &x, &y);
 		return {(f32)x, (f32)y};
 	}
 	return {};
@@ -203,7 +203,7 @@ glm::vec2 input::cursorPos()
 
 void input::setCursorPos(glm::vec2 pos)
 {
-	glfwSetCursorPos(g_pRenderWindow, pos.x, pos.y);
+	glfwSetCursorPos(g_pWindow, pos.x, pos.y);
 }
 
 JoyState input::getJoyState(s32 id)
@@ -253,18 +253,24 @@ f32 input::triggerToAxis(f32 triggerValue)
 
 std::string input::getClipboard()
 {
-	return glfwGetClipboardString(g_pRenderWindow);
+	return glfwGetClipboardString(g_pWindow);
 }
 
 void inputImpl::init(GLFWwindow& window)
 {
-	g_pRenderWindow = &window;
-	glfwSetKeyCallback(g_pRenderWindow, &onKey);
-	glfwSetCharCallback(g_pRenderWindow, &onText);
-	glfwSetCursorPosCallback(g_pRenderWindow, &onMouse);
-	glfwSetMouseButtonCallback(g_pRenderWindow, &onMouseButton);
-	glfwSetScrollCallback(g_pRenderWindow, &onScroll);
-	glfwSetDropCallback(g_pRenderWindow, &onFiledrop);
-	glfwSetCursorEnterCallback(g_pRenderWindow, &onFocus);
+	g_pWindow = &window;
+	glfwSetKeyCallback(g_pWindow, &onKey);
+	glfwSetCharCallback(g_pWindow, &onText);
+	glfwSetCursorPosCallback(g_pWindow, &onMouse);
+	glfwSetMouseButtonCallback(g_pWindow, &onMouseButton);
+	glfwSetScrollCallback(g_pWindow, &onScroll);
+	glfwSetDropCallback(g_pWindow, &onFiledrop);
+	glfwSetCursorEnterCallback(g_pWindow, &onFocus);
+}
+
+void inputImpl::clear()
+{
+	g_callbacks = Callbacks();
+	g_pWindow = nullptr;
 }
 } // namespace le

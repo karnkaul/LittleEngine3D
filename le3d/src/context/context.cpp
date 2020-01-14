@@ -15,30 +15,37 @@
 
 namespace le
 {
-namespace contextImpl
-{
-std::thread::id g_contextThreadID;
-std::mutex g_glMutex;
-} // namespace contextImpl
-
-using namespace contextImpl;
-
 namespace
 {
-std::unique_ptr<FileLogger> g_uFileLogger;
-glm::vec2 g_windowSize;
-f32 g_nativeAR = 1.0f;
-GLFWwindow* g_pRenderWindow = nullptr;
+struct LEContext
+{
+	std::unique_ptr<FileLogger> uFileLogger;
+	glm::vec2 size;
+	GLFWwindow* pWindow = nullptr;
+	f32 nativeAR = 1.0f;
+	u64 swapCount = 0;
+	bool bJoinThreadsOnDestroy = true;
+};
+
+LEContext g_context;
 
 void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 {
-	Lock lock(g_glMutex);
-	if (pWindow == g_pRenderWindow)
+	if (pWindow == g_context.pWindow)
 	{
-		g_windowSize = {width, height};
-		g_nativeAR = height > 0 ? (f32)width / height : 0.0f;
+		g_context.size = {width, height};
+		g_context.nativeAR = height > 0 ? (f32)width / height : 0.0f;
 		glViewport(0, 0, width, height);
 		inputImpl::g_callbacks.onResize(width, height);
+	}
+}
+
+void windowCloseCallback(GLFWwindow* pWindow)
+{
+	if (pWindow == g_context.pWindow)
+	{
+		LOG_I("[Context] Window closed, terminating session");
+		inputImpl::g_callbacks.onClosed();
 	}
 }
 
@@ -48,27 +55,29 @@ void onError(s32 code, char const* szDesc)
 }
 } // namespace
 
-context::Wrapper::Wrapper(bool bValid) : m_bValid(bValid) {}
-context::Wrapper::~Wrapper()
+void contextImpl::checkContextThread()
 {
-	if (m_bValid && context::exists())
+	auto const& tid = std::this_thread::get_id();
+	ASSERT(tid == g_contextThreadID, "Non-context thread attempting access!");
+	if (tid != g_contextThreadID)
 	{
-		context::destroy();
+		LOG_E("[Context] Invalid thread id attempting to access context!");
 	}
 }
 
-context::Wrapper::operator bool() const
+context::HContext::~HContext()
 {
-	return m_bValid;
+	contextImpl::destroy();
 }
 
-context::Wrapper context::create(Settings const& settings)
+std::unique_ptr<context::HContext> context::create(Settings const& settings)
 {
+	std::unique_ptr<FileLogger> uFileLogger;
 	env::init(settings.env.args);
 	if (settings.log.bLogToFile)
 	{
 		auto path = env::dirPath(settings.log.dir) / settings.log.filename;
-		g_uFileLogger = std::make_unique<FileLogger>(std::move(path));
+		uFileLogger = std::make_unique<FileLogger>(std::move(path));
 	}
 	LOG_I("LittleEngine3D v%s", versions::buildVersion().data());
 	glfwSetErrorCallback(&onError);
@@ -92,11 +101,11 @@ context::Wrapper context::create(Settings const& settings)
 		return {};
 	}
 	GLFWmonitor* pTarget = nullptr;
-	u16 height = settings.height;
-	u16 width = settings.width;
-	s32 screenIdx = settings.screenID < screenCount ? (s32)settings.screenID : -1;
-	bool bVSYNC = settings.bVSYNC;
-	switch (settings.type)
+	u16 height = settings.window.height;
+	u16 width = settings.window.width;
+	s32 screenIdx = settings.window.screenID < screenCount ? (s32)settings.window.screenID : -1;
+	bool bVSYNC = settings.window.bVSYNC;
+	switch (settings.window.type)
 	{
 	case Type::BorderedWindow:
 	{
@@ -120,7 +129,7 @@ context::Wrapper context::create(Settings const& settings)
 		break;
 	}
 	}
-	g_windowSize = glm::vec2(width, height);
+	g_context.size = glm::vec2(width, height);
 	s32 cX = (mode->width - width) / 2;
 	s32 cY = (mode->height - height) / 2;
 	ASSERT(cX >= 0 && cY >= 0, "Invalid centre-screen!");
@@ -129,83 +138,74 @@ context::Wrapper context::create(Settings const& settings)
 	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
 	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-	g_pRenderWindow = glfwCreateWindow(width, height, settings.title.data(), pTarget, nullptr);
-	if (!g_pRenderWindow)
+	g_context.pWindow = glfwCreateWindow(width, height, settings.window.title.data(), pTarget, nullptr);
+	if (!g_context.pWindow)
 	{
 		LOG_E("Failed to create window!");
 		return {};
 	}
-	glfwSetWindowPos(g_pRenderWindow, cX, cY);
-	{
-		Lock lock(g_glMutex);
-		glfwMakeContextCurrent(g_pRenderWindow);
+	glfwSetWindowPos(g_context.pWindow, cX, cY);
+	glfwMakeContextCurrent(g_context.pWindow);
 #if defined(FORCE_NO_VSYNC)
-		bVSYNC = false;
+	bVSYNC = false;
 #endif
-		LOGIF_I(!bVSYNC, "[Context] Vsync disabled unless overridden by driver");
-		glfwSwapInterval(bVSYNC ? 1 : 0);
-		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-		{
-			LOG_E("Failed to initialise GLAD!");
-			return {};
-		}
-		inputImpl::init(*g_pRenderWindow);
-		g_contextThreadID = std::this_thread::get_id();
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glfwSwapInterval(bVSYNC ? 1 : 0);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		LOG_E("Failed to initialise GLAD!");
+		return {};
 	}
-	glframeBufferResizeCallback(g_pRenderWindow, width, height);
-	glfwSetFramebufferSizeCallback(g_pRenderWindow, &glframeBufferResizeCallback);
+	inputImpl::init(*g_context.pWindow);
+	contextImpl::g_contextThreadID = std::this_thread::get_id();
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glframeBufferResizeCallback(g_context.pWindow, width, height);
+	glfwSetFramebufferSizeCallback(g_context.pWindow, &glframeBufferResizeCallback);
+
 	if (settings.env.jobWorkerCount > 0)
 	{
 		jobs::init(settings.env.jobWorkerCount);
 	}
+	glfwSetWindowCloseCallback(g_context.pWindow, &windowCloseCallback);
+	LOGIF_I(!bVSYNC, "[Context] Vsync disabled unless overridden by driver");
 	LOG_D("Context created");
-	return Wrapper(true);
+	g_context.bJoinThreadsOnDestroy = settings.bJoinThreadsOnDestroy;
+	g_context.uFileLogger = std::move(uFileLogger);
+	return std::make_unique<HContext>();
 }
 
-void context::destroy()
+bool context::isAlive()
 {
-	le::resources::unloadAll();
-	Lock lock(g_glMutex);
-	if (g_pRenderWindow)
+	return g_context.pWindow && !isClosing();
+}
+
+void context::close()
+{
+	if (isAlive())
 	{
-		glfwSetWindowShouldClose(g_pRenderWindow, true);
-		while (!glfwWindowShouldClose(g_pRenderWindow))
-		{
-			glfwPollEvents();
-		}
+		glfwSetWindowShouldClose(g_context.pWindow, true);
 	}
-	glfwTerminate();
-	jobs::cleanup();
-	g_pRenderWindow = nullptr;
-	g_windowSize = glm::vec2(0.0f);
-	g_contextThreadID = std::thread::id();
-	LOG_D("Context destroyed");
-	g_uFileLogger = nullptr;
-}
-
-bool context::exists()
-{
-	return g_pRenderWindow != nullptr;
 }
 
 bool context::isClosing()
 {
-	return g_pRenderWindow ? glfwWindowShouldClose(g_pRenderWindow) : false;
+	return g_context.pWindow ? glfwWindowShouldClose(g_context.pWindow) : false;
 }
 
 void context::clearFlags(u32 flags, Colour colour /* = Colour::Black */)
 {
-	Lock lock(g_glMutex);
-	glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
-	glClear(flags);
+	if (g_context.pWindow)
+	{
+		cxChk();
+		glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
+		glClear(flags);
+	}
 }
 
 void context::pollEvents()
 {
-	if (g_pRenderWindow)
+	if (g_context.pWindow)
 	{
 		glfwPollEvents();
 	}
@@ -213,20 +213,26 @@ void context::pollEvents()
 
 void context::swapBuffers()
 {
-	if (g_pRenderWindow)
+	if (g_context.pWindow)
 	{
-		glfwSwapBuffers(g_pRenderWindow);
+		glfwSwapBuffers(g_context.pWindow);
+		++g_context.swapCount;
 	}
+}
+
+u64 context::swapCount()
+{
+	return g_context.swapCount;
 }
 
 f32 context::nativeAR()
 {
-	return g_nativeAR;
+	return g_context.nativeAR;
 }
 
 glm::vec2 context::size()
 {
-	return g_windowSize;
+	return g_context.size;
 }
 
 glm::vec2 context::project(glm::vec2 nPos, glm::vec2 space)
@@ -236,11 +242,45 @@ glm::vec2 context::project(glm::vec2 nPos, glm::vec2 space)
 
 glm::vec2 context::projectScreen(glm::vec2 nPos)
 {
-	return project(nPos, g_windowSize);
+	return project(nPos, g_context.size);
 }
 
 glm::vec2 context::worldToScreen(glm::vec2 world)
 {
-	return g_windowSize == glm::vec2(0.0f) ? g_windowSize : glm::vec2(world.x / g_windowSize.x, world.y / g_windowSize.y);
+	return g_context.size == glm::vec2(0.0f) ? g_context.size : glm::vec2(world.x / g_context.size.x, world.y / g_context.size.y);
+}
+
+bool contextImpl::exists()
+{
+	return g_context.pWindow != nullptr;
+}
+
+void contextImpl::destroy()
+{
+	if (g_context.pWindow)
+	{
+		LOG_D("[Context] Destroying context, terminating session...");
+		cxChk();
+		inputImpl::clear();
+		le::resources::unloadAll();
+		if (g_context.pWindow)
+		{
+			glfwSetWindowShouldClose(g_context.pWindow, true);
+			while (!glfwWindowShouldClose(g_context.pWindow))
+			{
+				glfwPollEvents();
+			}
+		}
+		glfwTerminate();
+		jobs::cleanup();
+		bool bJoinThreads = g_context.bJoinThreadsOnDestroy;
+		g_contextThreadID = std::thread::id();
+		LOG_D("Context destroyed");
+		g_context = LEContext();
+		if (bJoinThreads)
+		{
+			threads::joinAll();
+		}
+	}
 }
 } // namespace le

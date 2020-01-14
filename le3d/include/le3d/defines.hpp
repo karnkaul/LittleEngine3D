@@ -1,26 +1,6 @@
 #pragma once
 
 /**
- * Variable     : ASSERTS
- * Description  : Used to log time taken to load meshes, textures, etc from model data
- */
-#if defined(DEBUGGING)
-#if !defined(ASSERTS)
-#define ASSERTS
-#endif
-#endif
-
-/**
- * Variable     : DEBUG_LOG
- * Description  : Used to enable LOG_D and LOGIF_D macros (LogLevel::Debug)
- */
-#if defined(DEBUGGING)
-#if !defined(DEBUG_LOG)
-#define DEBUG_LOG
-#endif
-#endif
-
-/**
  * Variable     : LOG_SOURCE_LOCATION
  * Description  : Used to append source file and line number to logs
  */

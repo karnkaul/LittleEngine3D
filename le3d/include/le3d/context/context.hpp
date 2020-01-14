@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <memory>
 #include <glm/glm.hpp>
 #include "le3d/stdtypes.hpp"
 #include "le3d/gfx/colour.hpp"
@@ -29,40 +30,37 @@ struct Settings
 		env::Args args;
 		u16 jobWorkerCount = 2;
 	};
+	struct WindowOpts
+	{
+		std::string title = "LittleEngine3D";
+		Type type = Type::BorderedWindow;
+		u16 width = 1280;
+		u16 height = 720;
+		u16 screenID = 0;
+		bool bVSYNC = true;
+	};
 
+	WindowOpts window;
 	LogOpts log;
 	EnvOpts env;
-	std::string title = "LittleEngine3D";
-	Type type = Type::BorderedWindow;
-	u16 width = 1280;
-	u16 height = 720;
-	u16 screenID = 0;
-	bool bVSYNC = true;
+	// Invokes `threads::joinAll()` on context destruction
+	bool bJoinThreadsOnDestroy = true;
 };
 
-struct Wrapper final
+struct HContext final
 {
-private:
-	bool const m_bValid = false;
-
-public:
-	Wrapper(bool bValid = false);
-	Wrapper(Wrapper const&) = delete;
-	Wrapper& operator=(Wrapper const&) = delete;
-	~Wrapper();
-
-	operator bool() const;
+	~HContext();
 };
 
-Wrapper create(Settings const& pSettings);
-void destroy();
-
-bool exists();
+std::unique_ptr<HContext> create(Settings const& settings);
+bool isAlive();
+void close();
 bool isClosing();
 void clearFlags(u32 flags, Colour colour = Colour::Black);
 void pollEvents();
 void swapBuffers();
 
+u64 swapCount();
 f32 nativeAR();
 glm::vec2 size();
 glm::vec2 project(glm::vec2 nPos, glm::vec2 space);

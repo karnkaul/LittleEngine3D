@@ -68,8 +68,6 @@ void logInternal(char const* szText, char const*, u64, LogLevel level, va_list a
 }
 } // namespace
 
-u32 g_logCacheSize = 128;
-
 std::list<std::string> logCache()
 {
 	std::lock_guard<std::mutex> lock(g_logMutex);

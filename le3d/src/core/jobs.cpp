@@ -1,4 +1,5 @@
 #include <optional>
+#include <sstream>
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
@@ -11,11 +12,11 @@ namespace
 {
 std::unique_ptr<JobManager> uManager;
 
-JobHandle doNow(std::packaged_task<std::any()> task, std::optional<std::string> oName)
+std::shared_ptr<HJob> doNow(std::packaged_task<std::any()> task, std::optional<std::string> oName)
 {
 	std::string name = oName ? *oName : "unnamed";
 	LOG_E("[Jobs] Not initialised! Running [%s] Task on this thread!", name.data());
-	JobHandle ret = std::make_shared<JobHandleBlock>(-1, task.get_future());
+	std::shared_ptr<HJob> ret = std::make_shared<HJob>(-1, task.get_future());
 	task();
 	if (oName)
 	{
@@ -50,7 +51,7 @@ void jobs::cleanup()
 	g_pJobManager = nullptr;
 }
 
-JobHandle jobs::enqueue(std::function<std::any()> task, std::string name /* = "" */, bool bSilent /* = false */)
+std::shared_ptr<HJob> jobs::enqueue(std::function<std::any()> task, std::string name /* = "" */, bool bSilent /* = false */)
 {
 	if (uManager)
 	{
@@ -62,7 +63,7 @@ JobHandle jobs::enqueue(std::function<std::any()> task, std::string name /* = ""
 	}
 }
 
-JobHandle jobs::enqueue(std::function<void()> task, std::string name /* = "" */, bool bSilent /* = false */)
+std::shared_ptr<HJob> jobs::enqueue(std::function<void()> task, std::string name /* = "" */, bool bSilent /* = false */)
 {
 	auto doTask = [task]() -> std::any {
 		task();
@@ -92,26 +93,34 @@ JobCatalog* jobs::createCatalogue(std::string name)
 	}
 }
 
-void jobs::forEach(std::function<void(size_t)> indexedTask, size_t iterationCount, size_t iterationsPerJob, size_t startIdx)
+std::vector<std::shared_ptr<HJob>> jobs::forEach(IndexedTask const& indexedTask)
 {
 	if (uManager)
 	{
-		uManager->forEach(indexedTask, iterationCount, iterationsPerJob, startIdx);
+		return uManager->forEach(indexedTask);
 	}
 	else
 	{
-		for (; startIdx < iterationCount * iterationsPerJob; ++startIdx)
+		for (size_t startIdx = indexedTask.startIdx; startIdx < indexedTask.iterationCount * indexedTask.iterationsPerJob; ++startIdx)
 		{
+			std::optional<std::string> oName;
+			if (!indexedTask.bSilent)
+			{
+				std::stringstream name;
+				name << indexedTask.name << startIdx << "-" << (startIdx + indexedTask.iterationsPerJob - 1);
+				oName = name.str();
+			}
 			doNow(std::packaged_task<std::any()>([&indexedTask, startIdx]() -> std::any {
-					  indexedTask(startIdx);
+					  indexedTask.task(startIdx);
 					  return {};
 				  }),
-				  std::nullopt);
+				  oName);
 		}
 	}
+	return {};
 }
 
-void jobs::waitAll(std::vector<JobHandle> const& handles)
+void jobs::waitAll(std::vector<std::shared_ptr<HJob>> const& handles)
 {
 	for (auto& handle : handles)
 	{

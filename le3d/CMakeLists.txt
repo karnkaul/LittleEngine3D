@@ -37,6 +37,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	stb-image
 	tinyobjloader
 )
-if(PLATFORM STREQUAL "Linux")
+if(PLATFORM STREQUAL "Linux" OR W_GCC)
 	target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)
 endif()

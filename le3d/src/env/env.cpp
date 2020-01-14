@@ -10,12 +10,6 @@
 
 namespace le
 {
-namespace env
-{
-EngineConfig g_config;
-std::string g_EOL = "\n";
-} // namespace env
-
 namespace
 {
 stdfs::path g_exeLocation;
@@ -106,6 +100,7 @@ stdfs::path env::dirPath(Dir dir)
 {
 	switch (dir)
 	{
+	default:
 	case env::Dir::Working:
 		if (g_workingDir.empty())
 		{

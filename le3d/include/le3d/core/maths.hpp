@@ -3,7 +3,7 @@
 #include "le3d/stdtypes.hpp"
 #include "time.hpp"
 
-namespace maths
+namespace le::maths
 {
 using Time = le::Time;
 
@@ -119,4 +119,4 @@ inline T scale(T val, f32 coeff)
 {
 	return static_cast<T>(static_cast<f32>(val) * coeff);
 }
-} // namespace maths
+} // namespace le::maths

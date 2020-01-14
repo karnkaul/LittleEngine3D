@@ -27,7 +27,7 @@ void JobCatalog::startJobs(Task onComplete)
 	LOG_D("%s started. Running and monitoring %d jobs", m_logName.c_str(), m_subJobs.size());
 	m_onComplete = onComplete;
 	m_bCompleted = false;
-	m_startTime = Time::now();
+	m_startTime = Time::elapsed();
 	for (auto& job : m_subJobs)
 	{
 		m_pendingJobs.push_back(m_pManager->enqueue(std::move(job.second), std::move(job.first)));
@@ -71,7 +71,7 @@ void JobCatalog::update()
 		}
 		m_bCompleted = true;
 #if defined(DEBUG_LOG)
-		f32 secs = (Time::now() - m_startTime).assecs();
+		f32 secs = (Time::elapsed() - m_startTime).assecs();
 		LOG_D("%s completed %d jobs in %.2fs", m_logName.c_str(), m_subJobs.size(), secs);
 #endif
 	}
