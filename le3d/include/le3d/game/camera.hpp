@@ -5,7 +5,7 @@
 #include "le3d/game/object.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/core/transform.hpp"
-#include "le3d/input/input.hpp"
+#include "le3d/engine/input.hpp"
 
 namespace le
 {

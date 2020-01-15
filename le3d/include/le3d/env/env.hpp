@@ -1,5 +1,7 @@
 #pragma once
 #include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "le3d/stdtypes.hpp"
@@ -73,5 +75,22 @@ void setConfig(std::string json);
 stdfs::path dirPath(Dir dir);
 std::vector<std::string_view> const& args();
 bool isDefined(std::string_view arg);
+
+std::stringstream readStr(stdfs::path const& path);
+bytestream readBytes(stdfs::path const& path);
+
+struct FileToT
+{
+	stdfs::path prefix;
+
+	template <typename Ret>
+	Ret get(stdfs::path const& id) const;
+	template <>
+	bytestream get(stdfs::path const& id) const;
+	template <>
+	std::stringstream get(stdfs::path const& id) const;
+	template <>
+	std::string get(stdfs::path const& id) const;
+};
 } // namespace env
 } // namespace le

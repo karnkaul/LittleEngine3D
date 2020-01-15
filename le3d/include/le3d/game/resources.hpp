@@ -6,22 +6,11 @@
 
 namespace le
 {
-struct FontAtlasData final
-{
-	glm::ivec2 cellSize = glm::ivec2(0);
-	glm::ivec2 colsRows = glm::ivec2(0);
-	glm::ivec2 offset = glm::ivec2(0);
-	bytestream bytes;
-	u8 startCode = 32;
-
-	void deserialise(std::string json);
-};
-
 struct Skybox final
 {
+	Mesh mesh;
 	std::string name;
-	HCubemap cubemap;
-	HMesh mesh;
+	HCubemap hCube;
 };
 
 namespace resources
@@ -30,11 +19,11 @@ inline HTexture g_blankTex1px;
 inline HTexture g_noTex1px;
 
 /// Supported types:
-// - HFont
 // - HShader
 // - HTexture
 // - HUBO
 // - Model
+// - BitmapFont
 
 template <typename T>
 T& get(std::string const& id);
@@ -47,7 +36,7 @@ void unloadAll();
 template <typename T>
 u32 count();
 
-HUBO& addUBO(std::string id, s64 size, u32 bindingPoint, gfx::Draw type);
+HUBO& addUBO(std::string const& id, s64 size, u32 bindingPoint, gfx::Draw type);
 template <>
 HUBO& get<HUBO>(std::string const& id);
 template <>
@@ -86,17 +75,17 @@ u32 count<HTexture>();
 Skybox createSkybox(std::string const& name, std::array<bytestream, 6> rltbfb);
 void destroySkybox(Skybox& skybox);
 
-HFont& loadFont(std::string const& id, FontAtlasData atlas);
+BitmapFont& loadFont(std::string const& id, FontAtlasData atlas);
 template <>
-HFont& get<HFont>(std::string const& id);
+BitmapFont& get<BitmapFont>(std::string const& id);
 template <>
-bool isLoaded<HFont>(std::string const& id);
+bool isLoaded<BitmapFont>(std::string const& id);
 template <>
-bool unload<HFont>(HFont& font);
+bool unload<BitmapFont>(BitmapFont& font);
 template <>
-void unloadAll<HFont>();
+void unloadAll<BitmapFont>();
 template <>
-u32 count<HFont>();
+u32 count<BitmapFont>();
 
 Model& loadModel(std::string const& id, Model::Data const& data);
 template <>

@@ -75,28 +75,37 @@ struct ModelMats final
 #pragma endregion
 
 #pragma region Handles
-struct HTexture final
+// NOT POLYMORPHIC
+struct GFXHandle
 {
 	std::string id;
-	glm::ivec2 size = glm::ivec2(0);
+	GLObj glID;
 	u32 byteCount = 0;
+};
+
+struct HVerts final
+{
+	GLObj vao;
+	GLObj vbo;
+	GLObj ebo;
+	u32 byteCount = 0;
+	u16 iCount = 0;
+	u16 vCount = 0;
+};
+
+struct HTexture final : GFXHandle
+{
+	glm::ivec2 size = glm::ivec2(0);
 	TexType type;
-	GLObj glID;
 };
 
-struct HCubemap final
+struct HCubemap final : GFXHandle
 {
-	std::string id;
 	glm::ivec2 size = glm::ivec2(0);
-	u32 byteCount = 0;
-	GLObj glID;
 };
 
-struct HShader final
+struct HShader final : GFXHandle
 {
-	std::string id;
-	GLObj glID;
-
 	void use() const;
 	bool setBool(std::string_view id, bool bVal) const;
 	bool setS32(std::string_view id, s32 val) const;
@@ -111,57 +120,9 @@ struct HShader final
 	void bindUBO(std::string_view id, struct HUBO const& ubo) const;
 };
 
-struct HVerts final
+struct HUBO final : GFXHandle
 {
-	GLObj vao;
-	GLObj vbo;
-	GLObj ebo;
-	u32 byteCount = 0;
-	u16 iCount = 0;
-	u16 vCount = 0;
-};
-
-struct HUBO final
-{
-	GLObj ubo;
 	u32 bindingPoint = 0;
-	u32 byteCount = 0;
-};
-
-struct Material
-{
-	enum class Flag
-	{
-		Lit = 0,
-		Textured,
-		Opaque,
-		_COUNT
-	};
-
-	using Flags = TFlags<(size_t)Flag::_COUNT>;
-
-	Albedo albedo;
-	std::vector<HTexture> textures;
-	f32 shininess = 32.0f;
-	Flags flags;
-};
-
-struct HMesh final
-{
-	Material material;
-	std::string name;
-	HVerts hVerts;
-};
-
-struct HFont final
-{
-	std::string name;
-	HMesh quad;
-	HTexture sheet;
-	glm::ivec2 cellSize = glm::ivec2(0);
-	glm::ivec2 colsRows = glm::ivec2(0);
-	glm::ivec2 offset = glm::ivec2(0);
-	u8 startCode = 0;
 };
 #pragma endregion
 } // namespace le

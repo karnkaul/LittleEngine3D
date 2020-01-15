@@ -1,42 +1,10 @@
 #include <algorithm>
 #include <array>
-#include <fstream>
 #include <stack>
 #include "le3d/core/utils.hpp"
 
 namespace le
 {
-std::stringstream utils::readFile(stdfs::path const& path)
-{
-	std::ifstream file(path);
-	std::stringstream buf;
-	if (file.good())
-	{
-		buf << file.rdbuf();
-	}
-	return buf;
-}
-
-std::vector<std::string> utils::readLines(stdfs::path const& path)
-{
-	std::ifstream file(path);
-	std::vector<std::string> ret;
-	for (std::string line; std::getline(file, line); ret.emplace_back(std::move(line)))
-		;
-	return ret;
-}
-
-bytestream utils::readBytes(stdfs::path const& path)
-{
-	std::ifstream file(path, std::ios::binary);
-	bytestream buf;
-	if (file.good())
-	{
-		buf = std::vector<u8>(std::istreambuf_iterator<char>(file), {});
-	}
-	return buf;
-}
-
 std::pair<f32, std::string_view> utils::friendlySize(u64 byteCount)
 {
 	static std::array suffixes = {"B", "KiB", "MiB", "GiB"};

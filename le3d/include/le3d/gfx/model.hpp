@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "colour.hpp"
 #include "gfxtypes.hpp"
+#include "mesh.hpp"
 #include "utils.hpp"
 
 namespace le
@@ -20,30 +21,29 @@ enum class DrawFlag
 class Model
 {
 public:
+	struct TexData
+	{
+		std::string id;
+		std::string filename;
+		bytestream bytes;
+		HTexture hTex;
+		TexType type;
+	};
+	struct MeshData
+	{
+		Mesh mesh;
+		Albedo albedo;
+		Vertices vertices;
+		Material::Flags flags;
+		std::string id;
+		std::vector<size_t> texIndices;
+		f32 shininess = 32.0f;
+	};
 	struct Data
 	{
-		struct Tex
-		{
-			std::string id;
-			std::string filename;
-			bytestream bytes;
-			HTexture hTex;
-			TexType type;
-		};
-		struct Mesh
-		{
-			HMesh hMesh;
-			Albedo albedo;
-			Vertices vertices;
-			Material::Flags flags;
-			std::string id;
-			std::vector<size_t> texIndices;
-			f32 shininess = 32.0f;
-		};
-
 		std::string name;
-		std::vector<Tex> textures;
-		std::vector<Mesh> meshes;
+		std::vector<TexData> textures;
+		std::vector<MeshData> meshes;
 
 		// Returns true if all textures loaded
 		bool loadTextures(u16 count);
@@ -65,7 +65,7 @@ public:
 
 	struct Fixture
 	{
-		HMesh mesh;
+		Mesh mesh;
 		std::optional<glm::mat4> oWorld;
 	};
 
@@ -86,7 +86,7 @@ protected:
 	std::vector<Fixture> m_fixtures;
 
 private:
-	std::vector<HMesh> m_loadedMeshes;
+	std::vector<Mesh> m_loadedMeshes;
 	std::unordered_map<std::string, HTexture> m_loadedTextures;
 
 public:
@@ -103,7 +103,7 @@ public:
 public:
 	void setupModel(std::string name);
 	void setupModel(Data const& data);
-	void addFixture(HMesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
+	void addFixture(Mesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
 	void render(HShader const& shader, ModelMats const& mats);
 
 	u32 meshCount() const;

@@ -7,7 +7,7 @@
 
 namespace le
 {
-HMesh gfx::createQuad(f32 width, f32 height, std::string name, Material::Flags materialFlags)
+Mesh gfx::createQuad(f32 width, f32 height, std::string name, Material::Flags materialFlags)
 {
 	f32 const w = width * 0.5f;
 	f32 const h = height * 0.5f;
@@ -19,7 +19,7 @@ HMesh gfx::createQuad(f32 width, f32 height, std::string name, Material::Flags m
 	return newMesh(std::move(name), verts, Draw::Dynamic, materialFlags);
 }
 
-HMesh gfx::createCube(f32 side, std::string name, Material::Flags materialFlags)
+Mesh gfx::createCube(f32 side, std::string name, Material::Flags materialFlags)
 {
 	f32 const s = side * 0.5f;
 	Vertices verts;
@@ -67,7 +67,7 @@ HMesh gfx::createCube(f32 side, std::string name, Material::Flags materialFlags)
 	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
 }
 
-HMesh gfx::create4Pyramid(f32 side, std::string name, Material::Flags materialFlags)
+Mesh gfx::create4Pyramid(f32 side, std::string name, Material::Flags materialFlags)
 {
 	f32 const s = side * 0.5f;
 	glm::vec3 const nF = glm::normalize(glm::cross(glm::vec3(-s, -s, -s), glm::vec3(s, -s, -s)));
@@ -102,7 +102,7 @@ HMesh gfx::create4Pyramid(f32 side, std::string name, Material::Flags materialFl
 	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
 }
 
-HMesh gfx::createTetrahedron(f32 side, std::string name, Material::Flags materialFlags)
+Mesh gfx::createTetrahedron(f32 side, std::string name, Material::Flags materialFlags)
 {
 	f32 const s = side * 0.5f;
 	f32 const t30 = glm::tan(glm::radians(30.0f));
@@ -137,7 +137,7 @@ HMesh gfx::createTetrahedron(f32 side, std::string name, Material::Flags materia
 	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
 }
 
-HMesh gfx::createCircle(f32 diam, s32 points, std::string name, Material::Flags materialFlags)
+Mesh gfx::createCircle(f32 diam, s32 points, std::string name, Material::Flags materialFlags)
 {
 	ASSERT(points > 0 && points < 1000, "Max points is 1000");
 	f32 const r = diam * 0.5f;
@@ -164,7 +164,7 @@ HMesh gfx::createCircle(f32 diam, s32 points, std::string name, Material::Flags 
 	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
 }
 
-HMesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name, Material::Flags materialFlags)
+Mesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name, Material::Flags materialFlags)
 {
 	ASSERT(points > 0 && points < 1000, "Max points is 1000");
 	f32 const r = diam * 0.5f;
@@ -196,7 +196,7 @@ HMesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name, Materi
 	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
 }
 
-HMesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name, Material::Flags materialFlags)
+Mesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name, Material::Flags materialFlags)
 {
 	ASSERT(points > 0 && points < 1000, "Max points is 1000");
 	f32 const r = diam * 0.5f;
@@ -237,7 +237,7 @@ HMesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name, Ma
 	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
 }
 
-HMesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Material::Flags materialFlags)
+Mesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Material::Flags materialFlags)
 {
 	ASSERT(quadsPerSide > 0 && quadsPerSide < 30, "Max quads per side is 30");
 	Vertices verts;

@@ -1,18 +1,10 @@
 #pragma once
-#include <filesystem>
 #include <string>
-#include <sstream>
 #include <vector>
 #include "le3d/stdtypes.hpp"
 
 namespace le::utils
 {
-namespace stdfs = std::filesystem;
-
-std::stringstream readFile(stdfs::path const& path);
-std::vector<std::string> readLines(stdfs::path const& path);
-bytestream readBytes(stdfs::path const& path);
-
 std::pair<f32, std::string_view> friendlySize(u64 byteCount);
 
 namespace strings

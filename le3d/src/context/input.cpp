@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <unordered_map>
-#include "le3d/context/context.hpp"
 #include "le3d/core/log.hpp"
-#include "le3d/input/input.hpp"
+#include "le3d/engine/context.hpp"
+#include "le3d/engine/input.hpp"
 #include "inputImpl.hpp"
 
 namespace le

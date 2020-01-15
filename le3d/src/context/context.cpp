@@ -7,11 +7,11 @@
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
-#include "le3d/context/context.hpp"
+#include "le3d/engine/context.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "contextImpl.hpp"
-#include "input/inputImpl.hpp"
+#include "inputImpl.hpp"
 
 namespace le
 {
@@ -133,7 +133,6 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 	s32 cX = (mode->width - width) / 2;
 	s32 cY = (mode->height - height) / 2;
 	ASSERT(cX >= 0 && cY >= 0, "Invalid centre-screen!");
-
 	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
 	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);

@@ -32,10 +32,10 @@ public:
 
 private:
 	size_t getTexIdx(std::string id, std::string_view texName, TexType type);
-	Model::Data::Mesh processShape(tinyobj::shape_t const& shape);
-	void setName(Model::Data::Mesh& outMesh, tinyobj::shape_t const& shape);
-	void setVertices(Model::Data::Mesh& outMesh, tinyobj::shape_t const& shape);
-	void setMaterials(Model::Data::Mesh& outMesh, tinyobj::shape_t const& shape);
+	Model::MeshData processShape(tinyobj::shape_t const& shape);
+	void setName(Model::MeshData& outMesh, tinyobj::shape_t const& shape);
+	void setVertices(Model::MeshData& outMesh, tinyobj::shape_t const& shape);
+	void setMaterials(Model::MeshData& outMesh, tinyobj::shape_t const& shape);
 };
 
 OBJParser::OBJParser(Model::LoadRequest const& loadRequest) : m_reader(loadRequest.mtlBuf), m_request(loadRequest)
@@ -100,7 +100,7 @@ size_t OBJParser::getTexIdx(std::string id, std::string_view texName, TexType ty
 			return idx;
 		}
 	}
-	Model::Data::Tex tex;
+	Model::TexData tex;
 	tex.filename = texName;
 	tex.id = std::move(id);
 	tex.type = type;
@@ -108,16 +108,16 @@ size_t OBJParser::getTexIdx(std::string id, std::string_view texName, TexType ty
 	return m_data.textures.size() - 1;
 }
 
-Model::Data::Mesh OBJParser::processShape(tinyobj::shape_t const& shape)
+Model::MeshData OBJParser::processShape(tinyobj::shape_t const& shape)
 {
-	Model::Data::Mesh meshData;
+	Model::MeshData meshData;
 	setName(meshData, shape);
 	setVertices(meshData, shape);
 	setMaterials(meshData, shape);
 	return meshData;
 }
 
-void OBJParser::setName(Model::Data::Mesh& outMesh, tinyobj::shape_t const& shape)
+void OBJParser::setName(Model::MeshData& outMesh, tinyobj::shape_t const& shape)
 {
 	std::stringstream id;
 	id << m_request.meshPrefix << "-" << shape.name;
@@ -130,7 +130,7 @@ void OBJParser::setName(Model::Data::Mesh& outMesh, tinyobj::shape_t const& shap
 	m_meshIDs.emplace(outMesh.id);
 }
 
-void OBJParser::setVertices(Model::Data::Mesh& outMesh, tinyobj::shape_t const& shape)
+void OBJParser::setVertices(Model::MeshData& outMesh, tinyobj::shape_t const& shape)
 {
 	for (auto const& idx : shape.mesh.indices)
 	{
@@ -163,7 +163,7 @@ void OBJParser::setVertices(Model::Data::Mesh& outMesh, tinyobj::shape_t const& 
 	}
 }
 
-void OBJParser::setMaterials(Model::Data::Mesh& outMesh, tinyobj::shape_t const& shape)
+void OBJParser::setMaterials(Model::MeshData& outMesh, tinyobj::shape_t const& shape)
 {
 	if (!shape.mesh.material_ids.empty())
 	{
@@ -232,7 +232,7 @@ bool Model::Data::loadTextures(u16 count)
 		{
 			if (count > 0)
 			{
-				tex.hTex = gfx::gl::genTexture(tex.id, std::move(tex.bytes), tex.type, false);
+				tex.hTex = gfx::genTexture(tex.id, std::move(tex.bytes), tex.type, false);
 				--count;
 			}
 			else
@@ -250,13 +250,13 @@ bool Model::Data::loadMeshes(u16 count)
 	bool bDone = true;
 	for (auto& mesh : meshes)
 	{
-		if (mesh.hMesh.hVerts.vao.handle <= 0)
+		if (mesh.mesh.m_hVerts.vao.handle <= 0)
 		{
 			if (count > 0)
 			{
-				mesh.hMesh = gfx::newMesh(mesh.id, std::move(mesh.vertices), le::gfx::Draw::Dynamic, mesh.flags);
-				mesh.hMesh.material.albedo = mesh.albedo;
-				mesh.hMesh.material.shininess = mesh.shininess;
+				mesh.mesh = gfx::newMesh(mesh.id, std::move(mesh.vertices), le::gfx::Draw::Dynamic, mesh.flags);
+				mesh.mesh.m_material.albedo = mesh.albedo;
+				mesh.mesh.m_material.shininess = mesh.shininess;
 				--count;
 			}
 			else
@@ -288,7 +288,7 @@ Model::Data Model::loadOBJ(LoadRequest const& request)
 	return std::move(parser.m_data);
 }
 
-void Model::addFixture(HMesh const& mesh, std::optional<glm::mat4> model /* = std::nullopt */)
+void Model::addFixture(Mesh const& mesh, std::optional<glm::mat4> model /* = std::nullopt */)
 {
 	m_fixtures.emplace_back(Fixture{mesh, model});
 }
@@ -330,23 +330,23 @@ void Model::setupModel(Data const& data)
 					}
 					else
 					{
-						m_loadedTextures[texData.id] = gfx::gl::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
+						m_loadedTextures[texData.id] = gfx::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
 					}
 				}
 			}
 		}
 		for (auto const& meshData : data.meshes)
 		{
-			HMesh hMesh;
-			if (meshData.hMesh.hVerts.vao.handle > 0)
+			Mesh hMesh;
+			if (meshData.mesh.m_hVerts.vao.handle > 0)
 			{
-				hMesh = meshData.hMesh;
+				hMesh = meshData.mesh;
 			}
 			else
 			{
 				hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic, meshData.flags);
-				hMesh.material.albedo = meshData.albedo;
-				hMesh.material.shininess = meshData.shininess;
+				hMesh.m_material.albedo = meshData.albedo;
+				hMesh.m_material.shininess = meshData.shininess;
 			}
 			for (auto texIdx : meshData.texIndices)
 			{
@@ -354,7 +354,7 @@ void Model::setupModel(Data const& data)
 				auto search = m_loadedTextures.find(texData.id);
 				if (search != m_loadedTextures.end())
 				{
-					hMesh.material.textures.push_back(search->second);
+					hMesh.m_material.textures.push_back(search->second);
 				}
 				else
 				{
@@ -378,7 +378,7 @@ void Model::render(HShader const& shader, ModelMats const& mats)
 #endif
 	for (auto& fixture : m_fixtures)
 	{
-		ASSERT(fixture.mesh.hVerts.vao > 0, "Mesh VAO is null!");
+		ASSERT(fixture.mesh.m_hVerts.vao > 0, "Mesh VAO is null!");
 		shader.setV4(env::g_config.uniforms.tint, m_tint);
 #if defined(DEBUGGING)
 		m_renderFlags.set((s32)DrawFlag::BlankMagenta, m_bDEBUG);
@@ -407,7 +407,7 @@ void Model::render(HShader const& shader, ModelMats const& mats)
 		if (!bSkipTextures)
 		{
 #endif
-			gfx::setTextures(shader, fixture.mesh.material.textures, true);
+			gfx::setTextures(shader, fixture.mesh.m_material.textures, true);
 #if defined(DEBUGGING)
 		}
 #endif
@@ -436,10 +436,10 @@ void Model::release()
 	{
 		textures.push_back(kvp.second);
 	}
-	gfx::gl::releaseTextures(textures);
-	for (auto& hMesh : m_loadedMeshes)
+	gfx::releaseTextures(textures);
+	for (auto& mesh : m_loadedMeshes)
 	{
-		gfx::releaseMesh(hMesh);
+		gfx::releaseMesh(mesh);
 	}
 	m_loadedMeshes.clear();
 	m_loadedTextures.clear();

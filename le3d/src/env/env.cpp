@@ -126,4 +126,44 @@ bool env::isDefined(std::string_view arg)
 {
 	return std::find_if(g_args.begin(), g_args.end(), [arg](std::string_view s) { return s == arg; }) != g_args.end();
 }
+
+std::stringstream env::readStr(stdfs::path const& path)
+{
+	std::ifstream file(path);
+	std::stringstream buf;
+	if (file.good())
+	{
+		buf << file.rdbuf();
+	}
+	return buf;
+}
+
+bytestream env::readBytes(stdfs::path const& path)
+{
+	std::ifstream file(path, std::ios::binary);
+	bytestream buf;
+	if (file.good())
+	{
+		buf = std::vector<u8>(std::istreambuf_iterator<char>(file), {});
+	}
+	return buf;
+}
+
+template <>
+bytestream env::FileToT::get(stdfs::path const& id) const
+{
+	return readBytes(prefix / id);
+}
+
+template <>
+std::stringstream env::FileToT::get(stdfs::path const& id) const
+{
+	return readStr(prefix / id);
+}
+
+template <>
+std::string env::FileToT::get(stdfs::path const& id) const
+{
+	return readStr(prefix / id).str();
+}
 } // namespace le
