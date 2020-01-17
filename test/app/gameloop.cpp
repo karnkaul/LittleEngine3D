@@ -1,18 +1,18 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/glm.hpp>
+#include "le3d/core/log.hpp"
+#include "le3d/core/io.hpp"
 #include "le3d/engine/context.hpp"
 #include "le3d/engine/input.hpp"
-#include "le3d/core/log.hpp"
-#include "le3d/env/env.hpp"
-#include "le3d/game/asyncLoader.hpp"
+#include "le3d/gfx/model.hpp"
+#include "le3d/gfx/primitives.hpp"
+#include "le3d/gfx/utils.hpp"
+#include "le3d/game/asyncLoaders.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
-#include "le3d/gfx/model.hpp"
-#include "le3d/gfx/primitives.hpp"
-#include "le3d/gfx/utils.hpp"
 
 #include "ubotypes.hpp"
 #include "gameloop.hpp"
@@ -25,8 +25,8 @@ namespace
 {
 void runTest()
 {
-	stdfs::path const resources = env::dirPath(env::Dir::Executable).parent_path() / "test/resources";
-	env::FileToT f{resources};
+	stdfs::path const resources = stdfs::path(env::dirPath(env::Dir::Executable)).parent_path() / "test/resources";
+	FileReader reader(resources);
 
 	FreeCam camera;
 	camera.setup("freecam");
@@ -34,39 +34,46 @@ void runTest()
 	camera.m_position = {0.0f, 0.0f, 3.0f};
 	camera.m_flags.set((s32)FreeCam::Flag::FixedSpeed, false);
 
-	resources::loadTexture("container2", TexType::Diffuse, f.get<bytestream>("textures/container2.png"), false);
-	resources::loadTexture("container2_specular", TexType::Specular, f.get<bytestream>("textures/container2_specular.png"), false);
-	resources::loadTexture("awesomeface", TexType::Diffuse, f.get<bytestream>("textures/awesomeface.png"), false);
+	AsyncTexturesLoader::Request texturesRequest = {
+		"textures",
+		"",
+		{{"textures/container2.png"}, {"textures/container2_specular.png", TexType::Specular}, {"textures/awesomeface.png"}},
+		&reader};
+	AsyncTexturesLoader loader(std::move(texturesRequest));
+	loader.waitAll();
+	loader.loadNext(3);
 
 	FontAtlasData scpSheet;
-	scpSheet.bytes = f.get<bytestream>("fonts/scp_1024x512.png");
-	scpSheet.deserialise(f.get<std::string>("fonts/scp_1024x512.json"));
+	scpSheet.bytes = reader.getBytes("fonts/scp_1024x512.png");
+	scpSheet.deserialise(reader.getString("fonts/scp_1024x512.json"));
 	auto& hFont = resources::loadFont("default", std::move(scpSheet));
 
 	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::s_bindingPoint, gfx::Draw::Dynamic);
 	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::s_bindingPoint, gfx::Draw::Dynamic);
 
-	auto def = f.get<std::string>("shaders/default.vsh");
-	auto ui = f.get<std::string>("shaders/ui.vsh");
-	auto sb = f.get<std::string>("shaders/skybox.vsh");
-	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, f.get<std::string>("shaders/unlit/tinted.fsh"));
-	resources::loadShader("unlit/textured", def, f.get<std::string>("shaders/unlit/textured.fsh"));
-	auto& litTinted = resources::loadShader("lit/tinted", def, f.get<std::string>("shaders/lit/tinted.fsh"));
-	auto& litTextured = resources::loadShader("lit/textured", def, f.get<std::string>("shaders/lit/textured.fsh"));
-	auto& uiTextured = resources::loadShader("ui/textured", ui, f.get<std::string>("shaders/unlit/textured.fsh"));
-	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, f.get<std::string>("shaders/unlit/tinted.fsh"));
-	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, f.get<std::string>("shaders/unlit/skyboxed.fsh"));
-	auto& monolithic = resources::loadShader("monolithic", f.get<std::string>("shaders/monolithic.vsh"), f.get<std::string>("shaders/monolithic.fsh"));
+	resources::ShaderIDMap shaderIDMap = {
+		{"unlit/tinted", {"shaders/default.vsh", "shaders/unlit/tinted.fsh"}},
+		{"unlit/textured", {"shaders/default.vsh", "shaders/unlit/textured.fsh"}},
+		{"lit/tinted", {"shaders/default.vsh", "shaders/lit/tinted.fsh"}},
+		{"lit/textured", {"shaders/default.vsh", "shaders/lit/textured.fsh"}},
+		{"ui/textured", {"shaders/ui.vsh", "shaders/unlit/textured.fsh"}},
+		{"ui/tinted", {"shaders/ui.vsh", "shaders/unlit/tinted.fsh"}},
+		{"unlit/skybox", {"shaders/skybox.vsh", "shaders/unlit/skyboxed.fsh"}},
+		{"monolithic", {"shaders/monolithic.vsh", "shaders/monolithic.fsh"}},
+	};
+	resources::loadShaders(shaderIDMap, reader);
+	auto& litTinted = resources::get<HShader>("lit/tinted");
+	auto& litTextured = resources::get<HShader>("lit/textured");
+	auto& uiTextured = resources::get<HShader>("ui/textured");
+	auto& monolithic = resources::get<HShader>("monolithic");
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
 
 #if defined(DEBUGGING)
 	Entity::s_gizmoShader = monolithic;
 #endif
 	Skybox skybox;
-	ResourceLoadRequest skyboxRequest;
-	skyboxRequest.getBytes = [f](auto const& id) -> bytestream { return f.get<bytestream>(id); };
-	skyboxRequest.idPrefix = "textures/skybox";
-	skyboxRequest.resourceIDs = {"right.jpg", "left.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"};
+	AsyncSkyboxLoader::Request skyboxRequest = {
+		"skybox", "textures/skybox", {"right.jpg", "left.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"}, &reader};
 	AsyncSkyboxLoader skyboxLoader(std::move(skyboxRequest));
 	/*skyboxLoader.waitAll();
 	ASSERT(skyboxLoader.loadNext(), "Skybox not loaded!");
@@ -98,23 +105,21 @@ void runTest()
 	stdfs::path const model0Path = "test/fox";
 	stdfs::path const model1Path = "plant";
 	stdfs::path const model2Path = "";
-	ResourceLoadRequest rlRequest;
-	rlRequest.idPrefix = "models";
-	rlRequest.resourceIDs = {model0Path, model1Path};
+	AsyncModelsLoader::Request modelsRequest = {"models", "models", {model0Path, model1Path}, &reader};
 	if (!model2Path.empty())
 	{
-		rlRequest.resourceIDs.push_back(model2Path);
+		modelsRequest.resources.push_back(model2Path);
 	}
-	rlRequest.getData = [f](auto const& id) -> std::stringstream { return f.get<std::stringstream>(id); };
-	rlRequest.getBytes = [f](auto const& id) -> bytestream { return f.get<bytestream>(id); };
-	AsyncModelsLoader modelsLoader(std::move(rlRequest));
+	AsyncModelsLoader modelsLoader(std::move(modelsRequest));
 	Mesh cubeMeshTexd = debug::Cube();
 	Mesh quadMesh = debug::Quad();
-	quadMesh.m_material.textures = {resources::get<HTexture>("awesomeface")};
-	// quadMesh.textures = {bad};
-	cubeMeshTexd.m_material.textures = {resources::get<HTexture>("container2"), resources::get<HTexture>("container2_specular")};
+	quadMesh.m_material.textures = {resources::get<HTexture>("textures/awesomeface.png")};
+	/*HTexture bad;
+	quadMesh.m_material.textures = {bad};*/
+	cubeMeshTexd.m_material.textures = {resources::get<HTexture>("textures/container2.png"),
+										resources::get<HTexture>("textures/container2_specular.png")};
 	cubeMeshTexd.m_material.albedo = {glm::vec3(0.4f), glm::vec3(0.5f), glm::vec3(1.0f)};
-	// cubeMesh.textures = {resources::getTexture("container2")};
+	// cubeMesh.textures = {resources::getTexture("textures/container2.png")};
 	Mesh blankCubeMesh = cubeMeshTexd;
 	blankCubeMesh.m_material.textures.clear();
 	blankCubeMesh.m_material.flags.set(s32(Material::Flag::Textured), false);
@@ -188,13 +193,22 @@ void runTest()
 	props[4].m_transform.setPosition({-4.0f, 1.0f, -2.0f});
 
 	auto tOnInput = input::registerInput([&](s32 key, s32 action, s32 mods) {
-		if (action == GLFW_RELEASE)
+		switch (action)
+		{
+		default:
+			break;
+
+		case GLFW_RELEASE:
 		{
 			if (key == GLFW_KEY_ESCAPE)
 			{
 				context::close();
 				return;
 			}
+			break;
+		}
+		case GLFW_PRESS:
+		{
 			if (key == GLFW_KEY_W && mods & GLFW_MOD_CONTROL)
 			{
 				bWireframe = !bWireframe;
@@ -228,6 +242,8 @@ void runTest()
 				ar.setTip(tip);
 			}
 #endif
+			break;
+		}
 		}
 		if (key == GLFW_MOUSE_BUTTON_1)
 		{
@@ -332,7 +348,7 @@ void runTest()
 		quadProp.render();
 
 		debug::Quad2D tl, tr, bl, br;
-		HTexture& quadTex = resources::get<HTexture>("awesomeface");
+		HTexture& quadTex = resources::get<HTexture>("textures/awesomeface.png");
 		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f, 0.0f};
 		tl.pos = {-tr.pos.x, tr.pos.y, 0.0f};

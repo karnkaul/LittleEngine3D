@@ -1,8 +1,10 @@
 #include <algorithm>
+#include <filesystem>
 #if defined(__linux__)
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
 #endif
+#include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/env/env.hpp"
@@ -10,6 +12,8 @@
 
 namespace le
 {
+namespace stdfs = std::filesystem;
+
 namespace
 {
 stdfs::path g_exeLocation;
@@ -96,7 +100,7 @@ void env::setConfig(std::string json)
 	}
 }
 
-stdfs::path env::dirPath(Dir dir)
+std::string env::dirPath(Dir dir)
 {
 	switch (dir)
 	{
@@ -104,16 +108,16 @@ stdfs::path env::dirPath(Dir dir)
 	case env::Dir::Working:
 		if (g_workingDir.empty())
 		{
-			g_workingDir = std::filesystem::current_path();
+			g_workingDir = stdfs::current_path();
 		}
-		return g_workingDir;
+		return g_workingDir.generic_string();
 	case env::Dir::Executable:
 		if (g_exePath.empty())
 		{
 			LOG_E("[Env] Unknown executable path! Using working directory instead [%s]", g_workingDir.generic_string().data());
 			g_exePath = dirPath(Dir::Working);
 		}
-		return g_exePath;
+		return g_exePath.generic_string();
 	}
 }
 
@@ -125,45 +129,5 @@ std::vector<std::string_view> const& env::args()
 bool env::isDefined(std::string_view arg)
 {
 	return std::find_if(g_args.begin(), g_args.end(), [arg](std::string_view s) { return s == arg; }) != g_args.end();
-}
-
-std::stringstream env::readStr(stdfs::path const& path)
-{
-	std::ifstream file(path);
-	std::stringstream buf;
-	if (file.good())
-	{
-		buf << file.rdbuf();
-	}
-	return buf;
-}
-
-bytestream env::readBytes(stdfs::path const& path)
-{
-	std::ifstream file(path, std::ios::binary);
-	bytestream buf;
-	if (file.good())
-	{
-		buf = std::vector<u8>(std::istreambuf_iterator<char>(file), {});
-	}
-	return buf;
-}
-
-template <>
-bytestream env::FileToT::get(stdfs::path const& id) const
-{
-	return readBytes(prefix / id);
-}
-
-template <>
-std::stringstream env::FileToT::get(stdfs::path const& id) const
-{
-	return readStr(prefix / id);
-}
-
-template <>
-std::string env::FileToT::get(stdfs::path const& id) const
-{
-	return readStr(prefix / id).str();
 }
 } // namespace le

@@ -1,7 +1,7 @@
 #include <memory>
-#include <unordered_map>
 #include "le3d/engine/context.hpp"
 #include "le3d/core/assert.hpp"
+#include "le3d/core/io.hpp"
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
@@ -103,6 +103,57 @@ HShader& resources::loadShader(std::string const& id, std::string_view vertCode,
 	ASSERT(false, "Failed to load shader!");
 	LOG_E("[Resources] [%s] Failed to load [%s]!", Typename<HShader>().data(), id.data());
 	return g_nullShader;
+}
+
+u32 resources::loadShaders(ShaderIDMap const& data, IOReader const& reader)
+{
+	if (data.empty())
+	{
+		return 0;
+	}
+	std::unordered_map<std::string, std::string> vertShaders;
+	std::unordered_map<std::string, std::string> fragShaders;
+#if defined(DEBUG_LOG)
+	u32 vertsLoaded = 0;
+	u32 fragsLoaded = 0;
+#endif
+	for (auto const& kvp : data)
+	{
+		auto const& vertShaderID = kvp.second.first;
+		auto const& fragShaderID = kvp.second.second;
+		if (vertShaders.find(vertShaderID) == vertShaders.end())
+		{
+			vertShaders[vertShaderID] = reader.getString(vertShaderID);
+#if defined(DEBUG_LOG)
+			++vertsLoaded;
+#endif
+		}
+		if (fragShaders.find(fragShaderID) == fragShaders.end())
+		{
+			fragShaders[fragShaderID] = reader.getString(fragShaderID);
+#if defined(DEBUG_LOG)
+			++fragsLoaded;
+#endif
+		}
+	}
+	LOG_D("[Resources] [%u] Vertex and [%u] Fragment shader(s) code loaded", vertsLoaded, fragsLoaded);
+	u32 processed = 0;
+	for (auto const& kvp : data)
+	{
+		auto const& vertShaderID = kvp.second.first;
+		auto const& fragShaderID = kvp.second.second;
+		if (!vertShaders[vertShaderID].empty() && !fragShaders[fragShaderID].empty())
+		{
+			loadShader(kvp.first, vertShaders[vertShaderID], fragShaders[fragShaderID]);
+			++processed;
+		}
+		else
+		{
+			LOG_W("[Resources] [%s] Failed to load [%s]!", Typename<HShader>().data(), kvp.first.data());
+		}
+	}
+	LOG_D("[Resources] [%u] [%s]s loaded", processed, Typename<HShader>().data());
+	return processed;
 }
 
 template <>

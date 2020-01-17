@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <unordered_map>
 #include "le3d/stdtypes.hpp"
 #include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/model.hpp"
@@ -12,6 +13,8 @@ struct Skybox final
 	std::string name;
 	HCubemap hCube;
 };
+
+class IOReader;
 
 namespace resources
 {
@@ -49,6 +52,9 @@ template <>
 u32 count<HUBO>();
 
 HShader& loadShader(std::string const& id, std::string_view vertCode, std::string_view fragCode);
+// {shaderID, {vertCodeID, fragCodeID}}
+using ShaderIDMap = std::unordered_map<std::string, std::pair<std::string, std::string>>;
+u32 loadShaders(ShaderIDMap const& data, IOReader const& reader);
 template <>
 HShader& get<HShader>(std::string const& id);
 template <>

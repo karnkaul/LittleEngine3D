@@ -407,7 +407,14 @@ void Model::render(HShader const& shader, ModelMats const& mats)
 		if (!bSkipTextures)
 		{
 #endif
-			gfx::setTextures(shader, fixture.mesh.m_material.textures, true);
+			if (fixture.mesh.m_material.flags.isSet((s32)Material::Flag::Textured))
+			{
+				gfx::setTextures(shader, fixture.mesh.m_material.textures);
+			}
+			else
+			{
+				shader.setS32(env::g_config.uniforms.material.isTextured, 0);
+			}
 #if defined(DEBUGGING)
 		}
 #endif

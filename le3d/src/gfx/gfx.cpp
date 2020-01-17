@@ -478,6 +478,7 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 			shader.setS32(env::g_config.uniforms.material.isTextured, 0);
 			return false;
 		}
+		shader.setS32(env::g_config.uniforms.material.isTextured, 1);
 		s32 txID = 0;
 		s32 diffuse = 0;
 		s32 specular = 0;
@@ -539,7 +540,7 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 			else
 			{
 				bResetTint = true;
-				setBlankTex(shader, txID, true);
+				setBlankTex(shader, txID++, true);
 			}
 		}
 		shader.setF32(u.material.hasSpecular, bHasSpecular ? 1.0f : 0.0f);
