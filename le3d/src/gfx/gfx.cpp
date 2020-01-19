@@ -153,7 +153,7 @@ HTexture gfx::genTexture(std::string id, u8 const* pData, TexType type, u8 ch, u
 	return ret;
 }
 
-HTexture gfx::genTexture(std::string id, bytestream bytes, TexType type, bool bClampToEdge)
+HTexture gfx::genTexture(std::string id, bytearray bytes, TexType type, bool bClampToEdge)
 {
 	HTexture ret;
 	if (context::isAlive())
@@ -161,7 +161,7 @@ HTexture gfx::genTexture(std::string id, bytestream bytes, TexType type, bool bC
 		cxChk();
 		s32 w, h, ch;
 		stbi_set_flip_vertically_on_load(1);
-		auto* pData = stbi_load_from_memory(bytes.data(), (s32)bytes.size(), &w, &h, &ch, 0);
+		auto* pData = stbi_load_from_memory(reinterpret_cast<u8 const*>(bytes.data()), (s32)bytes.size(), &w, &h, &ch, 0);
 		if (pData)
 		{
 			ret = genTexture(std::move(id), pData, type, (u8)ch, (u16)w, (u16)h, bClampToEdge);
@@ -225,7 +225,7 @@ void gfx::releaseTextures(std::vector<HTexture>& outTextures)
 	}
 }
 
-HCubemap gfx::genCubemap(std::string id, std::array<bytestream, 6> const& rludfb)
+HCubemap gfx::genCubemap(std::string id, std::array<bytearray, 6> const& rludfb)
 {
 	HCubemap ret;
 	if (context::isAlive())
@@ -239,7 +239,7 @@ HCubemap gfx::genCubemap(std::string id, std::array<bytestream, 6> const& rludfb
 		stbi_set_flip_vertically_on_load(0);
 		for (auto const& side : rludfb)
 		{
-			auto pData = stbi_load_from_memory(side.data(), (s32)side.size(), &w, &h, &ch, 0);
+			auto pData = stbi_load_from_memory(reinterpret_cast<u8 const*>(side.data()), (s32)side.size(), &w, &h, &ch, 0);
 			if (pData)
 			{
 				bool bAlpha = ch > 3;
@@ -423,7 +423,7 @@ void gfx::releaseMesh(Mesh& outMesh)
 	outMesh = Mesh();
 }
 
-BitmapFont gfx::newFont(std::string id, bytestream spritesheet, glm::ivec2 cellSize)
+BitmapFont gfx::newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSize)
 {
 	BitmapFont ret;
 	if (context::isAlive())

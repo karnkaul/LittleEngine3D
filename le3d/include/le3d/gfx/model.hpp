@@ -25,7 +25,7 @@ public:
 	{
 		std::string id;
 		std::string filename;
-		bytestream bytes;
+		bytearray bytes;
 		HTexture hTex;
 		TexType type;
 	};
@@ -57,7 +57,7 @@ public:
 		std::stringstream& mtlBuf;
 		std::string meshPrefix;
 		// Callback parameter: string_view filename
-		std::function<bytestream(std::string_view)> getTexBytes;
+		std::function<bytearray(std::string_view)> getTexBytes;
 		f32 scale = 1.0f;
 
 		LoadRequest(std::stringstream& objBuf, std::stringstream& mtlBuf);

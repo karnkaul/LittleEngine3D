@@ -100,6 +100,11 @@ void env::setConfig(std::string json)
 	}
 }
 
+std::string env::argv0()
+{
+	return g_exeLocation.generic_string();
+}
+
 std::string env::dirPath(Dir dir)
 {
 	switch (dir)

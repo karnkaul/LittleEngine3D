@@ -10,6 +10,7 @@
 #include "le3d/engine/context.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/gfx/utils.hpp"
+#include "core/ioImpl.hpp"
 #include "contextImpl.hpp"
 #include "inputImpl.hpp"
 
@@ -137,6 +138,7 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
 	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+	glfwWindowHint(GLFW_VISIBLE, false);
 	g_context.pWindow = glfwCreateWindow(width, height, settings.window.title.data(), pTarget, nullptr);
 	if (!g_context.pWindow)
 	{
@@ -144,6 +146,7 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 		return {};
 	}
 	glfwSetWindowPos(g_context.pWindow, cX, cY);
+	glfwShowWindow(g_context.pWindow);
 	glfwMakeContextCurrent(g_context.pWindow);
 #if defined(FORCE_NO_VSYNC)
 	bVSYNC = false;
@@ -275,6 +278,7 @@ void contextImpl::destroy()
 		bool bJoinThreads = g_context.bJoinThreadsOnDestroy;
 		g_contextThreadID = std::thread::id();
 		LOG_D("Context destroyed");
+		ioImpl::deinitPhysfs();
 		g_context = LEContext();
 		if (bJoinThreads)
 		{

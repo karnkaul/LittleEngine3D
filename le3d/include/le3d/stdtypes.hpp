@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <cstddef>
 #if defined(__MINGW32__)
 #define __STDC_FORMAT_MACROS
 #endif
@@ -26,7 +27,7 @@ using s64 = std::int64_t;
 using f32 = float;
 using f64 = double;
 using size_t = std::size_t;
-using bytestream = std::vector<u8>;
+using bytearray = std::vector<std::byte>;
 
 template <typename Base, typename Derived>
 constexpr bool isDerived()

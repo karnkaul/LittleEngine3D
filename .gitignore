@@ -7,9 +7,3 @@ out/*
 
 CMakeSettings.json
 .editorconfig
-
-khrplatform.h
-glad.h
-glad.c
-stb_image.*
-tiny_obj_loader.*

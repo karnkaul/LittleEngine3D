@@ -98,7 +98,7 @@ f64 toF64(std::string input, f64 defaultValue)
 	return ret;
 }
 
-std::string toText(bytestream rawBuffer)
+std::string toText(bytearray rawBuffer)
 {
 	std::vector<char> charBuffer(rawBuffer.size() + 1, 0);
 	for (size_t i = 0; i < rawBuffer.size(); ++i)

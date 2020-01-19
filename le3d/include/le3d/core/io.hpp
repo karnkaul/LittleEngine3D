@@ -16,7 +16,7 @@ public:
 		IOReader const* pReader;
 
 	public:
-		bytestream operator()(stdfs::path const& id) const;
+		bytearray operator()(stdfs::path const& id) const;
 
 	private:
 		friend class IOReader;
@@ -57,7 +57,7 @@ public:
 
 public:
 	virtual bool isPresent(stdfs::path const& id) const = 0;
-	virtual bytestream getBytes(stdfs::path const& id) const = 0;
+	virtual bytearray getBytes(stdfs::path const& id) const = 0;
 	virtual std::stringstream getStr(stdfs::path const& id) const = 0;
 };
 
@@ -68,7 +68,21 @@ public:
 
 public:
 	bool isPresent(stdfs::path const& id) const override;
-	bytestream getBytes(stdfs::path const& id) const override;
+	bytearray getBytes(stdfs::path const& id) const override;
+	std::stringstream getStr(stdfs::path const& id) const override;
+};
+
+class ZIPReader : public IOReader
+{
+protected:
+	stdfs::path m_zipPath;
+
+public:
+	ZIPReader(stdfs::path zipPath, stdfs::path idPrefix = "");
+
+public:
+	bool isPresent(stdfs::path const& id) const override;
+	bytearray getBytes(stdfs::path const& id) const override;
 	std::stringstream getStr(stdfs::path const& id) const override;
 };
 } // namespace le

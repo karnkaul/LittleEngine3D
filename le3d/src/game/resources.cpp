@@ -202,7 +202,7 @@ u32 resources::count<HShader>()
 	return (u32)g_shaderMap.size();
 }
 
-HTexture& resources::loadTexture(std::string const& id, TexType type, bytestream bytes, bool bClampToEdge)
+HTexture& resources::loadTexture(std::string const& id, TexType type, bytearray bytes, bool bClampToEdge)
 {
 	if (g_blankTex1px.glID <= 0)
 	{
@@ -278,7 +278,7 @@ u32 resources::count<HTexture>()
 	return (u32)g_textureMap.size();
 }
 
-Skybox resources::createSkybox(std::string const& name, std::array<bytestream, 6> rludfb)
+Skybox resources::createSkybox(std::string const& name, std::array<bytearray, 6> rludfb)
 {
 	Skybox ret;
 	ret.hCube = gfx::genCubemap(name + "_map", std::move(rludfb));

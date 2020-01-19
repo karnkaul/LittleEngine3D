@@ -66,7 +66,7 @@ void unloadAll<HShader>();
 template <>
 u32 count<HShader>();
 
-HTexture& loadTexture(std::string const& id, TexType type, bytestream bytes, bool bClampToEdge);
+HTexture& loadTexture(std::string const& id, TexType type, bytearray bytes, bool bClampToEdge);
 template <>
 HTexture& get<HTexture>(std::string const& id);
 template <>
@@ -78,7 +78,7 @@ void unloadAll<HTexture>();
 template <>
 u32 count<HTexture>();
 
-Skybox createSkybox(std::string const& name, std::array<bytestream, 6> rltbfb);
+Skybox createSkybox(std::string const& name, std::array<bytearray, 6> rltbfb);
 void destroySkybox(Skybox& skybox);
 
 BitmapFont& loadFont(std::string const& id, FontAtlasData atlas);

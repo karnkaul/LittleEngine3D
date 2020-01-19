@@ -62,6 +62,9 @@ add_subdirectory(lib/stb)
 # Tiny Obj Loader
 add_subdirectory(lib/tinyobjloader)
 
+# PhysicsFS
+add_subdirectory(lib/physfs)
+
 ## LittleEngine3D
 add_subdirectory(le3d)
 

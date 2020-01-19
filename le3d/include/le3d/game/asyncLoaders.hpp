@@ -93,7 +93,7 @@ struct AsyncTexLoadData
 };
 
 // Loads all textures specified via AsyncTexLoadData
-class AsyncTexturesLoader : public TLoader<AsyncTexLoadData, bytestream>
+class AsyncTexturesLoader : public TLoader<AsyncTexLoadData, bytearray>
 {
 public:
 	AsyncTexturesLoader(Request request);
@@ -104,7 +104,7 @@ protected:
 
 // Loads textures in `request` as `rludfb` and constructs
 // `m_skybox` on the main thread when all textures have been loaded.
-class AsyncSkyboxLoader : public TLoader<stdfs::path, bytestream>
+class AsyncSkyboxLoader : public TLoader<stdfs::path, bytearray>
 {
 public:
 	Skybox m_skybox;

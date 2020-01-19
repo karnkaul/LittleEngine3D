@@ -29,6 +29,7 @@ add_dependencies(${PROJECT_NAME}
 	glm
 	stb-image
 	tinyobjloader
+	physfs-static
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	glfw
@@ -36,6 +37,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	glm
 	stb-image
 	tinyobjloader
+	physfs-static
 )
 if(PLATFORM STREQUAL "Linux" OR W_GCC)
 	target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)

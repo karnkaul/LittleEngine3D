@@ -18,7 +18,7 @@ s32 toS32(std::string input, s32 defaultValue = -1);
 f32 toF32(std::string input, f32 defaultValue = -1.0f);
 f64 toF64(std::string input, f64 defaultValue = -1.0);
 
-std::string toText(bytestream rawBuffer);
+std::string toText(bytearray rawBuffer);
 
 // Slices a string into a pair via the first occurence of a delimiter
 std::pair<std::string, std::string> bisect(std::string_view input, char delimiter);

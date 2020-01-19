@@ -62,6 +62,7 @@ It is recommended to use UBOs for light data and view/projection matrices and sh
 - [x] Model loading
 - [x] Text rendering
 - [x] Debug primitives (cube, sphere, cone, etc)
+- [x] Async loading and archive decompression
 - [ ] Particle systems (using instancing)
 - [ ] Shadows (directional lights)
 - [ ] ImgUI integration
@@ -73,3 +74,4 @@ It is recommended to use UBOs for light data and view/projection matrices and sh
 - [glm](https://github.com/g-truc/glm)
 - [stb-image](https://github.com/nothings/stb)
 - [tinyobjloader](https://github.com/syoyo/tinyobjloader)
+- [physfs](https://icculus.org/physfs/)

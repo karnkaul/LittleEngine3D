@@ -26,7 +26,17 @@ namespace
 void runTest()
 {
 	stdfs::path const resources = stdfs::path(env::dirPath(env::Dir::Executable)).parent_path() / "test/resources";
-	FileReader reader(resources);
+	std::unique_ptr<IOReader> uReader;
+	if (std::filesystem::is_regular_file(resources / "resources.zip"))
+	{
+		uReader = std::make_unique<ZIPReader>(resources / "resources.zip");
+		LOG_I("[GameLoop] Using ZIP archive");
+	}
+	else
+	{
+		uReader = std::make_unique<FileReader>(resources);
+		LOG_I("[GameLoop] Using Filesystem");
+	}
 
 	FreeCam camera;
 	camera.setup("freecam");
@@ -38,14 +48,14 @@ void runTest()
 		"textures",
 		"",
 		{{"textures/container2.png"}, {"textures/container2_specular.png", TexType::Specular}, {"textures/awesomeface.png"}},
-		&reader};
+		uReader.get()};
 	AsyncTexturesLoader loader(std::move(texturesRequest));
 	loader.waitAll();
 	loader.loadNext(3);
 
 	FontAtlasData scpSheet;
-	scpSheet.bytes = reader.getBytes("fonts/scp_1024x512.png");
-	scpSheet.deserialise(reader.getString("fonts/scp_1024x512.json"));
+	scpSheet.bytes = uReader->getBytes("fonts/scp_1024x512.png");
+	scpSheet.deserialise(uReader->getString("fonts/scp_1024x512.json"));
 	auto& hFont = resources::loadFont("default", std::move(scpSheet));
 
 	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::s_bindingPoint, gfx::Draw::Dynamic);
@@ -61,7 +71,7 @@ void runTest()
 		{"unlit/skybox", {"shaders/skybox.vsh", "shaders/unlit/skyboxed.fsh"}},
 		{"monolithic", {"shaders/monolithic.vsh", "shaders/monolithic.fsh"}},
 	};
-	resources::loadShaders(shaderIDMap, reader);
+	resources::loadShaders(shaderIDMap, *uReader);
 	auto& litTinted = resources::get<HShader>("lit/tinted");
 	auto& litTextured = resources::get<HShader>("lit/textured");
 	auto& uiTextured = resources::get<HShader>("ui/textured");
@@ -73,7 +83,7 @@ void runTest()
 #endif
 	Skybox skybox;
 	AsyncSkyboxLoader::Request skyboxRequest = {
-		"skybox", "textures/skybox", {"right.jpg", "left.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"}, &reader};
+		"skybox", "textures/skybox", {"right.jpg", "left.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"}, uReader.get()};
 	AsyncSkyboxLoader skyboxLoader(std::move(skyboxRequest));
 	/*skyboxLoader.waitAll();
 	ASSERT(skyboxLoader.loadNext(), "Skybox not loaded!");
@@ -105,7 +115,7 @@ void runTest()
 	stdfs::path const model0Path = "test/fox";
 	stdfs::path const model1Path = "plant";
 	stdfs::path const model2Path = "";
-	AsyncModelsLoader::Request modelsRequest = {"models", "models", {model0Path, model1Path}, &reader};
+	AsyncModelsLoader::Request modelsRequest = {"models", "models", {model0Path, model1Path}, uReader.get()};
 	if (!model2Path.empty())
 	{
 		modelsRequest.resources.push_back(model2Path);

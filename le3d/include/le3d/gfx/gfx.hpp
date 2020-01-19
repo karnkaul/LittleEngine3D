@@ -22,11 +22,11 @@ HVerts genVerts(Vertices const& vertices, Draw drawType = Draw::Dynamic, HShader
 void releaseVerts(HVerts& outhVerts);
 
 HTexture genTexture(std::string id, u8 const* pData, TexType type, u8 ch, u16 w, u16 h, bool bClampToEdge);
-HTexture genTexture(std::string id, bytestream image, TexType type, bool bClampToEdge);
+HTexture genTexture(std::string id, bytearray image, TexType type, bool bClampToEdge);
 void releaseTexture(HTexture& outTexture);
 void releaseTextures(std::vector<HTexture>& outTextures);
 
-HCubemap genCubemap(std::string id, std::array<bytestream, 6> const& rludfb);
+HCubemap genCubemap(std::string id, std::array<bytearray, 6> const& rludfb);
 void releaseCubemap(HCubemap& outCube);
 
 HShader genShader(std::string id, std::string_view vertCode, std::string_view fragCode);
@@ -38,7 +38,7 @@ void releaseUBO(HUBO& outhUBO);
 Mesh newMesh(std::string id, Vertices const& vertices, Draw type, Material::Flags flags, HShader const* pShader = nullptr);
 void releaseMesh(Mesh& outMesh);
 
-BitmapFont newFont(std::string id, bytestream spritesheet, glm::ivec2 cellSize);
+BitmapFont newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSize);
 void releaseFont(BitmapFont& outFont);
 
 void setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData);

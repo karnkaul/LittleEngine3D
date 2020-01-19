@@ -7,7 +7,7 @@
 
 namespace le
 {
-AsyncTexturesLoader::AsyncTexturesLoader(Request request) : TLoader<AsyncTexLoadData, bytestream>(std::move(request))
+AsyncTexturesLoader::AsyncTexturesLoader(Request request) : TLoader<AsyncTexLoadData, bytearray>(std::move(request))
 {
 	if (m_request.pReader)
 	{
@@ -32,7 +32,7 @@ void AsyncTexturesLoader::onDone()
 	}
 }
 
-AsyncSkyboxLoader::AsyncSkyboxLoader(Request request) : TLoader<stdfs::path, bytestream>(std::move(request))
+AsyncSkyboxLoader::AsyncSkyboxLoader(Request request) : TLoader<stdfs::path, bytearray>(std::move(request))
 {
 	if (m_request.pReader)
 	{
@@ -52,7 +52,7 @@ AsyncSkyboxLoader::AsyncSkyboxLoader(Request request) : TLoader<stdfs::path, byt
 void AsyncSkyboxLoader::onDone()
 {
 	ASSERT(m_loadRequests.size() == 6, "Invalid skybox texture ID count!");
-	std::array<bytestream, 6> bytes;
+	std::array<bytearray, 6> bytes;
 	size_t idx = 0;
 	for (auto& request : m_loadRequests)
 	{
@@ -88,7 +88,7 @@ AsyncModelsLoader::AsyncModelsLoader(Request request) : TLoader<stdfs::path, Mod
 						auto objBuf = m_request.pReader->getStr(objPath);
 						auto mtlBuf = m_request.pReader->getStr(mtlPath);
 						Model::LoadRequest mlr(objBuf, mtlBuf);
-						mlr.getTexBytes = [this, prefix](std::string_view filename) -> bytestream {
+						mlr.getTexBytes = [this, prefix](std::string_view filename) -> bytearray {
 							return m_request.pReader->getBytes(prefix / filename);
 						};
 						mlr.meshPrefix = (m_request.idPrefix / sRequest->resIn.parent_path() / stdfs::path(id)).generic_string();
