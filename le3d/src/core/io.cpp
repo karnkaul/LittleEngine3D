@@ -27,7 +27,7 @@ PhysfsHandle::~PhysfsHandle()
 }
 
 std::unique_ptr<PhysfsHandle> g_uPhysfsHandle;
-}
+} // namespace
 
 bytearray IOReader::FBytes::operator()(stdfs::path const& id) const
 {

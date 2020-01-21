@@ -9,7 +9,7 @@
 
 namespace le::gfx
 {
-enum class Draw
+enum class Draw : s8
 {
 	Dynamic = 0,
 	Static
@@ -17,6 +17,20 @@ enum class Draw
 
 inline GLObj g_blankTexID = GLObj(1);
 inline GLObj g_noTexID = GLObj(2);
+
+struct VBODescriptor
+{
+	u32 attribCount = 1;
+	u16 attribLocation = 10;
+	u16 attribDivisor = 1;
+	u8 vec4sPerAttrib = 1;
+	Draw drawType = Draw::Static;
+	bool bNormalised = false;
+};
+
+HVBO genVec4VBO(VBODescriptor const& descriptor, std::vector<GLObj> const& hVAOs);
+void setVBO(HVBO const& hVBO, void const* pData);
+void releaseVBO(HVBO& outVBO, std::vector<GLObj> const& hVAOs);
 
 HVerts genVerts(Vertices const& vertices, Draw drawType = Draw::Dynamic, HShader const* pShader = nullptr);
 void releaseVerts(HVerts& outhVerts);
@@ -53,8 +67,10 @@ void unsetTextures(s32 lastTexID);
 void setMaterial(HShader const& shader, Material const& material);
 
 void draw(HVerts const& hVerts);
+void drawI(HVerts const& hVerts, u32 count);
 void drawMesh(Mesh const& mesh, HShader const& shader);
 void drawMeshes(Mesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader);
+void drawMeshesI(Mesh const& mesh, HShader const& shader, u32 instanceCount);
 
 template <typename T>
 void setUBO(HUBO const& hUBO, T const& data)

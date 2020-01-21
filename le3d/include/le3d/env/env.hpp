@@ -11,8 +11,9 @@ struct EngineConfig
 	{
 		struct Transform
 		{
-			// bool
+			// int
 			std::string isUI = "transform.isUI";
+			std::string isInstanced = "transform.isInstanced";
 		};
 		struct Material
 		{
@@ -29,9 +30,9 @@ struct EngineConfig
 			std::string isTextured = "material.isTextured";
 			std::string isLit = "material.isLit";
 			std::string isOpaque = "material.isOpaque";
-			std::string hasSpecular = "material.hasSpecular";
 
 			// float
+			std::string hasSpecular = "material.hasSpecular";
 			std::string shininess = "material.shininess";
 
 			// sampler2D

@@ -302,7 +302,7 @@ BitmapFont& resources::loadFont(std::string const& id, FontAtlasData atlas)
 {
 	ASSERT(g_fontMap.find(id) == g_fontMap.end(), "Font already loaded!");
 	BitmapFont font = gfx::newFont(id, std::move(atlas.bytes), atlas.cellSize);
-	if (font.sheet.glID > 0 && font.quad.m_hVerts.vao > 0)
+	if (font.sheet.glID > 0 && font.quad.m_hVerts.hVAO > 0)
 	{
 		font.colsRows = atlas.colsRows;
 		font.offset = atlas.offset;

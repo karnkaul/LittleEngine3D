@@ -289,6 +289,6 @@ Mesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Materi
 	addSide([](auto const& p) { return glm::normalize(glm::rotate(p, glm::radians(-90.0f), g_nUp)); });
 	addSide([](auto const& p) { return glm::normalize(glm::rotate(p, glm::radians(90.0f), g_nRight)); });
 	addSide([](auto const& p) { return glm::normalize(glm::rotate(p, glm::radians(-90.0f), g_nRight)); });
-	return gfx::newMesh(std::move(name), verts, gfx::Draw::Static, materialFlags);
+	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
 }
 } // namespace le

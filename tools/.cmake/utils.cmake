@@ -68,7 +68,7 @@ function(unzip_archive ARCHIVE_NAME SUBDIR)
 	message(STATUS "Extracting ${ARCHIVE_NAME}...")
 	execute_process(COMMAND 
 		${CMAKE_COMMAND} -E tar -xf "${ARCHIVE_NAME}"
-		WORKING_DIRECTORY "${SUBDIR}" OUTPUT_QUIET ERROR_QUIET
+		WORKING_DIRECTORY "${SUBDIR}"
 	)
 endfunction()
 

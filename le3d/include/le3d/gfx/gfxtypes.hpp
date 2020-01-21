@@ -83,11 +83,19 @@ struct GFXHandle
 	u32 byteCount = 0;
 };
 
+struct HVBO
+{
+	GLObj glID;
+	std::vector<GLObj> vaIDs;
+	u32 size = 0;
+	s32 type = 0;
+};
+
 struct HVerts final
 {
-	GLObj vao;
-	GLObj vbo;
-	GLObj ebo;
+	HVBO hVBO;
+	GLObj hVAO;
+	GLObj hEBO;
 	u32 byteCount = 0;
 	u16 iCount = 0;
 	u16 vCount = 0;

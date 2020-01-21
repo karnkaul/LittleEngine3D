@@ -250,7 +250,7 @@ bool Model::Data::loadMeshes(u16 count)
 	bool bDone = true;
 	for (auto& mesh : meshes)
 	{
-		if (mesh.mesh.m_hVerts.vao.handle <= 0)
+		if (mesh.mesh.m_hVerts.hVAO.handle <= 0)
 		{
 			if (count > 0)
 			{
@@ -338,7 +338,7 @@ void Model::setupModel(Data const& data)
 		for (auto const& meshData : data.meshes)
 		{
 			Mesh hMesh;
-			if (meshData.mesh.m_hVerts.vao.handle > 0)
+			if (meshData.mesh.m_hVerts.hVAO.handle > 0)
 			{
 				hMesh = meshData.mesh;
 			}
@@ -378,7 +378,7 @@ void Model::render(HShader const& shader, ModelMats const& mats)
 #endif
 	for (auto& fixture : m_fixtures)
 	{
-		ASSERT(fixture.mesh.m_hVerts.vao > 0, "Mesh VAO is null!");
+		ASSERT(fixture.mesh.m_hVerts.hVAO > 0, "Mesh VAO is null!");
 		shader.setV4(env::g_config.uniforms.tint, m_tint);
 #if defined(DEBUGGING)
 		m_renderFlags.set((s32)DrawFlag::BlankMagenta, m_bDEBUG);

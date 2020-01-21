@@ -34,11 +34,11 @@ void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 	shader.use();
 	shader.setV4(env::g_config.uniforms.tint, tint);
 	glChk(glActiveTexture(GL_TEXTURE0));
-	glChk(glBindVertexArray(skybox.mesh.m_hVerts.vao.handle));
+	glChk(glBindVertexArray(skybox.mesh.m_hVerts.hVAO.handle));
 	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.hCube.glID.handle));
-	if (skybox.mesh.m_hVerts.ebo.handle > 0)
+	if (skybox.mesh.m_hVerts.hEBO.handle > 0)
 	{
-		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox.mesh.m_hVerts.ebo.handle));
+		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox.mesh.m_hVerts.hEBO.handle));
 		glChk(glDrawElements(GL_TRIANGLES, skybox.mesh.m_hVerts.iCount, GL_UNSIGNED_INT, 0));
 	}
 	else
@@ -117,7 +117,7 @@ void debug::DArrow::setTip(Tip tip, bool bForce)
 Mesh& debug::Cube()
 {
 	auto& cube = g_debugMeshes["dCube"];
-	if (cube.m_hVerts.vao <= 0)
+	if (cube.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured)}, true);
@@ -129,7 +129,7 @@ Mesh& debug::Cube()
 Mesh& debug::Quad()
 {
 	auto& quad = g_debugMeshes["dQuad"];
-	if (quad.m_hVerts.vao <= 0)
+	if (quad.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Textured), true);
@@ -141,7 +141,7 @@ Mesh& debug::Quad()
 Mesh& debug::Circle()
 {
 	auto& circle = g_debugMeshes["dCircle"];
-	if (circle.m_hVerts.vao <= 0)
+	if (circle.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -153,7 +153,7 @@ Mesh& debug::Circle()
 Mesh& debug::Pyramid()
 {
 	auto& pyramid = g_debugMeshes["dPyramid"];
-	if (pyramid.m_hVerts.vao <= 0)
+	if (pyramid.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -165,7 +165,7 @@ Mesh& debug::Pyramid()
 Mesh& debug::Tetrahedron()
 {
 	auto& tetrahedron = g_debugMeshes["dTetrahedron"];
-	if (tetrahedron.m_hVerts.vao <= 0)
+	if (tetrahedron.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -177,7 +177,7 @@ Mesh& debug::Tetrahedron()
 Mesh& debug::Cone()
 {
 	auto& cone = g_debugMeshes["dCone"];
-	if (cone.m_hVerts.vao <= 0)
+	if (cone.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -189,7 +189,7 @@ Mesh& debug::Cone()
 Mesh& debug::Cylinder()
 {
 	auto& cylinder = g_debugMeshes["dCylinder"];
-	if (cylinder.m_hVerts.vao <= 0)
+	if (cylinder.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -201,7 +201,7 @@ Mesh& debug::Cylinder()
 Mesh& debug::Sphere()
 {
 	auto& sphere = g_debugMeshes["dSphere"];
-	if (sphere.m_hVerts.vao <= 0)
+	if (sphere.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -262,16 +262,16 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 			{
 				glm::vec4 const& uv = *quad.oTexCoords;
 				f32 const data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
-				glChk(glBindVertexArray(dQuad.m_hVerts.vao));
-				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.vbo));
+				glChk(glBindVertexArray(dQuad.m_hVerts.hVAO));
+				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.hVBO.glID));
 				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
 			}
 			gfx::drawMesh(dQuad, shader);
 			if (quad.oTexCoords)
 			{
 				f32 const data[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
-				glChk(glBindVertexArray(dQuad.m_hVerts.vao));
-				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.vbo));
+				glChk(glBindVertexArray(dQuad.m_hVerts.hVAO));
+				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.hVBO.glID));
 				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
 			}
 		}
@@ -332,8 +332,8 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 	bResetTint |= gfx::setTextures(shader, {hFont.sheet}, true);
 	if (!bOneDrawCall)
 	{
-		glBindVertexArray(hFont.quad.m_hVerts.vao.handle);
-		glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.m_hVerts.vbo.handle);
+		glBindVertexArray(hFont.quad.m_hVerts.hVAO.handle);
+		glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.m_hVerts.hVBO.glID.handle);
 	}
 	gfx::cropViewport(uiAR);
 	Vertices verts;
