@@ -1,10 +1,12 @@
+#include <algorithm>
 #include <unordered_map>
 #include <glad/glad.h>
 #include "le3d/engineVersion.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/env/env.hpp"
-#include "le3d/gfx/gfx.hpp"
+#include "le3d/gfx/draw.hpp"
+#include "le3d/gfx/vram.hpp"
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
@@ -34,6 +36,7 @@ void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 	shader.use();
 	shader.setV4(env::g_config.uniforms.tint, tint);
 	glChk(glActiveTexture(GL_TEXTURE0));
+	glChk(glBindSampler(0, 0));
 	glChk(glBindVertexArray(skybox.mesh.m_hVerts.hVAO.handle));
 	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.hCube.glID.handle));
 	if (skybox.mesh.m_hVerts.hEBO.handle > 0)
@@ -55,6 +58,19 @@ void renderMeshes(Mesh const& mesh, std::vector<ModelMats> const& mats, HShader 
 	shader.setV4(env::g_config.uniforms.tint, tint);
 	bool bResetTint = gfx::setTextures(shader, mesh.m_material.textures, true);
 	gfx::drawMeshes(mesh, mats, shader);
+	if (bResetTint)
+	{
+		shader.setV4(env::g_config.uniforms.tint, Colour::White);
+	}
+	gfx::unsetTextures((s32)mesh.m_material.textures.size());
+}
+
+void renderMeshes(Mesh const& mesh, HShader const& shader, u32 count, Colour tint)
+{
+	ASSERT(shader.glID.handle > 0, "null shader!");
+	shader.setV4(env::g_config.uniforms.tint, tint);
+	bool bResetTint = gfx::setTextures(shader, mesh.m_material.textures, true);
+	gfx::drawMeshes(mesh, shader, count);
 	if (bResetTint)
 	{
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
@@ -281,7 +297,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 		ModelMats mats;
 		shader.setModelMats(mats);
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
-		HVerts hVerts = gfx::genVerts(verts, gfx::Draw::Static, &shader);
+		HVerts hVerts = gfx::genVerts(verts, DrawType::Static, &shader);
 		gfx::draw(hVerts);
 		gfx::releaseVerts(hVerts);
 	}
@@ -391,7 +407,7 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 	{
 		ModelMats mats;
 		shader.setModelMats(mats);
-		HVerts hVerts = gfx::genVerts(verts, gfx::Draw::Static, &shader);
+		HVerts hVerts = gfx::genVerts(verts, DrawType::Static, &shader);
 		gfx::draw(hVerts);
 		gfx::releaseVerts(hVerts);
 	}

@@ -1,3 +1,4 @@
+#include <array>
 #include <fstream>
 #include <sstream>
 #include "le3d/core/gdata.hpp"
@@ -28,7 +29,7 @@ void AsyncTexturesLoader::onDone()
 	for (auto& sRequest : m_loadRequests)
 	{
 		auto const& texData = sRequest->resIn;
-		resources::loadTexture(texData.id.generic_string(), texData.type, std::move(sRequest->resOut), texData.bClampToEdge);
+		resources::loadTexture(texData.id.generic_string(), texData.type, std::move(sRequest->resOut));
 	}
 }
 
@@ -76,15 +77,17 @@ AsyncModelsLoader::AsyncModelsLoader(Request request) : TLoader<stdfs::path, Mod
 				auto prefix = m_request.idPrefix / sRequest->resIn;
 				auto objPath = prefix / gData.getStr("obj");
 				auto mtlPath = prefix / gData.getStr("mtl");
+				auto samplerID = gData.getStr("sampler", "default");
 				auto scale = (f32)gData.getF64("scale", 1.0f);
 				auto id = gData.getStr("id", "UNNAMED");
+				auto sampler = resources::get<HSampler>(samplerID);
 				if (gData.fieldCount() == 0 || !gData.contains("mtl") || !gData.contains("obj"))
 				{
 					LOG_E("[AsyncModelsLoader] [%s] No data in json!", jsonPath.generic_string().data());
 				}
 				else if (m_request.pReader->checkPresence(objPath) && m_request.pReader->checkPresence(mtlPath))
 				{
-					auto getRequest = [this, id, scale, sRequest, prefix, objPath, mtlPath]() {
+					auto getRequest = [this, id, scale, sRequest, prefix, objPath, mtlPath, sampler]() {
 						auto objBuf = m_request.pReader->getStr(objPath);
 						auto mtlBuf = m_request.pReader->getStr(mtlPath);
 						Model::LoadRequest mlr(objBuf, mtlBuf);
@@ -93,6 +96,7 @@ AsyncModelsLoader::AsyncModelsLoader(Request request) : TLoader<stdfs::path, Mod
 						};
 						mlr.meshPrefix = (m_request.idPrefix / sRequest->resIn.parent_path() / stdfs::path(id)).generic_string();
 						mlr.scale = scale;
+						mlr.modelSampler = sampler;
 						sRequest->resOut = Model::loadOBJ(mlr);
 					};
 					enqueueRequest(sRequest, getRequest, gData.getStr("id", "UNNAMED"));
@@ -120,7 +124,7 @@ void AsyncModelsLoader::onDone()
 {
 	for (auto& sRequest : m_loadRequests)
 	{
-		resources::loadModel(sRequest->resOut.name, sRequest->resOut);
+		resources::loadModel(sRequest->resOut.id, sRequest->resOut);
 	}
 	m_loadRequests.clear();
 }

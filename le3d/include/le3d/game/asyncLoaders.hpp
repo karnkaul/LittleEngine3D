@@ -89,7 +89,6 @@ struct AsyncTexLoadData
 {
 	stdfs::path id;
 	TexType type = TexType::Diffuse;
-	bool bClampToEdge = false;
 };
 
 // Loads all textures specified via AsyncTexLoadData
@@ -125,6 +124,7 @@ protected:
 //		"obj": "<.obj id> (local)"
 //		"mtl": "<.mtl id> (local)"
 //		"scale": "<model scale>"
+//		"sampler": "<sampler id>"
 //	}
 // Request format:
 //	eg: for

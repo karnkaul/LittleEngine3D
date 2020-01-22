@@ -6,7 +6,6 @@
 #include "le3d/core/tFlags.hpp"
 #include "le3d/core/transform.hpp"
 #include "le3d/game/object.hpp"
-#include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/model.hpp"
 
 namespace le

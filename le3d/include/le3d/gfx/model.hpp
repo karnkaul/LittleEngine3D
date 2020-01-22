@@ -27,6 +27,7 @@ public:
 		std::string filename;
 		bytearray bytes;
 		HTexture hTex;
+		HSampler hSampler;
 		TexType type;
 	};
 	struct MeshData
@@ -41,7 +42,7 @@ public:
 	};
 	struct Data
 	{
-		std::string name;
+		std::string id;
 		std::vector<TexData> textures;
 		std::vector<MeshData> meshes;
 
@@ -56,6 +57,7 @@ public:
 		std::stringstream& objBuf;
 		std::stringstream& mtlBuf;
 		std::string meshPrefix;
+		HSampler modelSampler;
 		// Callback parameter: string_view filename
 		std::function<bytearray(std::string_view)> getTexBytes;
 		f32 scale = 1.0f;
@@ -78,11 +80,9 @@ public:
 #endif
 
 public:
-	std::string m_name;
+	std::string m_id;
 	std::string m_type;
 	Colour m_tint = Colour::White;
-
-protected:
 	std::vector<Fixture> m_fixtures;
 
 private:

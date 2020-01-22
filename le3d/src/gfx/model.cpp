@@ -3,7 +3,9 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
+#include "le3d/gfx/draw.hpp"
 #include "le3d/gfx/model.hpp"
+#include "le3d/gfx/vram.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/defines.hpp"
 #if defined(PROFILE_MODEL_LOADS)
@@ -68,7 +70,7 @@ OBJParser::OBJParser(Model::LoadRequest const& loadRequest) : m_reader(loadReque
 	}
 	if (bOK)
 	{
-		m_data.name = m_request.meshPrefix;
+		m_data.id = m_request.meshPrefix;
 		{
 #if defined(PROFILE_MODEL_LOADS)
 			Profiler pr(m_request.meshPrefix + "-MeshData", LogLevel::Info);
@@ -104,6 +106,7 @@ size_t OBJParser::getTexIdx(std::string id, std::string_view texName, TexType ty
 	tex.filename = texName;
 	tex.id = std::move(id);
 	tex.type = type;
+	tex.hSampler = m_request.modelSampler;
 	m_data.textures.emplace_back(std::move(tex));
 	return m_data.textures.size() - 1;
 }
@@ -232,7 +235,7 @@ bool Model::Data::loadTextures(u16 count)
 		{
 			if (count > 0)
 			{
-				tex.hTex = gfx::genTexture(tex.id, std::move(tex.bytes), tex.type, false);
+				tex.hTex = gfx::genTexture(tex.id, std::move(tex.bytes), tex.type, &tex.hSampler);
 				--count;
 			}
 			else
@@ -254,7 +257,7 @@ bool Model::Data::loadMeshes(u16 count)
 		{
 			if (count > 0)
 			{
-				mesh.mesh = gfx::newMesh(mesh.id, std::move(mesh.vertices), le::gfx::Draw::Dynamic, mesh.flags);
+				mesh.mesh = gfx::newMesh(mesh.id, std::move(mesh.vertices), le::DrawType::Dynamic, mesh.flags);
 				mesh.mesh.m_material.albedo = mesh.albedo;
 				mesh.mesh.m_material.shininess = mesh.shininess;
 				--count;
@@ -295,21 +298,21 @@ void Model::addFixture(Mesh const& mesh, std::optional<glm::mat4> model /* = std
 
 void Model::setupModel(std::string name)
 {
-	m_name = std::move(name);
+	m_id = std::move(name);
 	m_type = Typename(*this);
-	LOG_D("[%s] [%s] setup", m_name.data(), m_type.data());
+	LOG_D("[%s] [%s] setup", m_id.data(), m_type.data());
 }
 
 void Model::setupModel(Data const& data)
 {
-	if (!data.name.empty())
+	if (!data.id.empty())
 	{
-		m_name = data.name;
+		m_id = data.id;
 	}
 	m_type = Typename(*this);
 	{
 #if defined(PROFILE_MODEL_LOADS)
-		Profiler pr(data.name + "-Model", LogLevel::Info);
+		Profiler pr(data.id + "-Model", LogLevel::Info);
 #endif
 		for (auto const& texData : data.textures)
 		{
@@ -330,7 +333,7 @@ void Model::setupModel(Data const& data)
 					}
 					else
 					{
-						m_loadedTextures[texData.id] = gfx::genTexture(texData.id, std::move(texData.bytes), texData.type, false);
+						m_loadedTextures[texData.id] = gfx::genTexture(texData.id, std::move(texData.bytes), texData.type);
 					}
 				}
 			}
@@ -344,7 +347,7 @@ void Model::setupModel(Data const& data)
 			}
 			else
 			{
-				hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::gfx::Draw::Dynamic, meshData.flags);
+				hMesh = gfx::newMesh(meshData.id, std::move(meshData.vertices), le::DrawType::Dynamic, meshData.flags);
 				hMesh.m_material.albedo = meshData.albedo;
 				hMesh.m_material.shininess = meshData.shininess;
 			}
@@ -365,8 +368,8 @@ void Model::setupModel(Data const& data)
 			m_loadedMeshes.emplace_back(std::move(hMesh));
 		}
 	}
-	LOGIF_W(data.meshes.empty(), "[Model::Data] [%s] Model: No meshes present in passed data!", m_name.data());
-	LOG_D("[%s] %s setup", m_name.data(), m_type.data());
+	LOGIF_W(data.meshes.empty(), "[Model::Data] [%s] Model: No meshes present in passed data!", m_id.data());
+	LOG_D("[%s] %s setup", m_id.data(), m_type.data());
 }
 
 void Model::render(HShader const& shader, ModelMats const& mats)
@@ -450,8 +453,8 @@ void Model::release()
 	}
 	m_loadedMeshes.clear();
 	m_loadedTextures.clear();
-	LOGIF_D(!m_fixtures.empty(), "[%s] [%s] destroyed", m_name.data(), m_type.data());
+	LOGIF_D(!m_fixtures.empty(), "[%s] [%s] destroyed", m_id.data(), m_type.data());
 	m_fixtures.clear();
-	m_name.clear();
+	m_id.clear();
 }
 } // namespace le

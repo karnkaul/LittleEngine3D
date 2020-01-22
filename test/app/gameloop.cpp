@@ -5,9 +5,11 @@
 #include "le3d/core/io.hpp"
 #include "le3d/engine/context.hpp"
 #include "le3d/engine/input.hpp"
+#include "le3d/gfx/draw.hpp"
 #include "le3d/gfx/model.hpp"
 #include "le3d/gfx/primitives.hpp"
 #include "le3d/gfx/utils.hpp"
+#include "le3d/gfx/vram.hpp"
 #include "le3d/game/asyncLoaders.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
@@ -58,9 +60,10 @@ void runTest()
 	scpSheet.deserialise(uReader->getString("fonts/scp_1024x512.json"));
 	auto& hFont = resources::loadFont("default", std::move(scpSheet));
 
-	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::s_bindingPoint, gfx::Draw::Dynamic);
-	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::s_bindingPoint, gfx::Draw::Dynamic);
-
+	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::s_bindingPoint, DrawType::Dynamic);
+	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::s_bindingPoint, DrawType::Dynamic);
+	auto samplerList = uReader->getString(resources / "samplers.json");
+	resources::addSamplers(samplerList);
 	resources::ShaderIDMap shaderIDMap = {
 		{"unlit/tinted", {"shaders/default.vsh", "shaders/unlit/tinted.fsh"}},
 		{"unlit/textured", {"shaders/default.vsh", "shaders/unlit/textured.fsh"}},
@@ -135,6 +138,26 @@ void runTest()
 	blankCubeMesh.m_material.flags.set(s32(Material::Flag::Textured), false);
 	Mesh sphereMesh = gfx::createCubedSphere(1.0f, "testSphere", 8, {});
 	sphereMesh.m_material = cubeMeshTexd.m_material;
+
+	Mesh& instanceMesh = sphereMesh;
+	constexpr s32 instanceSide = 4;
+	constexpr size_t instanceCount = size_t(instanceSide * instanceSide * 4);
+	std::vector<glm::mat4> instanceMats;
+	instanceMats.reserve(instanceCount);
+	for (s32 row = -instanceSide; row < instanceSide; ++row)
+	{
+		for (s32 col = -instanceSide; col < instanceSide; ++col)
+		{
+			glm::vec3 pos{row * 2.0f, col * 2.0f, -2.0f};
+			instanceMats.emplace_back(glm::translate(glm::mat4(1.0f), pos));
+		}
+	}
+	gfx::VBODescriptor descriptor;
+	descriptor.attribCount = instanceCount;
+	descriptor.attribLocation = 5;
+	descriptor.vec4sPerAttrib = 4;
+	HVBO instanceVBO = gfx::genVec4VBO(descriptor, {instanceMesh.m_hVerts.hVAO});
+	gfx::setVBO(instanceVBO, instanceMats.data());
 
 	Model cube;
 	Model blankCube;
@@ -288,8 +311,9 @@ void runTest()
 				props[4].addModel(resources::get<Model>("models/" + model1Path.string()));
 				if (resources::isLoaded<Model>("models/" + model2Path.string()))
 				{
+					auto& model2 = resources::get<Model>("models/" + model2Path.string());
 					props[0].clearModels();
-					props[0].addModel(resources::get<Model>("models/" + model2Path.string()));
+					props[0].addModel(model2);
 				}
 			}
 		}
@@ -348,6 +372,7 @@ void runTest()
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 		renderMeshes(sphereMesh, {sphereMat}, monolithic);
+		// renderMeshes(instanceMesh, monolithic, instanceCount);
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

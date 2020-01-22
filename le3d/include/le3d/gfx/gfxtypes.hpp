@@ -14,10 +14,33 @@ namespace le
 {
 using GLObj = TZero<u32>;
 
-enum class TexType
+enum class DrawType : u8
+{
+	Dynamic = 0,
+	Static
+};
+
+enum class TexType : u8
 {
 	Diffuse = 0,
 	Specular
+};
+
+enum class TexWrap : u8
+{
+	Repeat = 0,
+	ClampEdge,
+	ClampBorder
+};
+
+enum class TexFilter : u8
+{
+	Linear = 0,
+	Nearest,
+	LinearMpLinear,
+	LinearMpNearest,
+	NearestMpLinear,
+	NearestMpNearest
 };
 
 #pragma region Data
@@ -101,9 +124,14 @@ struct HVerts final
 	u16 vCount = 0;
 };
 
+struct HSampler final : GFXHandle
+{
+};
+
 struct HTexture final : GFXHandle
 {
 	glm::ivec2 size = glm::ivec2(0);
+	HSampler hSampler;
 	TexType type;
 };
 

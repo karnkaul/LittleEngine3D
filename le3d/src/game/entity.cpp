@@ -2,7 +2,7 @@
 #include <glad/glad.h>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
-#include "le3d/gfx/gfx.hpp"
+#include "le3d/gfx/draw.hpp"
 #include "le3d/gfx/utils.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"

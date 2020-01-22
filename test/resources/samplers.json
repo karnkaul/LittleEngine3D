@@ -1,0 +1,15 @@
+{
+	"samplers":
+	[
+		{
+			"id": "default",
+			"wrap": "Repeat",
+			"minFilter": "LinearMpLinear"
+		},
+		{
+			"id": "plant",
+			"wrap": "Repeat",
+			"minFilter": "Nearest"
+		}
+	]
+}

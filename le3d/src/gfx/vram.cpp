@@ -1,26 +1,16 @@
-#include <array>
-#include <cstddef>
-#include <sstream>
 #include <glad/glad.h>
-#include <glm/gtc/type_ptr.hpp>
 #include <stb/stb_image.h>
 #include "le3d/core/assert.hpp"
+#include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
 #include "le3d/engine/context.hpp"
-#include "le3d/env/env.hpp"
-#include "le3d/gfx/gfx.hpp"
 #include "le3d/gfx/primitives.hpp"
+#include "le3d/gfx/vram.hpp"
 #include "le3d/gfx/utils.hpp"
-#include "le3d/core/log.hpp"
 #include "context/contextImpl.hpp"
 
 namespace le
 {
-namespace
-{
-s32 g_maxTexIdx = 0;
-} // namespace
-
 HVBO gfx::genVec4VBO(VBODescriptor const& descriptor, std::vector<GLObj> const& hVAOs)
 {
 	HVBO vbo;
@@ -32,7 +22,7 @@ HVBO gfx::genVec4VBO(VBODescriptor const& descriptor, std::vector<GLObj> const& 
 	GLboolean const glNorm = descriptor.bNormalised ? GL_TRUE : GL_FALSE;
 	GLsizei const stride = GLsizei(descriptor.vec4sPerAttrib * sizeof(glm::vec4));
 	vbo.size = descriptor.attribCount * (u32)stride;
-	vbo.type = descriptor.drawType == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+	vbo.type = descriptor.type == DrawType::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 	glChk(glGenBuffers(1, &vbo.glID.handle));
 	glChk(glBindBuffer(GL_ARRAY_BUFFER, vbo.glID));
 	glChk(glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(vbo.size), nullptr, GLenum(vbo.type)));
@@ -96,7 +86,7 @@ void gfx::releaseVBO(HVBO& outVBO, std::vector<GLObj> const& hVAOs)
 	outVBO = HVBO();
 }
 
-HVerts gfx::genVerts(Vertices const& vertices, Draw drawType, HShader const* pShader)
+HVerts gfx::genVerts(Vertices const& vertices, DrawType drawType, HShader const* pShader)
 {
 	HVerts hVerts;
 	if (context::isAlive())
@@ -104,7 +94,7 @@ HVerts gfx::genVerts(Vertices const& vertices, Draw drawType, HShader const* pSh
 		cxChk();
 		ASSERT(vertices.normals.empty() || vertices.normals.size() == vertices.points.size(), "Point/normal count mismatch!");
 		ASSERT(vertices.texCoords.empty() || vertices.texCoords.size() == vertices.points.size(), "Point/UV count mismatch!");
-		hVerts.hVBO.type = drawType == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+		hVerts.hVBO.type = drawType == DrawType::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 		hVerts.hVBO.size = vertices.byteCount();
 		glChk(glGenVertexArrays(1, &hVerts.hVAO.handle));
 		glChk(glGenBuffers(1, &hVerts.hVBO.glID.handle));
@@ -189,7 +179,69 @@ void gfx::releaseVerts(HVerts& outhVerts)
 	outhVerts = HVerts();
 }
 
-HTexture gfx::genTexture(std::string id, u8 const* pData, TexType type, u8 ch, u16 w, u16 h, bool bClampToEdge)
+HSampler gfx::genSampler(std::string id, TexWrap wrap, TexFilter minFilter, TexFilter magFilter)
+{
+	HSampler hSampler;
+	if (context::isAlive())
+	{
+		GLint glWrap;
+		switch (wrap)
+		{
+		case TexWrap::ClampEdge:
+			glWrap = GL_CLAMP_TO_EDGE;
+			break;
+
+		case TexWrap::ClampBorder:
+			glWrap = GL_CLAMP_TO_BORDER;
+			break;
+
+		default:
+		case TexWrap::Repeat:
+			glWrap = GL_REPEAT;
+			break;
+		}
+		auto getGLFilter = [](TexFilter filter) -> GLint {
+			switch (filter)
+			{
+			default:
+			case TexFilter::Linear:
+				return GL_LINEAR;
+			case TexFilter::Nearest:
+				return GL_NEAREST;
+			case TexFilter::LinearMpLinear:
+				return GL_LINEAR_MIPMAP_LINEAR;
+			case TexFilter::LinearMpNearest:
+				return GL_LINEAR_MIPMAP_NEAREST;
+			case TexFilter::NearestMpLinear:
+				return GL_NEAREST_MIPMAP_LINEAR;
+			case TexFilter::NearestMpNearest:
+				return GL_LINEAR_MIPMAP_NEAREST;
+			}
+		};
+		GLint glMinFilter = getGLFilter(minFilter);
+		GLint glMagFilter = getGLFilter(magFilter);
+		glChk(glGenSamplers(1, &hSampler.glID.handle));
+		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_WRAP_S, glWrap));
+		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_WRAP_T, glWrap));
+		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_MIN_FILTER, glMinFilter));
+		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_MAG_FILTER, glMagFilter));
+		hSampler.id = std::move(id);
+		LOG_I("== [%s] [%s] created", hSampler.id.data(), Typename<HSampler>().data());
+	}
+	return hSampler;
+}
+
+void gfx::releaseSampler(HSampler& outhSampler)
+{
+	if (contextImpl::exists() && outhSampler.glID > 0)
+	{
+		glDeleteSamplers(1, &outhSampler.glID.handle);
+		LOG_I("-- [%s] [%s] destroyed", outhSampler.id.data(), Typename<HSampler>().data());
+	}
+	outhSampler = HSampler();
+}
+
+HTexture gfx::genTexture(std::string id, u8 const* pData, TexType type, HSampler* pSampler, u8 ch, u16 w, u16 h)
 {
 	HTexture ret;
 	if (context::isAlive())
@@ -199,19 +251,10 @@ HTexture gfx::genTexture(std::string id, u8 const* pData, TexType type, u8 ch, u
 		glChk(glGenTextures(1, &ret.glID.handle));
 		glChk(glActiveTexture(GL_TEXTURE0));
 		glChk(glBindTexture(GL_TEXTURE_2D, ret.glID));
-		if (bClampToEdge)
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		}
-		else
-		{
-			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-			glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-		}
+		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-
 #if defined(__arm__)
 		glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_RGBA : GL_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pData));
 #else
@@ -229,11 +272,15 @@ HTexture gfx::genTexture(std::string id, u8 const* pData, TexType type, u8 ch, u
 		ret.byteCount = size;
 		ret.type = type;
 		ret.size = {w, h};
+		if (pSampler)
+		{
+			ret.hSampler = *pSampler;
+		}
 	}
 	return ret;
 }
 
-HTexture gfx::genTexture(std::string id, bytearray bytes, TexType type, bool bClampToEdge)
+HTexture gfx::genTexture(std::string id, bytearray bytes, TexType type, HSampler* pSampler)
 {
 	HTexture ret;
 	if (context::isAlive())
@@ -244,7 +291,7 @@ HTexture gfx::genTexture(std::string id, bytearray bytes, TexType type, bool bCl
 		auto* pData = stbi_load_from_memory(reinterpret_cast<u8 const*>(bytes.data()), (s32)bytes.size(), &w, &h, &ch, 0);
 		if (pData)
 		{
-			ret = genTexture(std::move(id), pData, type, (u8)ch, (u16)w, (u16)h, bClampToEdge);
+			ret = genTexture(std::move(id), pData, type, pSampler, (u8)ch, (u16)w, (u16)h);
 		}
 		else
 		{
@@ -255,30 +302,30 @@ HTexture gfx::genTexture(std::string id, bytearray bytes, TexType type, bool bCl
 	return ret;
 }
 
-void gfx::releaseTexture(HTexture& outTexture)
+void gfx::releaseTexture(HTexture& outhTexture)
 {
 	if (contextImpl::exists())
 	{
 		cxChk();
-		if (outTexture.glID > 0)
+		if (outhTexture.glID > 0)
 		{
-			auto size = utils::friendlySize(outTexture.byteCount);
-			LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outTexture.id.data(), size.first, size.second.data(), Typename<HTexture>().data());
+			auto size = utils::friendlySize(outhTexture.byteCount);
+			LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outhTexture.id.data(), size.first, size.second.data(), Typename<HTexture>().data());
 		}
-		GLuint t[] = {outTexture.glID};
+		GLuint t[] = {outhTexture.glID};
 		glChk(glDeleteTextures(1, t));
 	}
-	outTexture = HTexture();
+	outhTexture = HTexture();
 }
 
-void gfx::releaseTextures(std::vector<HTexture>& outTextures)
+void gfx::releaseTextures(std::vector<HTexture>& outhTextures)
 {
 	std::vector<GLuint> texIDs;
-	texIDs.reserve(outTextures.size());
+	texIDs.reserve(outhTextures.size());
 #if defined(DEBUG_LOG)
 	u32 bytes = 0;
 #endif
-	for (auto& texture : outTextures)
+	for (auto& texture : outhTextures)
 	{
 		if (texture.glID.handle > 0)
 		{
@@ -296,7 +343,7 @@ void gfx::releaseTextures(std::vector<HTexture>& outTextures)
 		cxChk();
 		glChk(glDeleteTextures((GLsizei)texIDs.size(), texIDs.data()));
 #if defined(DEBUG_LOG)
-		if (outTextures.size() > 1)
+		if (outhTextures.size() > 1)
 		{
 			auto size = utils::friendlySize(bytes);
 			LOG_D("[%.1f%s] Texture VRAM released", size.first, size.second.data());
@@ -350,17 +397,17 @@ HCubemap gfx::genCubemap(std::string id, std::array<bytearray, 6> const& rludfb)
 	return ret;
 }
 
-void gfx::releaseCubemap(HCubemap& outCube)
+void gfx::releaseCubemap(HCubemap& outhCube)
 {
-	if (contextImpl::exists() && outCube.glID > 0)
+	if (contextImpl::exists() && outhCube.glID > 0)
 	{
 		cxChk();
-		GLuint texID[] = {outCube.glID.handle};
+		GLuint texID[] = {outhCube.glID.handle};
 		glChk(glDeleteTextures(1, texID));
-		auto size = utils::friendlySize(outCube.byteCount);
-		LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outCube.id.data(), size.first, size.second.data(), Typename<HCubemap>().data());
+		auto size = utils::friendlySize(outhCube.byteCount);
+		LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outhCube.id.data(), size.first, size.second.data(), Typename<HCubemap>().data());
 	}
-	outCube = HCubemap();
+	outhCube = HCubemap();
 }
 
 HShader gfx::genShader(std::string id, std::string_view vertCode, std::string_view fragCode)
@@ -429,18 +476,18 @@ HShader gfx::genShader(std::string id, std::string_view vertCode, std::string_vi
 	return ret;
 }
 
-void gfx::releaseShader(HShader& outShader)
+void gfx::releaseShader(HShader& outhShader)
 {
-	if (contextImpl::exists() && outShader.glID > 0)
+	if (contextImpl::exists() && outhShader.glID > 0)
 	{
 		cxChk();
-		LOG_I("-- [%s] [%s] destroyed", outShader.id.data(), Typename<HShader>().data());
-		glChk(glDeleteProgram(outShader.glID));
+		LOG_I("-- [%s] [%s] destroyed", outhShader.id.data(), Typename<HShader>().data());
+		glChk(glDeleteProgram(outhShader.glID));
 	}
-	outShader = HShader();
+	outhShader = HShader();
 }
 
-HUBO gfx::genUBO(std::string id, s64 size, u32 bindingPoint, Draw type)
+HUBO gfx::genUBO(std::string id, s64 size, u32 bindingPoint, DrawType type)
 {
 	HUBO ret;
 	if (context::isAlive())
@@ -448,7 +495,7 @@ HUBO gfx::genUBO(std::string id, s64 size, u32 bindingPoint, Draw type)
 		cxChk();
 		glChk(glGenBuffers(1, &ret.glID.handle));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, ret.glID.handle));
-		GLenum drawType = type == Draw::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+		GLenum drawType = type == DrawType::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 		glChk(glBufferData(GL_UNIFORM_BUFFER, size, nullptr, drawType));
 		glChk(glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ret.glID.handle));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
@@ -460,6 +507,17 @@ HUBO gfx::genUBO(std::string id, s64 size, u32 bindingPoint, Draw type)
 			  Typename<HUBO>().data(), ret.bindingPoint);
 	}
 	return ret;
+}
+
+void gfx::setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData)
+{
+	if (hUBO.glID.handle > 0 && context::isAlive())
+	{
+		cxChk();
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, hUBO.glID.handle));
+		glChk(glBufferSubData(GL_UNIFORM_BUFFER, offset, size, pData));
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
+	}
 }
 
 void gfx::releaseUBO(HUBO& outhUBO)
@@ -475,7 +533,7 @@ void gfx::releaseUBO(HUBO& outhUBO)
 	outhUBO = HUBO();
 }
 
-Mesh gfx::newMesh(std::string id, Vertices const& vertices, Draw type, Material::Flags flags, HShader const* pShader /* = nullptr */)
+Mesh gfx::newMesh(std::string id, Vertices const& vertices, DrawType type, Material::Flags flags, HShader const* pShader /* = nullptr */)
 {
 	Mesh mesh;
 	if (context::isAlive())
@@ -503,7 +561,7 @@ void gfx::releaseMesh(Mesh& outMesh)
 	outMesh = Mesh();
 }
 
-BitmapFont gfx::newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSize)
+BitmapFont gfx::newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSize, HSampler const& noRepeat)
 {
 	BitmapFont ret;
 	if (context::isAlive())
@@ -516,7 +574,8 @@ BitmapFont gfx::newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSi
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Textured), true);
 		ret.quad = createQuad(width, height, id + "_quad", flags);
-		ret.sheet = genTexture(id + "_sheet", std::move(spritesheet), TexType::Diffuse, true);
+		ret.sheet = genTexture(id + "_sheet", std::move(spritesheet), TexType::Diffuse);
+		ret.sheet.hSampler = noRepeat;
 		ret.id = std::move(id);
 		ret.cellSize = cellSize;
 		LOG_I("== [%s] [%s] created", ret.id.data(), Typename<BitmapFont>().data());
@@ -534,245 +593,5 @@ void gfx::releaseFont(BitmapFont& outFont)
 		LOG_I("-- [%s] [%s] destroyed", outFont.id.data(), Typename<BitmapFont>().data());
 	}
 	outFont = BitmapFont();
-}
-
-void gfx::setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData)
-{
-	if (hUBO.glID.handle > 0 && context::isAlive())
-	{
-		cxChk();
-		glChk(glBindBuffer(GL_UNIFORM_BUFFER, hUBO.glID.handle));
-		glChk(glBufferSubData(GL_UNIFORM_BUFFER, offset, size, pData));
-		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
-	}
-}
-
-bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textures, bool bSkipIfEmpty)
-{
-	bool bResetTint = false;
-	if (context::isAlive())
-	{
-		cxChk();
-		if (bSkipIfEmpty && textures.empty())
-		{
-			shader.setS32(env::g_config.uniforms.material.isTextured, 0);
-			return false;
-		}
-		shader.setS32(env::g_config.uniforms.material.isTextured, 1);
-		s32 txID = 0;
-		s32 diffuse = 0;
-		s32 specular = 0;
-		auto const& u = env::g_config.uniforms;
-		if (textures.empty())
-		{
-			bResetTint = true;
-			setBlankTex(shader, 0, true);
-			++txID;
-		}
-		bool bHasSpecular = false;
-		for (auto const& texture : textures)
-		{
-			std::stringstream id;
-			std::string number;
-			number.reserve(2);
-			bool bContinue = false;
-			if (txID > g_maxTexIdx)
-			{
-				g_maxTexIdx = txID;
-			}
-			switch (texture.type)
-			{
-			case TexType::Diffuse:
-			{
-				id << u.material.diffuseTexPrefix;
-				number = std::to_string(diffuse++);
-				break;
-			}
-			case TexType::Specular:
-			{
-				bHasSpecular = true;
-				id << u.material.specularTexPrefix;
-				number = std::to_string(specular++);
-				break;
-			}
-			default:
-			{
-				if (txID == 0)
-				{
-					bResetTint = true;
-					setBlankTex(shader, txID, true);
-				}
-				bContinue = true;
-				break;
-			}
-			}
-			if (bContinue)
-			{
-				continue;
-			}
-			id << number;
-			if (texture.glID.handle > 0)
-			{
-				glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-				glBindTexture(GL_TEXTURE_2D, texture.glID.handle);
-				shader.setS32(id.str(), txID++);
-			}
-			else
-			{
-				bResetTint = true;
-				setBlankTex(shader, txID++, true);
-			}
-		}
-		shader.setF32(u.material.hasSpecular, bHasSpecular ? 1.0f : 0.0f);
-		for (; txID <= g_maxTexIdx; ++txID)
-		{
-			glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-			glChk(glBindTexture(GL_TEXTURE_2D, 0));
-		}
-	}
-	return bResetTint;
-}
-
-void gfx::setBlankTex(HShader const& shader, s32 txID, bool bMagenta)
-{
-	if (context::isAlive())
-	{
-		cxChk();
-		if (bMagenta)
-		{
-			shader.setV4(env::g_config.uniforms.tint, Colour::Magenta);
-		}
-		glChk(glActiveTexture(GL_TEXTURE0 + (u32)txID));
-		glChk(glBindTexture(GL_TEXTURE_2D, gfx::g_blankTexID.handle));
-	}
-}
-
-void gfx::unsetTextures(s32 lastTexID /* = 0 */)
-{
-	if (context::isAlive())
-	{
-		cxChk();
-		auto resetTex = [](s32 id) {
-			glChk(glActiveTexture(GL_TEXTURE0 + (u32)id));
-			glChk(glBindTexture(GL_TEXTURE_2D, 0));
-		};
-		if (lastTexID < 0)
-		{
-			lastTexID = g_maxTexIdx;
-		}
-		for (s32 i = 0; i < g_maxTexIdx && i < lastTexID; ++i)
-		{
-			resetTex(i);
-		}
-	}
-}
-
-void gfx::setMaterial(HShader const& shader, Material const& material)
-{
-	if (context::isAlive())
-	{
-		auto const& u = env::g_config.uniforms;
-		ASSERT(shader.glID.handle > 0, "shader is null!");
-		{
-			cxChk();
-			shader.use();
-			bool const bIsLit = material.flags.isSet((s32)Material::Flag::Lit);
-			shader.setBool(u.material.isLit, bIsLit);
-			bool const bIsTextured = material.flags.isSet((s32)Material::Flag::Textured);
-			shader.setBool(u.material.isTextured, bIsTextured);
-			if (bIsLit)
-			{
-				shader.setF32(u.material.shininess, material.shininess);
-				shader.setV3(u.material.albedo.ambient, material.albedo.ambient);
-				shader.setV3(u.material.albedo.diffuse, material.albedo.diffuse);
-				shader.setV3(u.material.albedo.specular, material.albedo.specular);
-			}
-			if (bIsTextured)
-			{
-				shader.setBool(u.material.isOpaque, material.flags.isSet((s32)Material::Flag::Opaque));
-			}
-		}
-	}
-}
-
-void gfx::draw(HVerts const& hVerts)
-{
-	if (context::isAlive())
-	{
-		cxChk();
-		glChk(glBindVertexArray(hVerts.hVAO.handle));
-		if (hVerts.hEBO.handle > 0)
-		{
-			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, hVerts.hEBO.handle));
-			glChk(glDrawElements(GL_TRIANGLES, hVerts.iCount, GL_UNSIGNED_INT, 0));
-		}
-		else
-		{
-			glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)hVerts.vCount));
-		}
-		glBindVertexArray(0);
-	}
-}
-
-void gfx::drawI(HVerts const& hVerts, u32 count)
-{
-	if (context::isAlive())
-	{
-		cxChk();
-		glChk(glBindVertexArray(hVerts.hVAO.handle));
-		if (hVerts.hEBO.handle > 0)
-		{
-			glChk(glDrawElementsInstanced(GL_TRIANGLES, hVerts.iCount, GL_UNSIGNED_INT, 0, (GLsizei)count));
-		}
-		else
-		{
-			glChk(glDrawArraysInstanced(GL_TRIANGLES, 0, (GLsizei)hVerts.vCount, (GLsizei)count));
-		}
-		glBindVertexArray(0);
-	}
-}
-
-void gfx::drawMesh(Mesh const& mesh, HShader const& shader)
-{
-	cxChk();
-	setMaterial(shader, mesh.m_material);
-	shader.setS32(env::g_config.uniforms.transform.isInstanced, 0);
-	draw(mesh.m_hVerts);
-}
-
-void gfx::drawMeshes(Mesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader)
-{
-	cxChk();
-	setMaterial(shader, mesh.m_material);
-	shader.setS32(env::g_config.uniforms.transform.isInstanced, 0);
-	for (auto const& mat : mats)
-	{
-		shader.setModelMats(mat);
-		draw(mesh.m_hVerts);
-	}
-}
-
-void gfx::drawMeshesI(Mesh const& mesh, HShader const& shader, u32 instanceCount)
-{
-	cxChk();
-	setMaterial(shader, mesh.m_material);
-	shader.setS32(env::g_config.uniforms.transform.isInstanced, 1);
-	drawI(mesh.m_hVerts, instanceCount);
-}
-
-HVerts gfx::tutorial::newLight(HVerts const& hVBO)
-{
-	HVerts ret;
-	if (context::isAlive())
-	{
-		cxChk();
-		ret = hVBO;
-		glChk(glGenVertexArrays(1, &ret.hVAO.handle));
-		glChk(glBindVertexArray(ret.hVAO));
-		glChk(glBindBuffer(GL_ARRAY_BUFFER, ret.hVBO.glID));
-		glChk(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 * sizeof(float)), 0));
-		glChk(glEnableVertexAttribArray(0));
-	}
-	return ret;
 }
 } // namespace le

@@ -2,7 +2,7 @@
 #include <functional>
 #include "le3d/core/assert.hpp"
 #include "le3d/gfx/primitives.hpp"
-#include "le3d/gfx/gfx.hpp"
+#include "le3d/gfx/vram.hpp"
 #include "le3d/gfx/utils.hpp"
 
 namespace le
@@ -16,7 +16,7 @@ Mesh gfx::createQuad(f32 width, f32 height, std::string name, Material::Flags ma
 	verts.normals = {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}};
 	verts.texCoords = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 	verts.indices = {0, 1, 2, 2, 3, 0};
-	return newMesh(std::move(name), verts, Draw::Dynamic, materialFlags);
+	return newMesh(std::move(name), verts, DrawType::Dynamic, materialFlags);
 }
 
 Mesh gfx::createCube(f32 side, std::string name, Material::Flags materialFlags)
@@ -24,30 +24,30 @@ Mesh gfx::createCube(f32 side, std::string name, Material::Flags materialFlags)
 	f32 const s = side * 0.5f;
 	Vertices verts;
 	verts.points = {
-		{-s, -s, s},  {s, -s, s},  {s, s, s},	 {-s, s, s}, // front
+		{-s, -s, s},  {s, -s, s},  {s, s, s},	{-s, s, s}, // front
 
-		{-s, -s, -s}, {s, -s, -s}, {s, s, -s},	 {-s, s, -s}, // back
+		{-s, -s, -s}, {s, -s, -s}, {s, s, -s},   {-s, s, -s}, // back
 
-		{-s, s, s},	  {-s, s, -s}, {-s, -s, -s}, {-s, -s, s}, // left
+		{-s, s, s},   {-s, s, -s}, {-s, -s, -s}, {-s, -s, s}, // left
 
-		{s, s, s},	  {s, s, -s},  {s, -s, -s},	 {s, -s, s}, // right
+		{s, s, s},	{s, s, -s},  {s, -s, -s},  {s, -s, s}, // right
 
-		{-s, -s, -s}, {s, -s, -s}, {s, -s, s},	 {-s, -s, s}, // down
+		{-s, -s, -s}, {s, -s, -s}, {s, -s, s},   {-s, -s, s}, // down
 
-		{-s, s, -s},  {s, s, -s},  {s, s, s},	 {-s, s, s}, // up
+		{-s, s, -s},  {s, s, -s},  {s, s, s},	{-s, s, s}, // up
 	};
 	verts.normals = {
-		{0.0f, 0.0f, 1.0f},	 {0.0f, 0.0f, 1.0f},  {0.0f, 0.0f, 1.0f},  {0.0f, 0.0f, 1.0f}, // front
+		{0.0f, 0.0f, 1.0f},  {0.0f, 0.0f, 1.0f},  {0.0f, 0.0f, 1.0f},  {0.0f, 0.0f, 1.0f}, // front
 
 		{0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, -1.0f}, // back
 
 		{-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, // left
 
-		{1.0f, 0.0f, 0.0f},	 {1.0f, 0.0f, 0.0f},  {1.0f, 0.0f, 0.0f},  {1.0f, 0.0f, 0.0f}, // right
+		{1.0f, 0.0f, 0.0f},  {1.0f, 0.0f, 0.0f},  {1.0f, 0.0f, 0.0f},  {1.0f, 0.0f, 0.0f}, // right
 
 		{0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, // down
 
-		{0.0f, 1.0f, 0.0f},	 {0.0f, 1.0f, 0.0f},  {0.0f, 1.0f, 0.0f},  {0.0f, 1.0f, 0.0f}, // up
+		{0.0f, 1.0f, 0.0f},  {0.0f, 1.0f, 0.0f},  {0.0f, 1.0f, 0.0f},  {0.0f, 1.0f, 0.0f}, // up
 	};
 	verts.texCoords = {
 		{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, // front
@@ -56,15 +56,15 @@ Mesh gfx::createCube(f32 side, std::string name, Material::Flags materialFlags)
 
 		{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, // left
 
-		{0.0f, 0.0f}, {1.0f, 0.0},	{1.0f, 1.0f}, {0.0f, 1.0f}, // right
+		{0.0f, 0.0f}, {1.0f, 0.0},  {1.0f, 1.0f}, {0.0f, 1.0f}, // right
 
 		{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, // down
 
 		{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, // up
 	};
-	verts.indices = {0,	 1,	 2,	 2,	 3,	 0,	 4,	 5,	 6,	 6,	 7,	 4,	 8,	 9,	 10, 10, 11, 8,
+	verts.indices = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,  8,  9,  10, 10, 11, 8,
 					 12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
-	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
+	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
 }
 
 Mesh gfx::create4Pyramid(f32 side, std::string name, Material::Flags materialFlags)
@@ -99,7 +99,7 @@ Mesh gfx::create4Pyramid(f32 side, std::string name, Material::Flags materialFla
 		{nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z} // down
 	};
 	verts.indices = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 15, 12};
-	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
+	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
 }
 
 Mesh gfx::createTetrahedron(f32 side, std::string name, Material::Flags materialFlags)
@@ -134,7 +134,7 @@ Mesh gfx::createTetrahedron(f32 side, std::string name, Material::Flags material
 
 		{nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, // down
 	};
-	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
+	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
 }
 
 Mesh gfx::createCircle(f32 diam, s32 points, std::string name, Material::Flags materialFlags)
@@ -161,7 +161,7 @@ Mesh gfx::createCircle(f32 diam, s32 points, std::string name, Material::Flags m
 		u32 const iv1 = verts.addVertex({x1, y1, 0.0f}, norm);
 		verts.addIndices({iCentre, iv1 - 1, iv1});
 	}
-	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
+	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
 }
 
 Mesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name, Material::Flags materialFlags)
@@ -193,7 +193,7 @@ Mesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name, Materia
 		u32 const i4 = verts.addVertex(v2, nFace);
 		verts.addIndices({i2, i3, i4});
 	}
-	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
+	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
 }
 
 Mesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name, Material::Flags materialFlags)
@@ -234,7 +234,7 @@ Mesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name, Mat
 		u32 iv3 = verts.addVertex(v10, nF);
 		verts.addIndices({iv0, iv1, iv2, iv2, iv3, iv0});
 	}
-	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
+	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
 }
 
 Mesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Material::Flags materialFlags)
@@ -289,6 +289,6 @@ Mesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Materi
 	addSide([](auto const& p) { return glm::normalize(glm::rotate(p, glm::radians(-90.0f), g_nUp)); });
 	addSide([](auto const& p) { return glm::normalize(glm::rotate(p, glm::radians(90.0f), g_nRight)); });
 	addSide([](auto const& p) { return glm::normalize(glm::rotate(p, glm::radians(-90.0f), g_nRight)); });
-	return newMesh(std::move(name), verts, Draw::Static, materialFlags);
+	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
 }
 } // namespace le
