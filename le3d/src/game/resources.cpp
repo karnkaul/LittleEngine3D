@@ -1,7 +1,6 @@
 #include <memory>
 #include "le3d/engine/context.hpp"
 #include "le3d/core/assert.hpp"
-#include "le3d/core/gdata.hpp"
 #include "le3d/core/io.hpp"
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/log.hpp"
@@ -167,9 +166,9 @@ HShader& resources::loadShader(std::string const& id, std::string_view vertCode,
 	return g_shaders.nullT;
 }
 
-u32 resources::loadShaders(ShaderIDMap const& data, IOReader const& reader)
+u32 resources::loadShaders(GData const& shaderList, IOReader const& reader)
 {
-	if (data.empty())
+	if (shaderList.fieldCount() == 0)
 	{
 		return 0;
 	}
@@ -179,10 +178,15 @@ u32 resources::loadShaders(ShaderIDMap const& data, IOReader const& reader)
 	u32 vertsLoaded = 0;
 	u32 fragsLoaded = 0;
 #endif
-	for (auto const& kvp : data)
+	auto shadersData = shaderList.getGDatas(jsonKeys::g_shaders);
+	for (auto const& shaderData : shadersData)
 	{
-		auto const& vertShaderID = kvp.second.first;
-		auto const& fragShaderID = kvp.second.second;
+		auto const& vertShaderID = shaderData.getString(jsonKeys::g_vertCodeID);
+		auto const& fragShaderID = shaderData.getString(jsonKeys::g_fragCodeID);
+		if (vertShaderID.empty() || fragShaderID.empty() || !reader.checkPresence(vertShaderID) || !reader.checkPresence(fragShaderID))
+		{
+			continue;
+		}
 		if (vertShaders.find(vertShaderID) == vertShaders.end())
 		{
 			vertShaders[vertShaderID] = reader.getString(vertShaderID);
@@ -200,18 +204,19 @@ u32 resources::loadShaders(ShaderIDMap const& data, IOReader const& reader)
 	}
 	LOG_D("[Resources] [%u] Vertex and [%u] Fragment shader(s) code loaded", vertsLoaded, fragsLoaded);
 	u32 processed = 0;
-	for (auto const& kvp : data)
+	for (auto const& shaderData : shadersData)
 	{
-		auto const& vertShaderID = kvp.second.first;
-		auto const& fragShaderID = kvp.second.second;
+		auto const& shaderID = shaderData.getString(jsonKeys::g_shaderID);
+		auto const& vertShaderID = shaderData.getString(jsonKeys::g_vertCodeID);
+		auto const& fragShaderID = shaderData.getString(jsonKeys::g_fragCodeID);
 		if (!vertShaders[vertShaderID].empty() && !fragShaders[fragShaderID].empty())
 		{
-			loadShader(kvp.first, vertShaders[vertShaderID], fragShaders[fragShaderID]);
+			loadShader(shaderID, vertShaders[vertShaderID], fragShaders[fragShaderID]);
 			++processed;
 		}
 		else
 		{
-			LOG_W("[Resources] [%s] Failed to load [%s]!", Typename<HShader>().data(), kvp.first.data());
+			LOG_W("[Resources] [%s] Failed to load [%s]!", Typename<HShader>().data(), shaderID.data());
 		}
 	}
 	LOG_D("[Resources] [%u] [%s]s loaded", processed, Typename<HShader>().data());
@@ -271,20 +276,19 @@ HSampler& resources::addSampler(std::string const& id, TexWrap wrap, TexFilter m
 	return g_samplers.nullT;
 }
 
-void resources::addSamplers(std::string json)
+void resources::addSamplers(GData const& samplerList)
 {
-	GData gData(std::move(json));
-	auto samplerList = gData.getGDatas("samplers");
-	for (auto const& samplerData : samplerList)
+	auto samplers = samplerList.getGDatas(jsonKeys::g_samplers);
+	for (auto const& samplerData : samplers)
 	{
-		auto id = samplerData.getStr("id");
+		auto id = samplerData.getString(jsonKeys::g_samplerID);
 		if (id.empty())
 		{
 			continue;
 		}
-		auto wrapStr = samplerData.getStr("wrap", "repeat");
-		auto minFilterStr = samplerData.getStr("minFilter", "linearmplinear");
-		auto magFilterStr = samplerData.getStr("magFilter", "linear");
+		auto wrapStr = samplerData.getString(jsonKeys::g_samplerWrap, "repeat");
+		auto minFilterStr = samplerData.getString(jsonKeys::g_minFilter, "linearmplinear");
+		auto magFilterStr = samplerData.getString(jsonKeys::g_magFilter, "linear");
 		utils::strings::toLower(wrapStr);
 		utils::strings::toLower(minFilterStr);
 		utils::strings::toLower(magFilterStr);
@@ -408,11 +412,7 @@ u32 resources::count<HTexture>()
 BitmapFont& resources::loadFont(std::string const& id, FontAtlasData atlas)
 {
 	ASSERT(!g_fonts.isLoaded(id), "Font already loaded!");
-	if (g_fontSampler.glID == 0)
-	{
-		g_fontSampler = gfx::genSampler("clampEdge", TexWrap::ClampEdge, TexFilter::Linear);
-	}
-	BitmapFont font = gfx::newFont(id, std::move(atlas.bytes), atlas.cellSize, g_fontSampler);
+	BitmapFont font = gfx::newFont(id, std::move(atlas.bytes), atlas.cellSize, get<HSampler>(atlas.samplerID));
 	if (font.sheet.glID > 0 && font.quad.m_hVerts.hVAO > 0)
 	{
 		font.colsRows = atlas.colsRows;
@@ -424,6 +424,29 @@ BitmapFont& resources::loadFont(std::string const& id, FontAtlasData atlas)
 	ASSERT(false, "Failed to load font!");
 	LOG_E("[Resources] [%s] Failed to load [%s]!", Typename<BitmapFont>().data(), id.data());
 	return g_fonts.nullT;
+}
+
+void resources::loadFonts(GData const& fontList, IOReader const& reader)
+{
+	if (fontList.fieldCount() == 0)
+	{
+		return;
+	}
+	auto const& fontsData = fontList.getGDatas(jsonKeys::g_fonts);
+	for (auto const& fontData : fontsData)
+	{
+		auto const& texID = fontData.getString(jsonKeys::g_fontTextureID);
+		auto const& fontID = fontData.getString(jsonKeys::g_fontJSONid);
+		auto const& id = fontData.getString(jsonKeys::g_fontID);
+		if (id.empty() || !reader.checkPresence(texID) || !reader.checkPresence(fontID))
+		{
+			continue;
+		}
+		FontAtlasData data;
+		data.bytes = reader.getBytes(texID);
+		data.deserialise(reader.getString(fontID));
+		loadFont(id, std::move(data));
+	}
 }
 
 template <>
@@ -534,7 +557,6 @@ void resources::unloadAll()
 	unloadAll<HTexture>();
 	gfx::releaseTexture(g_blankTex1px);
 	gfx::releaseTexture(g_noTex1px);
-	gfx::releaseSampler(g_fontSampler);
 	unloadAll<HSampler>();
 	unloadAll<HUBO>();
 	unloadAll<HShader>();

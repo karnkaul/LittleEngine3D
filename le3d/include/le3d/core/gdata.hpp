@@ -28,8 +28,8 @@ public:
 	// Clears raw data and fields
 	void clear();
 
-	std::string getStr(std::string const& key, std::string defaultValue = "") const;
-	std::string getStr(std::string const& key, char spaceDelimiter, std::string defaultValue) const;
+	std::string getString(std::string const& key, std::string defaultValue = "") const;
+	std::string getString(std::string const& key, char spaceDelimiter, std::string defaultValue) const;
 	bool getBool(std::string const& key, bool defaultValue = false) const;
 	s32 getS32(std::string const& key, s32 defaultValue = -1) const;
 	f64 getF64(std::string const& key, f64 defaultValue = -1.0) const;

@@ -10,5 +10,6 @@ void FontAtlasData::deserialise(std::string json)
 	offset = {data.getS32("offsetX", offset.x), data.getS32("offsetY", offset.y)};
 	colsRows = {data.getS32("cols", colsRows.x), data.getS32("rows", colsRows.y)};
 	startCode = (u8)data.getS32("startCode", startCode);
+	samplerID = data.getString("sampler", "font");
 }
 } // namespace le

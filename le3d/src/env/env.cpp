@@ -25,7 +25,7 @@ void SetConfigStrIfPresent(std::string const& id, GData const& data, std::string
 {
 	if (data.contains(id))
 	{
-		member = data.getStr(id);
+		member = data.getString(id);
 		LOG_D("[EngineConfig] Extracted [%s] = [%s]", id.data(), member.data());
 	}
 }
