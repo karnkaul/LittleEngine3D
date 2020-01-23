@@ -25,7 +25,7 @@ void SetConfigStrIfPresent(std::string const& id, GData const& data, std::string
 {
 	if (data.contains(id))
 	{
-		member = data.getStr(id);
+		member = data.getString(id);
 		LOG_D("[EngineConfig] Extracted [%s] = [%s]", id.data(), member.data());
 	}
 }
@@ -95,6 +95,29 @@ void env::setConfig(std::string json)
 					SetConfigStrIfPresent("diffuse", albedo, g_config.uniforms.material.albedo.diffuse);
 					SetConfigStrIfPresent("specular", albedo, g_config.uniforms.material.albedo.specular);
 				}
+			}
+		}
+		if (data.contains("jsonIDs"))
+		{
+			GData jsonIDs = data.getGData("jsonIDs");
+			if (jsonIDs.contains("resources"))
+			{
+				GData resources = jsonIDs.getGData("resources");
+				SetConfigStrIfPresent("samplers", resources, g_config.jsonIDs.resources.samplers);
+				SetConfigStrIfPresent("samplerID", resources, g_config.jsonIDs.resources.samplerID);
+				SetConfigStrIfPresent("samplerWrap", resources, g_config.jsonIDs.resources.samplerWrap);
+				SetConfigStrIfPresent("minFilter", resources, g_config.jsonIDs.resources.minFilter);
+				SetConfigStrIfPresent("magFilter", resources, g_config.jsonIDs.resources.magFilter);
+
+				SetConfigStrIfPresent("shaders", resources, g_config.jsonIDs.resources.shaders);
+				SetConfigStrIfPresent("shaderID", resources, g_config.jsonIDs.resources.shaderID);
+				SetConfigStrIfPresent("vertCodeID", resources, g_config.jsonIDs.resources.vertCodeID);
+				SetConfigStrIfPresent("fragCodeID", resources, g_config.jsonIDs.resources.fragCodeID);
+
+				SetConfigStrIfPresent("fonts", resources, g_config.jsonIDs.resources.fonts);
+				SetConfigStrIfPresent("fontID", resources, g_config.jsonIDs.resources.fontID);
+				SetConfigStrIfPresent("fontJSONid", resources, g_config.jsonIDs.resources.fontJSONid);
+				SetConfigStrIfPresent("fontTextureID", resources, g_config.jsonIDs.resources.fontTextureID);
 			}
 		}
 	}

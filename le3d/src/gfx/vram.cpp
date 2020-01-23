@@ -533,7 +533,8 @@ void gfx::releaseUBO(HUBO& outhUBO)
 	outhUBO = HUBO();
 }
 
-Mesh gfx::newMesh(std::string id, Vertices const& vertices, DrawType type, Material::Flags flags, HShader const* pShader /* = nullptr */)
+Mesh gfx::newMesh(std::string id, Vertices const& vertices, DrawType type, Material::Flags const& flags,
+				  HShader const* pShader /* = nullptr */)
 {
 	Mesh mesh;
 	if (context::isAlive())
@@ -561,7 +562,7 @@ void gfx::releaseMesh(Mesh& outMesh)
 	outMesh = Mesh();
 }
 
-BitmapFont gfx::newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSize, HSampler const& noRepeat)
+BitmapFont gfx::newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSize, HSampler const& hSampler)
 {
 	BitmapFont ret;
 	if (context::isAlive())
@@ -575,7 +576,7 @@ BitmapFont gfx::newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSi
 		flags.set(s32(Material::Flag::Textured), true);
 		ret.quad = createQuad(width, height, id + "_quad", flags);
 		ret.sheet = genTexture(id + "_sheet", std::move(spritesheet), TexType::Diffuse);
-		ret.sheet.hSampler = noRepeat;
+		ret.sheet.hSampler = hSampler;
 		ret.id = std::move(id);
 		ret.cellSize = cellSize;
 		LOG_I("== [%s] [%s] created", ret.id.data(), Typename<BitmapFont>().data());

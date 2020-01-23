@@ -55,31 +55,20 @@ void runTest()
 	loader.waitAll();
 	loader.loadNext(3);
 
-	FontAtlasData scpSheet;
-	scpSheet.bytes = uReader->getBytes("fonts/scp_1024x512.png");
-	scpSheet.deserialise(uReader->getString("fonts/scp_1024x512.json"));
-	auto& hFont = resources::loadFont("default", std::move(scpSheet));
-
 	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::s_bindingPoint, DrawType::Dynamic);
 	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::s_bindingPoint, DrawType::Dynamic);
-	auto samplerList = uReader->getString(resources / "samplers.json");
-	resources::addSamplers(samplerList);
-	resources::ShaderIDMap shaderIDMap = {
-		{"unlit/tinted", {"shaders/default.vsh", "shaders/unlit/tinted.fsh"}},
-		{"unlit/textured", {"shaders/default.vsh", "shaders/unlit/textured.fsh"}},
-		{"lit/tinted", {"shaders/default.vsh", "shaders/lit/tinted.fsh"}},
-		{"lit/textured", {"shaders/default.vsh", "shaders/lit/textured.fsh"}},
-		{"ui/textured", {"shaders/ui.vsh", "shaders/unlit/textured.fsh"}},
-		{"ui/tinted", {"shaders/ui.vsh", "shaders/unlit/tinted.fsh"}},
-		{"unlit/skybox", {"shaders/skybox.vsh", "shaders/unlit/skyboxed.fsh"}},
-		{"monolithic", {"shaders/monolithic.vsh", "shaders/monolithic.fsh"}},
-	};
-	resources::loadShaders(shaderIDMap, *uReader);
+
+	auto manifestJSON = GData(uReader->getString(resources / "manifest.json"));
+	resources::addSamplers(manifestJSON);
+	resources::loadShaders(manifestJSON, *uReader);
+	resources::loadFonts(manifestJSON, *uReader);
+
 	auto& litTinted = resources::get<HShader>("lit/tinted");
 	auto& litTextured = resources::get<HShader>("lit/textured");
 	auto& uiTextured = resources::get<HShader>("ui/textured");
 	auto& monolithic = resources::get<HShader>("monolithic");
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
+	auto& font = resources::get<BitmapFont>("default");
 
 #if defined(DEBUGGING)
 	Entity::s_gizmoShader = monolithic;
@@ -88,9 +77,6 @@ void runTest()
 	AsyncSkyboxLoader::Request skyboxRequest = {
 		"skybox", "textures/skybox", {"right.jpg", "left.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"}, uReader.get()};
 	AsyncSkyboxLoader skyboxLoader(std::move(skyboxRequest));
-	/*skyboxLoader.waitAll();
-	ASSERT(skyboxLoader.loadNext(), "Skybox not loaded!");
-	skybox = std::move(skyboxLoader.m_skybox);*/
 
 	glm::vec3 pl0Pos(0.0f, 0.0f, 2.0f);
 	glm::vec3 pl1Pos(-4.0f, 2.0f, 2.0f);
@@ -396,10 +382,10 @@ void runTest()
 		text.align = debug::Text2D::Align::Centre;
 		text.height = 100.0f;
 		text.pos = glm::vec3(0.0f, 300.0f, 0.0f);
-		debug::renderString(text, uiTextured, hFont, uiAR);
+		debug::renderString(text, uiTextured, font, uiAR);
 
-		debug::renderFPS(hFont, monolithic, uiAR);
-		debug::renderVersion(hFont, uiTextured, uiAR);
+		debug::renderFPS(font, monolithic, uiAR);
+		debug::renderVersion(font, uiTextured, uiAR);
 
 		context::swapBuffers();
 		context::pollEvents();

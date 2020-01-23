@@ -46,7 +46,31 @@ struct EngineConfig
 		std::string normalMatrix = "normals";
 	};
 
+	struct JSONIDs
+	{
+		struct Resources
+		{
+			std::string samplers = "samplers";
+			std::string samplerID = "id";
+			std::string samplerWrap = "wrap";
+			std::string minFilter = "minFilter";
+			std::string magFilter = "magFilter";
+
+			std::string shaders = "shaders";
+			std::string shaderID = "id";
+			std::string vertCodeID = "vertCodeID";
+			std::string fragCodeID = "fragCodeID";
+
+			std::string fonts = "fonts";
+			std::string fontID = "id";
+			std::string fontJSONid = "fontID";
+			std::string fontTextureID = "textureID";
+		};
+		Resources resources;
+	};
+
 	Uniforms uniforms;
+	JSONIDs jsonIDs;
 };
 
 namespace env
