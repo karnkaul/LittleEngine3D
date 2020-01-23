@@ -1,11 +1,11 @@
 #pragma once
 #include <string>
 #include <unordered_map>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 #include "le3d/core/gdata.hpp"
-#include "le3d/gfx/bitmapFont.hpp"
-#include "le3d/gfx/gfxtypes.hpp"
-#include "le3d/gfx/model.hpp"
+#include "le3d/engine/gfx/bitmapFont.hpp"
+#include "le3d/engine/gfx/gfxtypes.hpp"
+#include "le3d/engine/gfx/model.hpp"
 
 namespace le
 {

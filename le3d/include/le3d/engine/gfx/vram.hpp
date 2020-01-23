@@ -1,6 +1,6 @@
 #pragma once
 #include <array>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 #include "gfxtypes.hpp"
 #include "mesh.hpp"
 #include "bitmapFont.hpp"

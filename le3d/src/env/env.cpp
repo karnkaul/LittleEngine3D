@@ -50,11 +50,15 @@ void env::init(Args const& args)
 		threadsImpl::g_maxThreads = 1;
 	}
 #endif
-	g_workingDir = std::filesystem::current_path();
+	g_workingDir = stdfs::absolute(stdfs::current_path());
 	if (args.argc > 0)
 	{
-		g_exeLocation = args.argv[0];
+		g_exeLocation = stdfs::absolute(args.argv[0]);
 		g_exePath = g_exeLocation.parent_path();
+		while (g_exePath.filename() == ".")
+		{
+			g_exePath = g_exePath.parent_path();
+		}
 		for (s32 i = 1; i < args.argc; ++i)
 		{
 			g_args.push_back(args.argv[i]);
@@ -136,7 +140,7 @@ std::string env::dirPath(Dir dir)
 	case env::Dir::Working:
 		if (g_workingDir.empty())
 		{
-			g_workingDir = stdfs::current_path();
+			g_workingDir = stdfs::absolute(stdfs::current_path());
 		}
 		return g_workingDir.generic_string();
 	case env::Dir::Executable:

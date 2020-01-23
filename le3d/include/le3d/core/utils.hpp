@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 
 namespace le::utils
 {

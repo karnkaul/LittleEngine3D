@@ -2,11 +2,11 @@
 #include <bitset>
 #include <optional>
 #include <vector>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 #include "le3d/core/tFlags.hpp"
 #include "le3d/core/transform.hpp"
 #include "le3d/game/object.hpp"
-#include "le3d/gfx/model.hpp"
+#include "le3d/engine/gfx/model.hpp"
 
 namespace le
 {

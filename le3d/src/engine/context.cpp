@@ -1,7 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <glad/glad.h>
-#include "le3d/engineVersion.hpp"
+#include "le3d/env/engineVersion.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/fileLogger.hpp"
 #include "le3d/core/jobs.hpp"
@@ -9,7 +9,7 @@
 #include "le3d/env/env.hpp"
 #include "le3d/engine/context.hpp"
 #include "le3d/game/resources.hpp"
-#include "le3d/gfx/utils.hpp"
+#include "le3d/engine/gfx/utils.hpp"
 #include "core/ioImpl.hpp"
 #include "contextImpl.hpp"
 #include "inputImpl.hpp"
@@ -80,7 +80,7 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 		auto path = env::dirPath(settings.log.dir) / settings.log.filename;
 		uFileLogger = std::make_unique<FileLogger>(std::move(path));
 	}
-	LOG_I("LittleEngine3D v%s", versions::buildVersion().data());
+	LOG_I("LittleEngine3D v%s", env::buildVersion().data());
 	glfwSetErrorCallback(&onError);
 	if (!glfwInit())
 	{

@@ -8,7 +8,7 @@
 #include <mutex>
 #include <sstream>
 #include <unordered_map>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
 #if _MSC_VER

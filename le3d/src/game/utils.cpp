@@ -1,13 +1,13 @@
 #include <algorithm>
 #include <unordered_map>
 #include <glad/glad.h>
-#include "le3d/engineVersion.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/time.hpp"
+#include "le3d/env/engineVersion.hpp"
 #include "le3d/env/env.hpp"
-#include "le3d/gfx/draw.hpp"
-#include "le3d/gfx/vram.hpp"
-#include "le3d/gfx/primitives.hpp"
+#include "le3d/engine/gfx/draw.hpp"
+#include "le3d/engine/gfx/vram.hpp"
+#include "le3d/engine/gfx/primitives.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
 
@@ -23,7 +23,7 @@ namespace debug
 {
 Text2D g_fpsStyle = {"", {-900.0f, 500.0f, 0.9f}, 35.0f, Text2D::Align::Left, Colour(150, 150, 150)};
 Text2D g_versionStyle = {
-	std::string(versions::buildVersion()), {-900.0f, -500.0f, 0.9f}, 30.0f, Text2D::Align::Left, Colour(150, 150, 150)};
+	std::string(env::buildVersion()), {-900.0f, -500.0f, 0.9f}, 30.0f, Text2D::Align::Left, Colour(150, 150, 150)};
 } // namespace debug
 
 void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)

@@ -2,12 +2,12 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "le3d/engine/context.hpp"
-#include "context/contextImpl.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
-#include "le3d/gfx/gfxtypes.hpp"
-#include "le3d/gfx/utils.hpp"
+#include "le3d/engine/gfx/gfxtypes.hpp"
+#include "le3d/engine/gfx/utils.hpp"
+#include "engine/contextImpl.hpp"
 
 namespace le
 {

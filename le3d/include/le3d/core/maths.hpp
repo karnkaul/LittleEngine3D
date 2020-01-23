@@ -1,6 +1,6 @@
 #pragma once
 #include <random>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 #include "time.hpp"
 
 namespace le::maths

@@ -6,7 +6,7 @@
 #include <vector>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 #include "le3d/core/delegate.hpp"
 
 namespace le

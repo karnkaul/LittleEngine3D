@@ -1,4 +1,4 @@
-#include "le3d/gfx/mesh.hpp"
+#include "le3d/engine/gfx/mesh.hpp"
 
 namespace le
 {

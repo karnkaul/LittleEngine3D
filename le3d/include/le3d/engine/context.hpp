@@ -2,8 +2,8 @@
 #include <filesystem>
 #include <memory>
 #include <glm/glm.hpp>
-#include "le3d/stdtypes.hpp"
-#include "le3d/gfx/colour.hpp"
+#include "le3d/core/stdtypes.hpp"
+#include "le3d/engine/gfx/colour.hpp"
 #include "le3d/env/env.hpp"
 
 namespace le

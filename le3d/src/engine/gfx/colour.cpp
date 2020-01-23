@@ -1,4 +1,4 @@
-#include "le3d/gfx/colour.hpp"
+#include "le3d/engine/gfx/colour.hpp"
 #include "le3d/core/maths.hpp"
 
 namespace le

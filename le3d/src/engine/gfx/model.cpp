@@ -3,9 +3,9 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
-#include "le3d/gfx/draw.hpp"
-#include "le3d/gfx/model.hpp"
-#include "le3d/gfx/vram.hpp"
+#include "le3d/engine/gfx/draw.hpp"
+#include "le3d/engine/gfx/model.hpp"
+#include "le3d/engine/gfx/vram.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/defines.hpp"
 #if defined(PROFILE_MODEL_LOADS)

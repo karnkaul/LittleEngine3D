@@ -1,6 +1,6 @@
 #pragma once
 #include <chrono>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 #include "le3d/core/fixed.hpp"
 
 namespace le

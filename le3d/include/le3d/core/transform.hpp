@@ -2,7 +2,7 @@
 #include <list>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 
 namespace le
 {

@@ -8,7 +8,7 @@
 #include "le3d/core/time.hpp"
 #endif
 #include "le3d/env/env.hpp"
-#include "le3d/gfx/model.hpp"
+#include "le3d/engine/gfx/model.hpp"
 #include "le3d/game/resources.hpp"
 
 namespace le

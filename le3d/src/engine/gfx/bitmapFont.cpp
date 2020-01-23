@@ -1,5 +1,5 @@
 #include "le3d/core/gdata.hpp"
-#include "le3d/gfx/bitmapFont.hpp"
+#include "le3d/engine/gfx/bitmapFont.hpp"
 
 namespace le
 {

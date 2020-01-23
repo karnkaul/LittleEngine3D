@@ -1,6 +1,6 @@
 #pragma once
 #include <thread>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 
 namespace le::threadsImpl
 {

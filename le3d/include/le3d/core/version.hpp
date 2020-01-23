@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 
 #if __linux__
 #undef major
