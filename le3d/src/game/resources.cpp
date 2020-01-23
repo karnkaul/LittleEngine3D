@@ -168,6 +168,7 @@ HShader& resources::loadShader(std::string const& id, std::string_view vertCode,
 
 u32 resources::loadShaders(GData const& shaderList, IOReader const& reader)
 {
+	auto const& r = env::g_config.jsonIDs.resources;
 	if (shaderList.fieldCount() == 0)
 	{
 		return 0;
@@ -178,11 +179,11 @@ u32 resources::loadShaders(GData const& shaderList, IOReader const& reader)
 	u32 vertsLoaded = 0;
 	u32 fragsLoaded = 0;
 #endif
-	auto shadersData = shaderList.getGDatas(jsonKeys::g_shaders);
+	auto shadersData = shaderList.getGDatas(r.shaders);
 	for (auto const& shaderData : shadersData)
 	{
-		auto const& vertShaderID = shaderData.getString(jsonKeys::g_vertCodeID);
-		auto const& fragShaderID = shaderData.getString(jsonKeys::g_fragCodeID);
+		auto const& vertShaderID = shaderData.getString(r.vertCodeID);
+		auto const& fragShaderID = shaderData.getString(r.fragCodeID);
 		if (vertShaderID.empty() || fragShaderID.empty() || !reader.checkPresence(vertShaderID) || !reader.checkPresence(fragShaderID))
 		{
 			continue;
@@ -206,9 +207,9 @@ u32 resources::loadShaders(GData const& shaderList, IOReader const& reader)
 	u32 processed = 0;
 	for (auto const& shaderData : shadersData)
 	{
-		auto const& shaderID = shaderData.getString(jsonKeys::g_shaderID);
-		auto const& vertShaderID = shaderData.getString(jsonKeys::g_vertCodeID);
-		auto const& fragShaderID = shaderData.getString(jsonKeys::g_fragCodeID);
+		auto const& shaderID = shaderData.getString(r.shaderID);
+		auto const& vertShaderID = shaderData.getString(r.vertCodeID);
+		auto const& fragShaderID = shaderData.getString(r.fragCodeID);
 		if (!vertShaders[vertShaderID].empty() && !fragShaders[fragShaderID].empty())
 		{
 			loadShader(shaderID, vertShaders[vertShaderID], fragShaders[fragShaderID]);
@@ -278,17 +279,18 @@ HSampler& resources::addSampler(std::string const& id, TexWrap wrap, TexFilter m
 
 void resources::addSamplers(GData const& samplerList)
 {
-	auto samplers = samplerList.getGDatas(jsonKeys::g_samplers);
+	auto const& r = env::g_config.jsonIDs.resources;
+	auto samplers = samplerList.getGDatas(r.samplers);
 	for (auto const& samplerData : samplers)
 	{
-		auto id = samplerData.getString(jsonKeys::g_samplerID);
+		auto id = samplerData.getString(r.samplerID);
 		if (id.empty())
 		{
 			continue;
 		}
-		auto wrapStr = samplerData.getString(jsonKeys::g_samplerWrap, "repeat");
-		auto minFilterStr = samplerData.getString(jsonKeys::g_minFilter, "linearmplinear");
-		auto magFilterStr = samplerData.getString(jsonKeys::g_magFilter, "linear");
+		auto wrapStr = samplerData.getString(r.samplerWrap, "repeat");
+		auto minFilterStr = samplerData.getString(r.minFilter, "linearmplinear");
+		auto magFilterStr = samplerData.getString(r.magFilter, "linear");
 		utils::strings::toLower(wrapStr);
 		utils::strings::toLower(minFilterStr);
 		utils::strings::toLower(magFilterStr);
@@ -432,12 +434,13 @@ void resources::loadFonts(GData const& fontList, IOReader const& reader)
 	{
 		return;
 	}
-	auto const& fontsData = fontList.getGDatas(jsonKeys::g_fonts);
+	auto const& r = env::g_config.jsonIDs.resources;
+	auto const& fontsData = fontList.getGDatas(r.fonts);
 	for (auto const& fontData : fontsData)
 	{
-		auto const& texID = fontData.getString(jsonKeys::g_fontTextureID);
-		auto const& fontID = fontData.getString(jsonKeys::g_fontJSONid);
-		auto const& id = fontData.getString(jsonKeys::g_fontID);
+		auto const& texID = fontData.getString(r.fontTextureID);
+		auto const& fontID = fontData.getString(r.fontJSONid);
+		auto const& id = fontData.getString(r.fontID);
 		if (id.empty() || !reader.checkPresence(texID) || !reader.checkPresence(fontID))
 		{
 			continue;

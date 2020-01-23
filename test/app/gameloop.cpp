@@ -62,7 +62,7 @@ void runTest()
 	resources::addSamplers(manifestJSON);
 	resources::loadShaders(manifestJSON, *uReader);
 	resources::loadFonts(manifestJSON, *uReader);
-	
+
 	auto& litTinted = resources::get<HShader>("lit/tinted");
 	auto& litTextured = resources::get<HShader>("lit/textured");
 	auto& uiTextured = resources::get<HShader>("ui/textured");
