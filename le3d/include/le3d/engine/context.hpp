@@ -10,11 +10,12 @@ namespace le
 {
 namespace context
 {
-enum class Type
+enum class WindowType : u8
 {
-	BorderedWindow,
+	DecoratedWindow = 0,
+	BorderlessWindow,
 	BorderlessFullscreen,
-	Dedicated,
+	DedicatedFullscreen,
 };
 
 struct Settings
@@ -33,7 +34,7 @@ struct Settings
 	struct WindowOpts
 	{
 		std::string title = "LittleEngine3D";
-		Type type = Type::BorderedWindow;
+		WindowType type = WindowType::DecoratedWindow;
 		u16 width = 1280;
 		u16 height = 720;
 		u16 screenID = 0;

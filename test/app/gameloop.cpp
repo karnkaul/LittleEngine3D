@@ -28,10 +28,11 @@ namespace
 void runTest()
 {
 	stdfs::path const resources = stdfs::path(env::dirPath(env::Dir::Executable)).parent_path() / "test/resources";
+	stdfs::path const resourcesZip = resources.parent_path() / "resources.zip";
 	std::unique_ptr<IOReader> uReader;
-	if (std::filesystem::is_regular_file(resources / "resources.zip"))
+	if (std::filesystem::is_regular_file(resourcesZip))
 	{
-		uReader = std::make_unique<ZIPReader>(resources / "resources.zip");
+		uReader = std::make_unique<ZIPReader>(resourcesZip, "resources");
 		LOG_I("[GameLoop] Using ZIP archive");
 	}
 	else
@@ -58,7 +59,7 @@ void runTest()
 	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::s_bindingPoint, DrawType::Dynamic);
 	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::s_bindingPoint, DrawType::Dynamic);
 
-	auto manifestJSON = GData(uReader->getString(resources / "manifest.json"));
+	auto manifestJSON = GData(uReader->getString("manifest.json"));
 	resources::addSamplers(manifestJSON);
 	resources::loadShaders(manifestJSON, *uReader);
 	resources::loadFonts(manifestJSON, *uReader);
@@ -398,13 +399,18 @@ void runTest()
 
 s32 gameloop::run(s32 argc, char const** argv)
 {
+#if defined(__arm__)
+	env::g_config.shaderPrefix = "#version 300 es";
+#else
+	env::g_config.shaderPrefix = "#version 330 core";
+#endif
 	context::Settings settings;
 	settings.window.title = "LE3D Test";
 	settings.window.bVSYNC = false;
+	// settings.window.type = context::WindowType::BorderlessWindow;
 	// settings.window.width = 3000;
 	settings.env.args = {argc, argv};
 	settings.env.jobWorkerCount = 4;
-	// settings.type = context::Type::BorderlessFullscreen;
 	if (auto uContext = context::create(settings))
 	{
 		runTest();

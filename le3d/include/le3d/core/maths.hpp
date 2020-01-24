@@ -1,4 +1,5 @@
 #pragma once
+#include <limits>
 #include <random>
 #include "le3d/core/stdtypes.hpp"
 #include "time.hpp"
@@ -6,8 +7,6 @@
 namespace le::maths
 {
 using Time = le::Time;
-
-constexpr f32 EPSILON = 0.001f;
 
 // Returns val E [min, max]
 template <typename T>
@@ -22,24 +21,12 @@ template <typename T>
 T clamp_11(T val);
 
 template <typename T>
-T min(T lhs, T rhs);
-
-template <typename T>
-T max(T lhs, T rhs);
-
-template <typename T>
-T abs(T val);
-
-template <typename T>
 T transformRange(T value, T oldMin, T oldMax, T newMin, T newMax);
 
 template <typename T>
-T lerp(T min, T max, T alpha);
+T lerp(T min, T max, f32 alpha);
 
-template <typename T>
-T scale(T val, f32 coeff);
-
-bool isNearlyEqual(f32 lhs, f32 rhs, f32 epsilon = EPSILON);
+bool isNearlyEqual(f32 lhs, f32 rhs, f32 epsilon = std::numeric_limits<f32>::epsilon());
 
 class RandomGen
 {
@@ -83,24 +70,6 @@ inline T clamp_11(T val)
 }
 
 template <typename T>
-inline T min(T lhs, T rhs)
-{
-	return lhs < rhs ? lhs : rhs;
-}
-
-template <typename T>
-T max(T lhs, T rhs)
-{
-	return lhs > rhs ? lhs : rhs;
-}
-
-template <typename T>
-inline T abs(T val)
-{
-	return val < T(0) ? -val : val;
-}
-
-template <typename T>
 T transformRange(T value, T oldMin, T oldMax, T newMin, T newMax)
 {
 	T oldRange = oldMax - oldMin;
@@ -109,9 +78,9 @@ T transformRange(T value, T oldMin, T oldMax, T newMin, T newMax)
 }
 
 template <typename T>
-inline T lerp(T min, T max, T alpha)
+inline T lerp(T min, T max, f32 alpha)
 {
-	return min + alpha * (max - min);
+	return min * alpha * (1.0f - alpha) * max;
 }
 
 template <typename T>

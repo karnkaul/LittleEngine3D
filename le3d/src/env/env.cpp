@@ -124,6 +124,7 @@ void env::setConfig(std::string json)
 				SetConfigStrIfPresent("fontTextureID", resources, g_config.jsonIDs.resources.fontTextureID);
 			}
 		}
+		SetConfigStrIfPresent("shaderPrefix", data, g_config.shaderPrefix);
 	}
 }
 

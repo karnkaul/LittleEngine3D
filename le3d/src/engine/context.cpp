@@ -106,9 +106,11 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 	u16 width = settings.window.width;
 	s32 screenIdx = settings.window.screenID < screenCount ? (s32)settings.window.screenID : -1;
 	bool bVSYNC = settings.window.bVSYNC;
+	bool bDecorated = true;
 	switch (settings.window.type)
 	{
-	case Type::BorderedWindow:
+	default:
+	case WindowType::DecoratedWindow:
 	{
 		if (mode->width < width || mode->height < height)
 		{
@@ -117,14 +119,24 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 		}
 		break;
 	}
-	case Type::BorderlessFullscreen:
+	case WindowType::BorderlessWindow:
+	{
+		if (mode->width < width || mode->height < height)
+		{
+			LOG_E("Context size [%ux%u] too large for default screen! [%ux%u]", width, height, mode->width, mode->height);
+			return {};
+		}
+		bDecorated = false;
+		break;
+	}
+	case WindowType::BorderlessFullscreen:
 	{
 		height = (u16)mode->height;
 		width = (u16)mode->width;
 		pTarget = ppScreens[(size_t)screenIdx];
 		break;
 	}
-	case Type::Dedicated:
+	case WindowType::DedicatedFullscreen:
 	{
 		pTarget = ppScreens[(size_t)screenIdx];
 		break;
@@ -134,6 +146,7 @@ std::unique_ptr<context::HContext> context::create(Settings const& settings)
 	s32 cX = (mode->width - width) / 2;
 	s32 cY = (mode->height - height) / 2;
 	ASSERT(cX >= 0 && cY >= 0, "Invalid centre-screen!");
+	glfwWindowHint(GLFW_DECORATED, bDecorated ? 1 : 0);
 	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
 	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);

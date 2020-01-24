@@ -71,6 +71,7 @@ struct EngineConfig
 
 	Uniforms uniforms;
 	JSONIDs jsonIDs;
+	std::string shaderPrefix = "#version 330 core";
 };
 
 namespace env

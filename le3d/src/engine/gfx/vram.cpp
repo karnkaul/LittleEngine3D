@@ -3,6 +3,7 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/engine/context.hpp"
 #include "le3d/engine/gfx/primitives.hpp"
 #include "le3d/engine/gfx/vram.hpp"
@@ -427,14 +428,10 @@ HShader gfx::genShader(std::string id, std::string_view vertCode, std::string_vi
 			LOG_E("[%s] (Shader) Failed to compile fragment shader: empty input string!", id.data());
 			return ret;
 		}
-#if defined(__arm__)
-		static std::string_view const VERSION = "#version 300 es\n";
-#else
-		static std::string_view const VERSION = "#version 330 core\n";
-#endif
 		u32 vsh = glCreateShader(GL_VERTEX_SHADER);
-		GLchar const* files[] = {VERSION.data(), vertCode.data()};
-		glShaderSource(vsh, (GLsizei)ARR_SIZE(files), files, nullptr);
+		GLchar const* files[] = {env::g_config.shaderPrefix.data(), "\n", vertCode.data()};
+		size_t const filesSize = ARR_SIZE(files);
+		glShaderSource(vsh, (GLsizei)filesSize, files, nullptr);
 		glCompileShader(vsh);
 		std::array<char, 512> buf;
 		glGetShaderiv(vsh, GL_COMPILE_STATUS, &success);
@@ -445,8 +442,8 @@ HShader gfx::genShader(std::string id, std::string_view vertCode, std::string_vi
 			return {};
 		}
 		u32 fsh = glCreateShader(GL_FRAGMENT_SHADER);
-		files[1] = fragCode.data();
-		glShaderSource(fsh, (GLsizei)ARR_SIZE(files), files, nullptr);
+		files[filesSize - 1] = fragCode.data();
+		glShaderSource(fsh, (GLsizei)filesSize, files, nullptr);
 		glCompileShader(fsh);
 		glGetShaderiv(fsh, GL_COMPILE_STATUS, &success);
 		if (!success)
