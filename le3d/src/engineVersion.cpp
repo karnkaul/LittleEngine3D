@@ -1,7 +1,7 @@
-#include "le3d/engineVersion.hpp"
+#include "le3d/env/engineVersion.hpp"
 #include "buildVersion.hpp"
 
-namespace le::versions
+namespace le::env
 {
 Version const engineVersion()
 {
@@ -20,4 +20,4 @@ std::string_view const buildVersion()
 	static std::string_view s_buildVersion = LE3D_BUILD_VERSION;
 	return s_buildVersion;
 }
-} // namespace le::versions
+} // namespace le::env

@@ -1,6 +1,6 @@
 #pragma once
 #include <atomic>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 #include "le3d/env/threads.hpp"
 
 namespace le

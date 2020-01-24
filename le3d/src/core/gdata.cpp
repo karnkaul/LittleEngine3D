@@ -81,7 +81,7 @@ void GData::clear()
 	m_fieldMap.clear();
 }
 
-std::string GData::getStr(std::string const& key, std::string defaultValue) const
+std::string GData::getString(std::string const& key, std::string defaultValue) const
 {
 	auto search = m_fieldMap.find(key);
 	if (search != m_fieldMap.end())
@@ -91,7 +91,7 @@ std::string GData::getStr(std::string const& key, std::string defaultValue) cons
 	return defaultValue;
 }
 
-std::string GData::getStr(std::string const& key, char spaceDelimiter, std::string defaultValue) const
+std::string GData::getString(std::string const& key, char spaceDelimiter, std::string defaultValue) const
 {
 	std::string ret = std::move(defaultValue);
 	auto search = m_fieldMap.find(key);

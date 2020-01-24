@@ -1,8 +1,10 @@
 #include <algorithm>
+#include <filesystem>
 #if defined(__linux__)
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
 #endif
+#include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/env/env.hpp"
@@ -10,6 +12,8 @@
 
 namespace le
 {
+namespace stdfs = std::filesystem;
+
 namespace
 {
 stdfs::path g_exeLocation;
@@ -21,7 +25,7 @@ void SetConfigStrIfPresent(std::string const& id, GData const& data, std::string
 {
 	if (data.contains(id))
 	{
-		member = data.getStr(id);
+		member = data.getString(id);
 		LOG_D("[EngineConfig] Extracted [%s] = [%s]", id.data(), member.data());
 	}
 }
@@ -46,11 +50,15 @@ void env::init(Args const& args)
 		threadsImpl::g_maxThreads = 1;
 	}
 #endif
-	g_workingDir = std::filesystem::current_path();
+	g_workingDir = stdfs::absolute(stdfs::current_path());
 	if (args.argc > 0)
 	{
-		g_exeLocation = args.argv[0];
+		g_exeLocation = stdfs::absolute(args.argv[0]);
 		g_exePath = g_exeLocation.parent_path();
+		while (g_exePath.filename() == ".")
+		{
+			g_exePath = g_exePath.parent_path();
+		}
 		for (s32 i = 1; i < args.argc; ++i)
 		{
 			g_args.push_back(args.argv[i]);
@@ -93,10 +101,39 @@ void env::setConfig(std::string json)
 				}
 			}
 		}
+		if (data.contains("jsonIDs"))
+		{
+			GData jsonIDs = data.getGData("jsonIDs");
+			if (jsonIDs.contains("resources"))
+			{
+				GData resources = jsonIDs.getGData("resources");
+				SetConfigStrIfPresent("samplers", resources, g_config.jsonIDs.resources.samplers);
+				SetConfigStrIfPresent("samplerID", resources, g_config.jsonIDs.resources.samplerID);
+				SetConfigStrIfPresent("samplerWrap", resources, g_config.jsonIDs.resources.samplerWrap);
+				SetConfigStrIfPresent("minFilter", resources, g_config.jsonIDs.resources.minFilter);
+				SetConfigStrIfPresent("magFilter", resources, g_config.jsonIDs.resources.magFilter);
+
+				SetConfigStrIfPresent("shaders", resources, g_config.jsonIDs.resources.shaders);
+				SetConfigStrIfPresent("shaderID", resources, g_config.jsonIDs.resources.shaderID);
+				SetConfigStrIfPresent("vertCodeID", resources, g_config.jsonIDs.resources.vertCodeID);
+				SetConfigStrIfPresent("fragCodeID", resources, g_config.jsonIDs.resources.fragCodeID);
+
+				SetConfigStrIfPresent("fonts", resources, g_config.jsonIDs.resources.fonts);
+				SetConfigStrIfPresent("fontID", resources, g_config.jsonIDs.resources.fontID);
+				SetConfigStrIfPresent("fontJSONid", resources, g_config.jsonIDs.resources.fontJSONid);
+				SetConfigStrIfPresent("fontTextureID", resources, g_config.jsonIDs.resources.fontTextureID);
+			}
+		}
+		SetConfigStrIfPresent("shaderPrefix", data, g_config.shaderPrefix);
 	}
 }
 
-stdfs::path env::dirPath(Dir dir)
+std::string env::argv0()
+{
+	return g_exeLocation.generic_string();
+}
+
+std::string env::dirPath(Dir dir)
 {
 	switch (dir)
 	{
@@ -104,16 +141,16 @@ stdfs::path env::dirPath(Dir dir)
 	case env::Dir::Working:
 		if (g_workingDir.empty())
 		{
-			g_workingDir = std::filesystem::current_path();
+			g_workingDir = stdfs::absolute(stdfs::current_path());
 		}
-		return g_workingDir;
+		return g_workingDir.generic_string();
 	case env::Dir::Executable:
 		if (g_exePath.empty())
 		{
 			LOG_E("[Env] Unknown executable path! Using working directory instead [%s]", g_workingDir.generic_string().data());
 			g_exePath = dirPath(Dir::Working);
 		}
-		return g_exePath;
+		return g_exePath.generic_string();
 	}
 }
 

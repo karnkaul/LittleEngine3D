@@ -16,7 +16,8 @@ if(LIBRARIES_PATH)
 	output_directory(${PROJECT_NAME} "${LIBRARIES_PATH}")
 endif()
 target_include_directories(${PROJECT_NAME}
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+	INTERFACE SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/include"
+	PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
 	PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated"
 	PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
@@ -29,6 +30,7 @@ add_dependencies(${PROJECT_NAME}
 	glm
 	stb-image
 	tinyobjloader
+	physfs-static
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	glfw
@@ -36,6 +38,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	glm
 	stb-image
 	tinyobjloader
+	physfs-static
 )
 if(PLATFORM STREQUAL "Linux" OR W_GCC)
 	target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)

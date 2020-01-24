@@ -35,7 +35,8 @@ The engine will set these built-in uniforms (default names shown) when drawing a
 	- `mat4 model`		// Model Matrix
 	- `mat4 normals`	// Normals Matrix
 	- Transform:
-		- `int transform.isUI`	// Whether to use a UI projection matrix
+		- `int transform.isUI`				// Whether to use a UI projection matrix
+		- `int transform.isInstanced`		// Whether to use instance VBO or uniform model
 - Fragment:
 	- `vec4 tint`
 	- Material:
@@ -56,12 +57,16 @@ Monolithic shaders can be reused for multiple `Material`s (lit, textured, opaque
 #### Lights and View/Projection/UI Matrices
 It is recommended to use UBOs for light data and view/projection matrices and share them across all shaders instead of setting individual uniforms on each shader. Use `resources::addUBO()` to auto-bind them to subsequent shaders created via `resources::loadShader()`, and `gfx::setUBO<T>()` to copy data (must be 16-aligned).
 
+#### Instancing
+Use `gfx::genVec4VBO()` to generate an instance `HVBO` and attach it to passed VAOs, enabling its vertex attribute; and `gfx::setVBO()` to set instance data. Call `gfx::draw()` / `gfx::drawMeshes()` / `renderMeshes()` with a non-zero `instanceCount` to draw elements / arrays instanced.
+
 ### MVP Target
 - [x] Perspective and orthographic projections
 - [x] 2D view and quad drawing
 - [x] Model loading
 - [x] Text rendering
 - [x] Debug primitives (cube, sphere, cone, etc)
+- [x] Async loading and archive decompression
 - [ ] Particle systems (using instancing)
 - [ ] Shadows (directional lights)
 - [ ] ImgUI integration
@@ -73,3 +78,4 @@ It is recommended to use UBOs for light data and view/projection matrices and sh
 - [glm](https://github.com/g-truc/glm)
 - [stb-image](https://github.com/nothings/stb)
 - [tinyobjloader](https://github.com/syoyo/tinyobjloader)
+- [physfs](https://icculus.org/physfs/)

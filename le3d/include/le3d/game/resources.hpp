@@ -1,28 +1,22 @@
 #pragma once
 #include <string>
-#include "le3d/stdtypes.hpp"
-#include "le3d/gfx/gfx.hpp"
-#include "le3d/gfx/model.hpp"
+#include <unordered_map>
+#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/gdata.hpp"
+#include "le3d/engine/gfx/bitmapFont.hpp"
+#include "le3d/engine/gfx/gfxtypes.hpp"
+#include "le3d/engine/gfx/model.hpp"
 
 namespace le
 {
-struct FontAtlasData final
-{
-	glm::ivec2 cellSize = glm::ivec2(0);
-	glm::ivec2 colsRows = glm::ivec2(0);
-	glm::ivec2 offset = glm::ivec2(0);
-	bytestream bytes;
-	u8 startCode = 32;
-
-	void deserialise(std::string json);
-};
-
 struct Skybox final
 {
+	Mesh mesh;
 	std::string name;
-	HCubemap cubemap;
-	HMesh mesh;
+	HCubemap hCube;
 };
+
+class IOReader;
 
 namespace resources
 {
@@ -30,10 +24,11 @@ inline HTexture g_blankTex1px;
 inline HTexture g_noTex1px;
 
 /// Supported types:
-// - HFont
+// - HSampler
 // - HShader
 // - HTexture
 // - HUBO
+// - BitmapFont
 // - Model
 
 template <typename T>
@@ -47,68 +42,26 @@ void unloadAll();
 template <typename T>
 u32 count();
 
-HUBO& addUBO(std::string id, s64 size, u32 bindingPoint, gfx::Draw type);
-template <>
-HUBO& get<HUBO>(std::string const& id);
-template <>
-bool isLoaded<HUBO>(std::string const& id);
-template <>
-bool unload<HUBO>(HUBO& hUBO);
-template <>
-void unloadAll<HUBO>();
-template <>
-u32 count<HUBO>();
+HUBO& addUBO(std::string const& id, s64 size, u32 bindingPoint, DrawType type);
 
 HShader& loadShader(std::string const& id, std::string_view vertCode, std::string_view fragCode);
-template <>
-HShader& get<HShader>(std::string const& id);
-template <>
-bool isLoaded<HShader>(std::string const& id);
-template <>
-bool unload<HShader>(HShader& shader);
-template <>
-void unloadAll<HShader>();
-template <>
-u32 count<HShader>();
+// Shader data fields: id, vertCodeID, fragCodeID
+u32 loadShaders(GData const& shaderList, IOReader const& reader);
 
-HTexture& loadTexture(std::string const& id, TexType type, bytestream bytes, bool bClampToEdge);
-template <>
-HTexture& get<HTexture>(std::string const& id);
-template <>
-bool isLoaded<HTexture>(std::string const& id);
-template <>
-bool unload<HTexture>(HTexture& texture);
-template <>
-void unloadAll<HTexture>();
-template <>
-u32 count<HTexture>();
+HSampler& addSampler(std::string const& id, TexWrap wrap, TexFilter minFilter, TexFilter magFilter = TexFilter::Linear);
+// Sampler data fields: id, wrap, minFilter, magFilter
+void addSamplers(GData const& samplerList);
 
-Skybox createSkybox(std::string const& name, std::array<bytestream, 6> rltbfb);
-void destroySkybox(Skybox& skybox);
+HTexture& loadTexture(std::string const& id, TexType type, bytearray bytes);
 
-HFont& loadFont(std::string const& id, FontAtlasData atlas);
-template <>
-HFont& get<HFont>(std::string const& id);
-template <>
-bool isLoaded<HFont>(std::string const& id);
-template <>
-bool unload<HFont>(HFont& font);
-template <>
-void unloadAll<HFont>();
-template <>
-u32 count<HFont>();
+BitmapFont& loadFont(std::string const& id, FontAtlasData atlas);
+// Font data fields: id, fontID, textureID
+void loadFonts(GData const& fontList, IOReader const& reader);
 
 Model& loadModel(std::string const& id, Model::Data const& data);
-template <>
-Model& get<Model>(std::string const& id);
-template <>
-bool isLoaded<Model>(std::string const& id);
-template <>
-bool unload<Model>(Model& id);
-template <>
-void unloadAll<Model>();
-template <>
-u32 count<Model>();
+
+Skybox createSkybox(std::string const& name, std::array<bytearray, 6> rltbfb);
+void destroySkybox(Skybox& skybox);
 
 void unloadAll();
 } // namespace resources

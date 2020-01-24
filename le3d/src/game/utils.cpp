@@ -1,11 +1,13 @@
+#include <algorithm>
 #include <unordered_map>
 #include <glad/glad.h>
-#include "le3d/engineVersion.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/time.hpp"
+#include "le3d/env/engineVersion.hpp"
 #include "le3d/env/env.hpp"
-#include "le3d/gfx/gfx.hpp"
-#include "le3d/gfx/primitives.hpp"
+#include "le3d/engine/gfx/draw.hpp"
+#include "le3d/engine/gfx/vram.hpp"
+#include "le3d/engine/gfx/primitives.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
 
@@ -13,7 +15,7 @@ namespace le
 {
 namespace
 {
-std::unordered_map<std::string, HMesh> g_debugMeshes;
+std::unordered_map<std::string, Mesh> g_debugMeshes;
 debug::DArrow g_debugArrow;
 } // namespace
 
@@ -21,12 +23,12 @@ namespace debug
 {
 Text2D g_fpsStyle = {"", {-900.0f, 500.0f, 0.9f}, 35.0f, Text2D::Align::Left, Colour(150, 150, 150)};
 Text2D g_versionStyle = {
-	std::string(versions::buildVersion()), {-900.0f, -500.0f, 0.9f}, 30.0f, Text2D::Align::Left, Colour(150, 150, 150)};
+	std::string(env::buildVersion()), {-900.0f, -500.0f, 0.9f}, 30.0f, Text2D::Align::Left, Colour(150, 150, 150)};
 } // namespace debug
 
 void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 {
-	if (skybox.cubemap.byteCount == 0 || skybox.mesh.hVerts.byteCount == 0)
+	if (skybox.hCube.byteCount == 0 || skybox.mesh.m_hVerts.byteCount == 0)
 	{
 		return;
 	}
@@ -34,32 +36,46 @@ void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 	shader.use();
 	shader.setV4(env::g_config.uniforms.tint, tint);
 	glChk(glActiveTexture(GL_TEXTURE0));
-	glChk(glBindVertexArray(skybox.mesh.hVerts.vao.handle));
-	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemap.glID.handle));
-	if (skybox.mesh.hVerts.ebo.handle > 0)
+	glChk(glBindSampler(0, 0));
+	glChk(glBindVertexArray(skybox.mesh.m_hVerts.hVAO.handle));
+	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.hCube.glID.handle));
+	if (skybox.mesh.m_hVerts.hEBO.handle > 0)
 	{
-		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox.mesh.hVerts.ebo.handle));
-		glChk(glDrawElements(GL_TRIANGLES, skybox.mesh.hVerts.iCount, GL_UNSIGNED_INT, 0));
+		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox.mesh.m_hVerts.hEBO.handle));
+		glChk(glDrawElements(GL_TRIANGLES, skybox.mesh.m_hVerts.iCount, GL_UNSIGNED_INT, 0));
 	}
 	else
 	{
-		glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)skybox.mesh.hVerts.vCount));
+		glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)skybox.mesh.m_hVerts.vCount));
 	}
 	glChk(glBindVertexArray(0));
 	glChk(glDepthMask(GL_TRUE));
 }
 
-void renderMeshes(HMesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader, Colour tint)
+void renderMeshes(Mesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader, Colour tint)
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
 	shader.setV4(env::g_config.uniforms.tint, tint);
-	bool bResetTint = gfx::setTextures(shader, mesh.material.textures, true);
+	bool bResetTint = gfx::setTextures(shader, mesh.m_material.textures, true);
 	gfx::drawMeshes(mesh, mats, shader);
 	if (bResetTint)
 	{
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
-	gfx::unsetTextures((s32)mesh.material.textures.size());
+	gfx::unsetTextures((s32)mesh.m_material.textures.size());
+}
+
+void renderMeshes(Mesh const& mesh, HShader const& shader, u32 count, Colour tint)
+{
+	ASSERT(shader.glID.handle > 0, "null shader!");
+	shader.setV4(env::g_config.uniforms.tint, tint);
+	bool bResetTint = gfx::setTextures(shader, mesh.m_material.textures, true);
+	gfx::drawMeshes(mesh, shader, count);
+	if (bResetTint)
+	{
+		shader.setV4(env::g_config.uniforms.tint, Colour::White);
+	}
+	gfx::unsetTextures((s32)mesh.m_material.textures.size());
 }
 
 void debug::DArrow::setupDArrow(const glm::quat& orientation)
@@ -69,7 +85,7 @@ void debug::DArrow::setupDArrow(const glm::quat& orientation)
 	m = glm::rotate(m, glm::radians(90.0f), g_nRight);
 	m = glm::translate(m, g_nUp * 0.5f);
 	m_cylinder.mesh = Cylinder();
-	m_cylinder.mesh.material.flags = {};
+	m_cylinder.mesh.m_material.flags = {};
 	addFixture(m_cylinder.mesh, m);
 	m = glm::toMat4(orientation);
 	m = glm::translate(m, g_nFront * 0.5f);
@@ -83,7 +99,7 @@ void debug::DArrow::setupDArrow(const glm::quat& orientation)
 	m_cube.oWorld = mCb;
 	m_sphere.mesh = Sphere();
 	m_sphere.oWorld = mSp;
-	m_cone.mesh.material.flags = m_cube.mesh.material.flags = m_sphere.mesh.material.flags = {};
+	m_cone.mesh.m_material.flags = m_cube.mesh.m_material.flags = m_sphere.mesh.m_material.flags = {};
 	setTip(m_tip, true);
 	setupModel("dArrow");
 }
@@ -94,7 +110,7 @@ void debug::DArrow::setTip(Tip tip, bool bForce)
 	{
 		m_tip = tip;
 		auto search = std::remove_if(m_fixtures.begin(), m_fixtures.end(), [&](const Fixture& f) -> bool {
-			return f.mesh.name == m_cone.mesh.name || f.mesh.name == m_cube.mesh.name || f.mesh.name == m_sphere.mesh.name;
+			return f.mesh.m_id == m_cone.mesh.m_id || f.mesh.m_id == m_cube.mesh.m_id || f.mesh.m_id == m_sphere.mesh.m_id;
 		});
 		m_fixtures.erase(search, m_fixtures.end());
 		switch (m_tip)
@@ -114,10 +130,10 @@ void debug::DArrow::setTip(Tip tip, bool bForce)
 	}
 }
 
-HMesh& debug::Cube()
+Mesh& debug::Cube()
 {
 	auto& cube = g_debugMeshes["dCube"];
-	if (cube.hVerts.vao <= 0)
+	if (cube.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured)}, true);
@@ -126,10 +142,10 @@ HMesh& debug::Cube()
 	return cube;
 }
 
-HMesh& debug::Quad()
+Mesh& debug::Quad()
 {
 	auto& quad = g_debugMeshes["dQuad"];
-	if (quad.hVerts.vao <= 0)
+	if (quad.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Textured), true);
@@ -138,10 +154,10 @@ HMesh& debug::Quad()
 	return quad;
 }
 
-HMesh& debug::Circle()
+Mesh& debug::Circle()
 {
 	auto& circle = g_debugMeshes["dCircle"];
-	if (circle.hVerts.vao <= 0)
+	if (circle.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -150,10 +166,10 @@ HMesh& debug::Circle()
 	return circle;
 }
 
-HMesh& debug::Pyramid()
+Mesh& debug::Pyramid()
 {
 	auto& pyramid = g_debugMeshes["dPyramid"];
-	if (pyramid.hVerts.vao <= 0)
+	if (pyramid.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -162,10 +178,10 @@ HMesh& debug::Pyramid()
 	return pyramid;
 }
 
-HMesh& debug::Tetrahedron()
+Mesh& debug::Tetrahedron()
 {
 	auto& tetrahedron = g_debugMeshes["dTetrahedron"];
-	if (tetrahedron.hVerts.vao <= 0)
+	if (tetrahedron.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -174,10 +190,10 @@ HMesh& debug::Tetrahedron()
 	return tetrahedron;
 }
 
-HMesh& debug::Cone()
+Mesh& debug::Cone()
 {
 	auto& cone = g_debugMeshes["dCone"];
-	if (cone.hVerts.vao <= 0)
+	if (cone.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -186,10 +202,10 @@ HMesh& debug::Cone()
 	return cone;
 }
 
-HMesh& debug::Cylinder()
+Mesh& debug::Cylinder()
 {
 	auto& cylinder = g_debugMeshes["dCylinder"];
-	if (cylinder.hVerts.vao <= 0)
+	if (cylinder.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
@@ -198,15 +214,15 @@ HMesh& debug::Cylinder()
 	return cylinder;
 }
 
-HMesh& debug::Sphere()
+Mesh& debug::Sphere()
 {
 	auto& sphere = g_debugMeshes["dSphere"];
-	if (sphere.hVerts.vao <= 0)
+	if (sphere.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
 		flags.set(s32(Material::Flag::Lit), true);
 		sphere = gfx::createCubedSphere(1.0f, "dSphere", 8, flags);
-		sphere.material.shininess = 5.0f;
+		sphere.m_material.shininess = 5.0f;
 	}
 	return sphere;
 }
@@ -262,16 +278,16 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 			{
 				glm::vec4 const& uv = *quad.oTexCoords;
 				f32 const data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
-				glChk(glBindVertexArray(dQuad.hVerts.vao));
-				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.hVerts.vbo));
+				glChk(glBindVertexArray(dQuad.m_hVerts.hVAO));
+				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.hVBO.glID));
 				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
 			}
 			gfx::drawMesh(dQuad, shader);
 			if (quad.oTexCoords)
 			{
 				f32 const data[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
-				glChk(glBindVertexArray(dQuad.hVerts.vao));
-				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.hVerts.vbo));
+				glChk(glBindVertexArray(dQuad.m_hVerts.hVAO));
+				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.hVBO.glID));
 				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
 			}
 		}
@@ -281,9 +297,9 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 		ModelMats mats;
 		shader.setModelMats(mats);
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
-		HVerts hVerts = gfx::gl::genVertices(verts, gfx::Draw::Static, &shader);
-		gfx::gl::draw(hVerts);
-		gfx::gl::releaseVerts(hVerts);
+		HVerts hVerts = gfx::genVerts(verts, DrawType::Static, &shader);
+		gfx::draw(hVerts);
+		gfx::releaseVerts(hVerts);
 	}
 	else if (bResetTint)
 	{
@@ -294,7 +310,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 	gfx::resetViewport();
 }
 
-void debug::renderString(Text2D const& text, HShader const& shader, HFont const& hFont, f32 const uiAR, bool bOneDrawCall)
+void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont const& hFont, f32 const uiAR, bool bOneDrawCall)
 {
 	ASSERT(hFont.sheet.glID.handle > 0, "Font has no texture!");
 	f32 cellAR = (f32)hFont.cellSize.x / hFont.cellSize.y;
@@ -332,8 +348,8 @@ void debug::renderString(Text2D const& text, HShader const& shader, HFont const&
 	bResetTint |= gfx::setTextures(shader, {hFont.sheet}, true);
 	if (!bOneDrawCall)
 	{
-		glBindVertexArray(hFont.quad.hVerts.vao.handle);
-		glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.hVerts.vbo.handle);
+		glBindVertexArray(hFont.quad.m_hVerts.hVAO.handle);
+		glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.m_hVerts.hVBO.glID.handle);
 	}
 	gfx::cropViewport(uiAR);
 	Vertices verts;
@@ -391,9 +407,9 @@ void debug::renderString(Text2D const& text, HShader const& shader, HFont const&
 	{
 		ModelMats mats;
 		shader.setModelMats(mats);
-		HVerts hVerts = gfx::gl::genVertices(verts, gfx::Draw::Static, &shader);
-		gfx::gl::draw(hVerts);
-		gfx::gl::releaseVerts(hVerts);
+		HVerts hVerts = gfx::genVerts(verts, DrawType::Static, &shader);
+		gfx::draw(hVerts);
+		gfx::releaseVerts(hVerts);
 	}
 	else
 	{
@@ -410,7 +426,7 @@ void debug::renderString(Text2D const& text, HShader const& shader, HFont const&
 	gfx::resetViewport();
 }
 
-void debug::renderFPS(HFont const& font, HShader const& shader, f32 const uiAR)
+void debug::renderFPS(BitmapFont const& font, HShader const& shader, f32 const uiAR)
 {
 	static Time frameTime = Time::elapsed();
 	static Time totalDT;
@@ -430,7 +446,7 @@ void debug::renderFPS(HFont const& font, HShader const& shader, f32 const uiAR)
 	renderString(g_fpsStyle, shader, font, uiAR);
 }
 
-void debug::renderVersion(HFont const& font, HShader const& shader, f32 const uiAR)
+void debug::renderVersion(BitmapFont const& font, HShader const& shader, f32 const uiAR)
 {
 	renderString(g_versionStyle, shader, font, uiAR);
 }

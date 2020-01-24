@@ -1,0 +1,10 @@
+docs
+extras
+include/physfs
+src
+test
+.hgignore
+.hgtags
+.hg_archival.txt
+LICENSE.txt
+README.txt

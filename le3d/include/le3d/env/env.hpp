@@ -1,21 +1,19 @@
 #pragma once
-#include <filesystem>
 #include <string>
 #include <vector>
-#include "le3d/stdtypes.hpp"
+#include "le3d/core/stdtypes.hpp"
 
 namespace le
 {
-namespace stdfs = std::filesystem;
-
 struct EngineConfig
 {
 	struct Uniforms
 	{
 		struct Transform
 		{
-			// bool
+			// int
 			std::string isUI = "transform.isUI";
+			std::string isInstanced = "transform.isInstanced";
 		};
 		struct Material
 		{
@@ -32,9 +30,9 @@ struct EngineConfig
 			std::string isTextured = "material.isTextured";
 			std::string isLit = "material.isLit";
 			std::string isOpaque = "material.isOpaque";
-			std::string hasSpecular = "material.hasSpecular";
 
 			// float
+			std::string hasSpecular = "material.hasSpecular";
 			std::string shininess = "material.shininess";
 
 			// sampler2D
@@ -48,7 +46,32 @@ struct EngineConfig
 		std::string normalMatrix = "normals";
 	};
 
+	struct JSONIDs
+	{
+		struct Resources
+		{
+			std::string samplers = "samplers";
+			std::string samplerID = "id";
+			std::string samplerWrap = "wrap";
+			std::string minFilter = "minFilter";
+			std::string magFilter = "magFilter";
+
+			std::string shaders = "shaders";
+			std::string shaderID = "id";
+			std::string vertCodeID = "vertCodeID";
+			std::string fragCodeID = "fragCodeID";
+
+			std::string fonts = "fonts";
+			std::string fontID = "id";
+			std::string fontJSONid = "fontID";
+			std::string fontTextureID = "textureID";
+		};
+		Resources resources;
+	};
+
 	Uniforms uniforms;
+	JSONIDs jsonIDs;
+	std::string shaderPrefix = "#version 330 core";
 };
 
 namespace env
@@ -70,7 +93,8 @@ struct Args
 
 void init(Args const& args);
 void setConfig(std::string json);
-stdfs::path dirPath(Dir dir);
+std::string argv0();
+std::string dirPath(Dir dir);
 std::vector<std::string_view> const& args();
 bool isDefined(std::string_view arg);
 } // namespace env

@@ -1,25 +1,20 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/glm.hpp>
-#include "le3d/engineVersion.hpp"
-#include "le3d/context/context.hpp"
-#include "le3d/core/assert.hpp"
-#include "le3d/core/gdata.hpp"
-#include "le3d/core/jobs.hpp"
-#include "le3d/core/maths.hpp"
 #include "le3d/core/log.hpp"
-#include "le3d/core/utils.hpp"
-#include "le3d/env/env.hpp"
-#include "le3d/env/threads.hpp"
-#include "le3d/game/asyncLoader.hpp"
+#include "le3d/core/io.hpp"
+#include "le3d/engine/context.hpp"
+#include "le3d/engine/input.hpp"
+#include "le3d/engine/gfx/draw.hpp"
+#include "le3d/engine/gfx/model.hpp"
+#include "le3d/engine/gfx/primitives.hpp"
+#include "le3d/engine/gfx/utils.hpp"
+#include "le3d/engine/gfx/vram.hpp"
+#include "le3d/game/asyncLoaders.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
-#include "le3d/gfx/model.hpp"
-#include "le3d/gfx/primitives.hpp"
-#include "le3d/gfx/utils.hpp"
-#include "le3d/input/input.hpp"
 
 #include "ubotypes.hpp"
 #include "gameloop.hpp"
@@ -27,74 +22,62 @@
 namespace letest
 {
 using namespace le;
-using namespace le::utils;
 
 namespace
 {
-OnInput::Token tOnInput;
-stdfs::path const resourcesPath = "../test/resources";
-
-stdfs::path resourcePath(stdfs::path const& id)
-{
-	return env::dirPath(env::Dir::Executable) / resourcesPath / id;
-}
-
-std::stringstream fileToStream(stdfs::path const& id)
-{
-	return utils::readFile(resourcePath(id));
-}
-
-bytestream fileToBytes(stdfs::path const& id)
-{
-	return utils::readBytes(resourcePath(id));
-}
-
 void runTest()
 {
+	stdfs::path const resources = stdfs::path(env::dirPath(env::Dir::Executable)).parent_path() / "test/resources";
+	stdfs::path const resourcesZip = resources.parent_path() / "resources.zip";
+	std::unique_ptr<IOReader> uReader;
+	if (std::filesystem::is_regular_file(resourcesZip))
+	{
+		uReader = std::make_unique<ZIPReader>(resourcesZip, "resources");
+		LOG_I("[GameLoop] Using ZIP archive");
+	}
+	else
+	{
+		uReader = std::make_unique<FileReader>(resources);
+		LOG_I("[GameLoop] Using Filesystem");
+	}
+
 	FreeCam camera;
 	camera.setup("freecam");
 	// input::setCursorMode(CursorMode::Disabled);
 	camera.m_position = {0.0f, 0.0f, 3.0f};
 	camera.m_flags.set((s32)FreeCam::Flag::FixedSpeed, false);
 
-	resources::loadTexture("container2", TexType::Diffuse, readBytes(resourcePath("textures/container2.png")), false);
-	resources::loadTexture("container2_specular", TexType::Specular, readBytes(resourcePath("textures/container2_specular.png")), false);
-	resources::loadTexture("awesomeface", TexType::Diffuse, readBytes(resourcePath("textures/awesomeface.png")), false);
+	AsyncTexturesLoader::Request texturesRequest = {
+		"textures",
+		"",
+		{{"textures/container2.png"}, {"textures/container2_specular.png", TexType::Specular}, {"textures/awesomeface.png"}},
+		uReader.get()};
+	AsyncTexturesLoader loader(std::move(texturesRequest));
+	loader.waitAll();
+	loader.loadNext(3);
 
-	FontAtlasData scpSheet;
-	scpSheet.bytes = readBytes(resourcePath("fonts/scp_1024x512.png"));
-	scpSheet.deserialise(readFile(resourcePath("fonts/scp_1024x512.json")).str());
-	auto& hFont = resources::loadFont("default", std::move(scpSheet));
+	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::s_bindingPoint, DrawType::Dynamic);
+	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::s_bindingPoint, DrawType::Dynamic);
 
-	auto& hMatricesUBO = resources::addUBO("Matrices", sizeof(uboData::Matrices), uboData::Matrices::s_bindingPoint, gfx::Draw::Dynamic);
-	auto& hLightsUBO = resources::addUBO("Lights", sizeof(uboData::Lights), uboData::Lights::s_bindingPoint, gfx::Draw::Dynamic);
+	auto manifestJSON = GData(uReader->getString("manifest.json"));
+	resources::addSamplers(manifestJSON);
+	resources::loadShaders(manifestJSON, *uReader);
+	resources::loadFonts(manifestJSON, *uReader);
 
-	auto def = readFile(resourcePath("shaders/default.vsh")).str();
-	auto ui = readFile(resourcePath("shaders/ui.vsh")).str();
-	auto sb = readFile(resourcePath("shaders/skybox.vsh")).str();
-	/*auto& unlitTinted = */ resources::loadShader("unlit/tinted", def, readFile(resourcePath("shaders/unlit/tinted.fsh")).str());
-	resources::loadShader("unlit/textured", def, readFile(resourcePath("shaders/unlit/textured.fsh")).str());
-	auto& litTinted = resources::loadShader("lit/tinted", def, readFile(resourcePath("shaders/lit/tinted.fsh")).str());
-	auto& litTextured = resources::loadShader("lit/textured", def, readFile(resourcePath("shaders/lit/textured.fsh")).str());
-	auto& uiTextured = resources::loadShader("ui/textured", ui, readFile(resourcePath("shaders/unlit/textured.fsh")).str());
-	/*auto& uiTinted = */ resources::loadShader("ui/tinted", ui, readFile(resourcePath("shaders/unlit/tinted.fsh")).str());
-	/*auto& skyboxShader = */ resources::loadShader("unlit/skybox", sb, readFile(resourcePath("shaders/unlit/skyboxed.fsh")).str());
-	auto& monolithic = resources::loadShader("monolithic", readFile(resourcePath("shaders/monolithic.vsh")).str(),
-											 readFile(resourcePath("shaders/monolithic.fsh")).str());
+	auto& litTinted = resources::get<HShader>("lit/tinted");
+	auto& litTextured = resources::get<HShader>("lit/textured");
+	auto& uiTextured = resources::get<HShader>("ui/textured");
+	auto& monolithic = resources::get<HShader>("monolithic");
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
+	auto& font = resources::get<BitmapFont>("default");
 
 #if defined(DEBUGGING)
 	Entity::s_gizmoShader = monolithic;
 #endif
 	Skybox skybox;
-	ResourceLoadRequest skyboxRequest;
-	skyboxRequest.getBytes = &fileToBytes;
-	skyboxRequest.idPrefix = "textures/skybox";
-	skyboxRequest.resourceIDs = {"right.jpg", "left.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"};
+	AsyncSkyboxLoader::Request skyboxRequest = {
+		"skybox", "textures/skybox", {"right.jpg", "left.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"}, uReader.get()};
 	AsyncSkyboxLoader skyboxLoader(std::move(skyboxRequest));
-	/*skyboxLoader.waitAll();
-	ASSERT(skyboxLoader.loadNext(), "Skybox not loaded!");
-	skybox = std::move(skyboxLoader.m_skybox);*/
 
 	glm::vec3 pl0Pos(0.0f, 0.0f, 2.0f);
 	glm::vec3 pl1Pos(-4.0f, 2.0f, 2.0f);
@@ -114,7 +97,7 @@ void runTest()
 		auto const& tinted = resources::get<HShader>("unlit/tinted");
 		tinted.setV4(env::g_config.uniforms.tint, Colour::White);
 		tinted.setModelMats(mats);
-		gfx::gl::draw(light);
+		gfx::draw(light);
 	};
 
 	bool bModelsSwapped = false;
@@ -122,28 +105,46 @@ void runTest()
 	stdfs::path const model0Path = "test/fox";
 	stdfs::path const model1Path = "plant";
 	stdfs::path const model2Path = "";
-	ResourceLoadRequest rlRequest;
-	rlRequest.idPrefix = "models";
-	rlRequest.resourceIDs = {model0Path, model1Path};
+	AsyncModelsLoader::Request modelsRequest = {"models", "models", {model0Path, model1Path}, uReader.get()};
 	if (!model2Path.empty())
 	{
-		rlRequest.resourceIDs.push_back(model2Path);
+		modelsRequest.resources.push_back(model2Path);
 	}
-	rlRequest.getData = &fileToStream;
-	rlRequest.getBytes = &fileToBytes;
-	AsyncModelsLoader modelsLoader(std::move(rlRequest));
-	HMesh cubeMeshTexd = debug::Cube();
-	HMesh quadMesh = debug::Quad();
-	quadMesh.material.textures = {resources::get<HTexture>("awesomeface")};
-	// quadMesh.textures = {bad};
-	cubeMeshTexd.material.textures = {resources::get<HTexture>("container2"), resources::get<HTexture>("container2_specular")};
-	cubeMeshTexd.material.albedo = {glm::vec3(0.4f), glm::vec3(0.5f), glm::vec3(1.0f)};
-	// cubeMesh.textures = {resources::getTexture("container2")};
-	HMesh blankCubeMesh = cubeMeshTexd;
-	blankCubeMesh.material.textures.clear();
-	blankCubeMesh.material.flags.set(s32(Material::Flag::Textured), false);
-	HMesh sphereMesh = gfx::createCubedSphere(1.0f, "testSphere", 8, {});
-	sphereMesh.material = cubeMeshTexd.material;
+	AsyncModelsLoader modelsLoader(std::move(modelsRequest));
+	Mesh cubeMeshTexd = debug::Cube();
+	Mesh quadMesh = debug::Quad();
+	quadMesh.m_material.textures = {resources::get<HTexture>("textures/awesomeface.png")};
+	/*HTexture bad;
+	quadMesh.m_material.textures = {bad};*/
+	cubeMeshTexd.m_material.textures = {resources::get<HTexture>("textures/container2.png"),
+										resources::get<HTexture>("textures/container2_specular.png")};
+	cubeMeshTexd.m_material.albedo = {glm::vec3(0.4f), glm::vec3(0.5f), glm::vec3(1.0f)};
+	// cubeMesh.textures = {resources::getTexture("textures/container2.png")};
+	Mesh blankCubeMesh = cubeMeshTexd;
+	blankCubeMesh.m_material.textures.clear();
+	blankCubeMesh.m_material.flags.set(s32(Material::Flag::Textured), false);
+	Mesh sphereMesh = gfx::createCubedSphere(1.0f, "testSphere", 8, {});
+	sphereMesh.m_material = cubeMeshTexd.m_material;
+
+	Mesh& instanceMesh = sphereMesh;
+	constexpr s32 instanceSide = 4;
+	constexpr size_t instanceCount = size_t(instanceSide * instanceSide * 4);
+	std::vector<glm::mat4> instanceMats;
+	instanceMats.reserve(instanceCount);
+	for (s32 row = -instanceSide; row < instanceSide; ++row)
+	{
+		for (s32 col = -instanceSide; col < instanceSide; ++col)
+		{
+			glm::vec3 pos{row * 2.0f, col * 2.0f, -2.0f};
+			instanceMats.emplace_back(glm::translate(glm::mat4(1.0f), pos));
+		}
+	}
+	gfx::VBODescriptor descriptor;
+	descriptor.attribCount = instanceCount;
+	descriptor.attribLocation = 5;
+	descriptor.vec4sPerAttrib = 4;
+	HVBO instanceVBO = gfx::genVec4VBO(descriptor, {instanceMesh.m_hVerts.hVAO});
+	gfx::setVBO(instanceVBO, instanceMats.data());
 
 	Model cube;
 	Model blankCube;
@@ -191,8 +192,8 @@ void runTest()
 	quadProp.setShader(monolithic);
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
-	HVerts light0 = gfx::tutorial::newLight(cubeMeshTexd.hVerts);
-	HVerts light1 = gfx::tutorial::newLight(cubeMeshTexd.hVerts);
+	HVerts light0 = gfx::tutorial::newLight(cubeMeshTexd.m_hVerts);
+	HVerts light1 = gfx::tutorial::newLight(cubeMeshTexd.m_hVerts);
 
 	std::vector<Prop> props;
 	for (s32 i = 0; i < 5; ++i)
@@ -211,14 +212,23 @@ void runTest()
 	props[3].m_transform.setPosition({-3.0f, -1.0f, 2.0f});
 	props[4].m_transform.setPosition({-4.0f, 1.0f, -2.0f});
 
-	tOnInput = input::registerInput([&](s32 key, s32 action, s32 mods) {
-		if (action == GLFW_RELEASE)
+	auto tOnInput = input::registerInput([&](s32 key, s32 action, s32 mods) {
+		switch (action)
+		{
+		default:
+			break;
+
+		case GLFW_RELEASE:
 		{
 			if (key == GLFW_KEY_ESCAPE)
 			{
 				context::close();
 				return;
 			}
+			break;
+		}
+		case GLFW_PRESS:
+		{
 			if (key == GLFW_KEY_W && mods & GLFW_MOD_CONTROL)
 			{
 				bWireframe = !bWireframe;
@@ -252,6 +262,8 @@ void runTest()
 				ar.setTip(tip);
 			}
 #endif
+			break;
+		}
 		}
 		if (key == GLFW_MOUSE_BUTTON_1)
 		{
@@ -286,12 +298,13 @@ void runTest()
 				props[4].addModel(resources::get<Model>("models/" + model1Path.string()));
 				if (resources::isLoaded<Model>("models/" + model2Path.string()))
 				{
+					auto& model2 = resources::get<Model>("models/" + model2Path.string());
 					props[0].clearModels();
-					props[0].addModel(resources::get<Model>("models/" + model2Path.string()));
+					props[0].addModel(model2);
 				}
 			}
 		}
-		if (skybox.cubemap.byteCount == 0)
+		if (skybox.hCube.byteCount == 0)
 		{
 			if (skyboxLoader.loadNext() == AsyncLoadState::Idle)
 			{
@@ -346,6 +359,7 @@ void runTest()
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 		renderMeshes(sphereMesh, {sphereMat}, monolithic);
+		// renderMeshes(instanceMesh, monolithic, instanceCount);
 		if (bWireframe)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -356,7 +370,7 @@ void runTest()
 		quadProp.render();
 
 		debug::Quad2D tl, tr, bl, br;
-		HTexture& quadTex = resources::get<HTexture>("awesomeface");
+		HTexture& quadTex = resources::get<HTexture>("textures/awesomeface.png");
 		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f, 0.0f};
 		tl.pos = {-tr.pos.x, tr.pos.y, 0.0f};
@@ -369,10 +383,10 @@ void runTest()
 		text.align = debug::Text2D::Align::Centre;
 		text.height = 100.0f;
 		text.pos = glm::vec3(0.0f, 300.0f, 0.0f);
-		debug::renderString(text, uiTextured, hFont, uiAR);
+		debug::renderString(text, uiTextured, font, uiAR);
 
-		debug::renderFPS(hFont, monolithic, uiAR);
-		debug::renderVersion(hFont, uiTextured, uiAR);
+		debug::renderFPS(font, monolithic, uiAR);
+		debug::renderVersion(font, uiTextured, uiAR);
 
 		context::swapBuffers();
 		context::pollEvents();
@@ -385,13 +399,18 @@ void runTest()
 
 s32 gameloop::run(s32 argc, char const** argv)
 {
+#if defined(__arm__)
+	env::g_config.shaderPrefix = "#version 300 es";
+#else
+	env::g_config.shaderPrefix = "#version 330 core";
+#endif
 	context::Settings settings;
 	settings.window.title = "LE3D Test";
 	settings.window.bVSYNC = false;
+	// settings.window.type = context::WindowType::BorderlessWindow;
 	// settings.window.width = 3000;
 	settings.env.args = {argc, argv};
 	settings.env.jobWorkerCount = 4;
-	// settings.type = context::Type::BorderlessFullscreen;
 	if (auto uContext = context::create(settings))
 	{
 		runTest();
