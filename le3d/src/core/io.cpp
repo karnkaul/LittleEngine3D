@@ -119,7 +119,7 @@ bytearray FileReader::getBytes(stdfs::path const& id) const
 			auto pos = file.tellg();
 			buf = bytearray((size_t)pos);
 			file.seekg(0, std::ios::beg);
-			file.read((char*)buf.data(), pos);
+			file.read((char*)buf.data(), (std::streamsize)pos);
 		}
 	}
 	return buf;

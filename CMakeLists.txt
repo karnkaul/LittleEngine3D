@@ -41,12 +41,15 @@ endif()
 
 ## Dependencies
 # GLFW
-set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
-add_subdirectory(lib/glfw)
-set_relaxed_compile_options(glfw)
+option(LE3D_USE_GLFW "Use GLFW for windowing" ON)
+if(LE3D_USE_GLFW)
+	set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
+	set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
+	set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+	set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+	add_subdirectory(lib/glfw)
+	set_relaxed_compile_options(glfw)
+endif()
 
 # GLM
 set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)

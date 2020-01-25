@@ -32,13 +32,13 @@ add_dependencies(${PROJECT_NAME}
 	tinyobjloader
 	physfs-static
 )
-target_link_libraries(${PROJECT_NAME} PUBLIC
-	glfw
-	glad$<$<CONFIG:Debug>:-d>
-	glm
-	stb-image
-	tinyobjloader
-	physfs-static
+target_link_libraries(${PROJECT_NAME} 
+PUBLIC 	glm
+PRIVATE	glad$<$<CONFIG:Debug>:-d>
+		$<$<BOOL:${LE3D_USE_GLFW}>:glfw>
+		stb-image
+		tinyobjloader
+		physfs-static
 )
 if(PLATFORM STREQUAL "Linux" OR W_GCC)
 	target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)

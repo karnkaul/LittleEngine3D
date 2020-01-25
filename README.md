@@ -1,12 +1,13 @@
 # LittleEngine 3D
 
-This is essentially a v2 of [`LittleEngine`](https://github.com/karnkaul/LittleEngine) (which is a 2D, SFML based engine), being developed in OpenGL 3.3 (and 3.0 ES). 
+A lightweight, simple, and performant 3D game engine library, being developed in OpenGL 3.3 (contexts < 3.3 are not officially supported, but can be requested and worked with).
 
 [![Build Status](https://travis-ci.org/karnkaul/LittleEngine.svg?branch=master)](https://travis-ci.org/karnkaul/LittleEngine) [![Licence](https://img.shields.io/github/license/karnkaul/LittleEngine)](LICENSE) [![Twitter](https://img.shields.io/twitter/url/https/karnkaul?label=Follow&style=social)](https://twitter.com/KarnKaul)
 
 >*Note: When viewing this repository's source on GitHub's web interface, add `?ts=4` to the URL to have it use the correct tab spacing (4).*
 
 ### How to Build
+>*Note: `le3d-test` requires OpenGL 3.3*
 * VS2019/Ninja: 
 	1. Open root directory in Visual Studio 2019
 	1. Select Build > Build All
@@ -73,9 +74,11 @@ Use `gfx::genVec4VBO()` to generate an instance `HVBO` and attach it to passed V
 - [ ] Trivial collision system
 
 ### Submodules / External:
-- [glfw](https://github.com/glfw/glfw)
-- [glad]()
+Public (use via `#include <libName/.../header>`):
 - [glm](https://github.com/g-truc/glm)
+Private:
+- [glfw](https://github.com/glfw/glfw)
+- [glad](https://github.com/Dav1dde/glad)
 - [stb-image](https://github.com/nothings/stb)
 - [tinyobjloader](https://github.com/syoyo/tinyobjloader)
 - [physfs](https://icculus.org/physfs/)

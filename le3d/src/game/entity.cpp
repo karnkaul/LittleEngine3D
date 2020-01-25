@@ -1,16 +1,14 @@
 #include <assert.h>
-#include <glad/glad.h>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
+#include "le3d/engine/context.hpp"
 #include "le3d/engine/gfx/draw.hpp"
 #include "le3d/engine/gfx/utils.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
 #if defined(DEBUGGING)
 #include "le3d/game/utils.hpp"
-#endif
-#if defined(__arm__)
-#include "le3d/env/env.hpp"
 #endif
 
 namespace le
@@ -31,7 +29,7 @@ void Entity::render()
 #if defined(DEBUGGING)
 	if (m_pArrow && s_gizmoShader.glID.handle > 0)
 	{
-		glDisable(GL_DEPTH_TEST);
+		context::toggle(context::GFXFlag::DepthTest, false);
 		glm::mat4 mZ = m_transform.model();
 		glm::vec3 scale = m_transform.worldScl();
 		mZ = glm::scale(mZ, {1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z});
@@ -47,7 +45,7 @@ void Entity::render()
 		mats.model = mZ;
 		m_pArrow->m_tint = Colour::Blue;
 		m_pArrow->render(s_gizmoShader, mats);
-		glEnable(GL_DEPTH_TEST);
+		context::toggle(context::GFXFlag::DepthTest, true);
 	}
 #endif
 }
@@ -66,15 +64,12 @@ void Prop::render()
 {
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		context::setPolygonMode(context::PolygonMode::Line);
 	}
 	for (auto pModel : m_models)
 	{
 		ASSERT(m_shader.glID.handle > 0, "null shader!");
-#if defined(__arm__)
-		// Compensate for lack of uniform initialisation in GLES
 		m_shader.setV4(env::g_config.uniforms.tint, Colour::White);
-#endif
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{
@@ -98,7 +93,7 @@ void Prop::render()
 	}
 	if (m_flags.isSet((s32)Flag::Wireframe))
 	{
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		context::setPolygonMode(context::PolygonMode::Fill);
 	}
 	Entity::render();
 }

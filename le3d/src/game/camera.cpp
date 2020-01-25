@@ -1,10 +1,10 @@
 #include <assert.h>
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/maths.hpp"
 #include "le3d/engine/context.hpp"
+#include "le3d/engine/input.hpp"
 #include "le3d/game/camera.hpp"
 #include "le3d/engine/gfx/utils.hpp"
 
@@ -52,19 +52,19 @@ glm::mat4 Camera::uiProj(glm::vec3 const& uiSpace) const
 
 FreeCam::FreeCam()
 {
-	m_tMove = input::registerInput([this](s32 key, s32 action, s32 /*mods*/) {
+	m_tMove = input::registerInput([this](Key key, Action action, Mods /*mods*/) {
 		if (m_flags.isSet((s32)Flag::Enabled))
 		{
 			switch (action)
 			{
-			case GLFW_PRESS:
+			case Action::PRESS:
 			{
 				m_heldKeys.emplace(key);
 				break;
 			}
-			case GLFW_RELEASE:
+			case Action::RELEASE:
 			{
-				if (!m_flags.isSet((s32)Flag::FixedSpeed) && key == GLFW_MOUSE_BUTTON_3)
+				if (!m_flags.isSet((s32)Flag::FixedSpeed) && key == Key::MOUSE_BUTTON_3)
 				{
 					m_speed = m_defaultSpeed;
 				}
@@ -74,9 +74,9 @@ FreeCam::FreeCam()
 			default:
 				break;
 			}
-			if (key == GLFW_MOUSE_BUTTON_2)
+			if (key == Key::MOUSE_BUTTON_2)
 			{
-				bool bLook = action == GLFW_PRESS;
+				bool bLook = action == Action::PRESS;
 				if (m_flags.isSet((s32)Flag::Looking) ^ bLook)
 				{
 					m_flags.set((s32)Flag::InitPos, false);
@@ -113,11 +113,11 @@ void FreeCam::tick(Time dt)
 	// Speed
 	if (!m_flags.isSet((s32)Flag::FixedSpeed))
 	{
-		if (pad0.isPressed(GLFW_GAMEPAD_BUTTON_LEFT_BUMPER))
+		if (pad0.isPressed(Key::GAMEPAD_BUTTON_LEFT_BUMPER))
 		{
 			m_dSpeed -= (dt.assecs() * 10);
 		}
-		else if (pad0.isPressed(GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER))
+		else if (pad0.isPressed(Key::GAMEPAD_BUTTON_RIGHT_BUMPER))
 		{
 			m_dSpeed += (dt.assecs() * 10);
 		}
@@ -133,8 +133,7 @@ void FreeCam::tick(Time dt)
 	}
 
 	// Elevation
-	f32 elevation = input::triggerToAxis(pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER))
-					- input::triggerToAxis(pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_TRIGGER));
+	f32 elevation = input::triggerToAxis(pad0.getAxis(PadAxis::RIGHT_TRIGGER)) - input::triggerToAxis(pad0.getAxis(PadAxis::LEFT_TRIGGER));
 	if (elevation * elevation > 0.01f)
 	{
 		m_position.y += (elevation * dt.assecs() * m_speed);
@@ -142,7 +141,7 @@ void FreeCam::tick(Time dt)
 
 	// Look
 	f32 dLook = m_joyLookSens * dt.assecs();
-	glm::vec2 const padRight(pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_X), pad0.getAxis(GLFW_GAMEPAD_AXIS_RIGHT_Y));
+	glm::vec2 const padRight(pad0.getAxis(PadAxis::RIGHT_X), pad0.getAxis(PadAxis::RIGHT_Y));
 	if (glm::length2(padRight) > m_minJoyRightDPosSqr)
 	{
 		m_pitch += (padRight.y * dLook);
@@ -165,7 +164,7 @@ void FreeCam::tick(Time dt)
 	glm::vec3 dPos = glm::vec3(0.0f);
 	glm::vec3 const nForward = -glm::normalize(glm::rotate(m_orientation, g_nFront));
 	glm::vec3 const nRight = glm::normalize(glm::rotate(m_orientation, g_nRight));
-	glm::vec2 const padLeft(pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_X), -pad0.getAxis(GLFW_GAMEPAD_AXIS_LEFT_Y));
+	glm::vec2 const padLeft(pad0.getAxis(PadAxis::LEFT_X), -pad0.getAxis(PadAxis::LEFT_Y));
 
 	if (glm::length2(padLeft) > m_minJoyRightDPosSqr)
 	{
@@ -180,29 +179,29 @@ void FreeCam::tick(Time dt)
 		default:
 			break;
 
-		case GLFW_KEY_W:
-		case GLFW_KEY_UP:
+		case Key::W:
+		case Key::UP:
 		{
 			dPos += nForward;
 			break;
 		}
 
-		case GLFW_KEY_D:
-		case GLFW_KEY_RIGHT:
+		case Key::D:
+		case Key::RIGHT:
 		{
 			dPos += nRight;
 			break;
 		}
 
-		case GLFW_KEY_S:
-		case GLFW_KEY_DOWN:
+		case Key::S:
+		case Key::DOWN:
 		{
 			dPos -= nForward;
 			break;
 		}
 
-		case GLFW_KEY_A:
-		case GLFW_KEY_LEFT:
+		case Key::A:
+		case Key::LEFT:
 		{
 			dPos -= nRight;
 			break;

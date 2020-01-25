@@ -1,6 +1,3 @@
-#include <glad/glad.h>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/glm.hpp>
 #include "le3d/core/log.hpp"
 #include "le3d/core/io.hpp"
 #include "le3d/engine/context.hpp"
@@ -212,36 +209,40 @@ void runTest()
 	props[3].m_transform.setPosition({-3.0f, -1.0f, 2.0f});
 	props[4].m_transform.setPosition({-4.0f, 1.0f, -2.0f});
 
-	auto tOnInput = input::registerInput([&](s32 key, s32 action, s32 mods) {
+	auto tOnInput = input::registerInput([&](Key key, Action action, Mods mods) {
 		switch (action)
 		{
 		default:
 			break;
 
-		case GLFW_RELEASE:
+		case Action::RELEASE:
 		{
-			if (key == GLFW_KEY_ESCAPE)
+			if (key == Key::ESCAPE)
 			{
 				context::close();
 				return;
 			}
+			else if (key == Key::V && mods & Mods::CONTROL)
+			{
+				context::setSwapInterval(context::swapInterval() == 0 ? 1 : 0);
+			}
 			break;
 		}
-		case GLFW_PRESS:
+		case Action::PRESS:
 		{
-			if (key == GLFW_KEY_W && mods & GLFW_MOD_CONTROL)
+			if (key == Key::W && mods & Mods::CONTROL)
 			{
 				bWireframe = !bWireframe;
 				prop0.m_flags.set((s32)Entity::Flag::Wireframe, bWireframe);
 				props[3].m_flags.set((s32)Entity::Flag::Wireframe, bWireframe);
 			}
-			if (key == GLFW_KEY_P && mods & GLFW_MOD_CONTROL)
+			if (key == Key::P && mods & Mods::CONTROL)
 			{
 				bParented = !bParented;
 				prop0.m_transform.setParent(bParented ? &prop1.m_transform : nullptr);
 			}
 #if defined(DEBUGGING)
-			if (key == GLFW_KEY_G && mods & GLFW_MOD_CONTROL)
+			if (key == Key::G && mods & Mods::CONTROL)
 			{
 				auto& ar = debug::Arrow();
 				auto tip = debug::DArrow::Tip::Sphere;
@@ -265,9 +266,9 @@ void runTest()
 			break;
 		}
 		}
-		if (key == GLFW_MOUSE_BUTTON_1)
+		if (key == Key::MOUSE_BUTTON_1)
 		{
-			LOG_D("Mouse button 0 [pressed/released] [%d/%d]!", action == GLFW_PRESS, action == GLFW_RELEASE);
+			LOG_D("Mouse button 0 [pressed/released] [%d/%d]!", action == Action::PRESS, action == Action::RELEASE);
 		}
 	});
 #if defined(DEBUGGING)
@@ -279,13 +280,15 @@ void runTest()
 	glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
 	f32 uiAR = uiSpace.x / uiSpace.y;
 
+	context::ClearFlags clearFlags;
+	clearFlags.set({s32(context::ClearFlag::ColorBuffer), s32(context::ClearFlag::DepthBuffer)}, true);
 	while (context::isAlive())
 	{
 		dt = Time::elapsed() - t;
 		t = Time::elapsed();
 		camera.tick(dt);
 		// context::glClearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Colour(50, 40, 10));
-		context::clearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		context::clearFlags(clearFlags);
 
 		if (!bModelsSwapped)
 		{
@@ -356,14 +359,11 @@ void runTest()
 		sphereMat.model = glm::translate(sphereMat.model, {2.0f, -0.5f, 0.0f});
 		if (bWireframe)
 		{
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			context::setPolygonMode(context::PolygonMode::Line);
 		}
 		renderMeshes(sphereMesh, {sphereMat}, monolithic);
 		// renderMeshes(instanceMesh, monolithic, instanceCount);
-		if (bWireframe)
-		{
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		}
+		context::setPolygonMode(context::PolygonMode::Fill);
 
 		drawLight(pl0Pos, light0);
 		drawLight(pl1Pos, light1);
@@ -406,7 +406,7 @@ s32 gameloop::run(s32 argc, char const** argv)
 #endif
 	context::Settings settings;
 	settings.window.title = "LE3D Test";
-	settings.window.bVSYNC = false;
+	settings.ctxt.bVSYNC = false;
 	// settings.window.type = context::WindowType::BorderlessWindow;
 	// settings.window.width = 3000;
 	settings.env.args = {argc, argv};

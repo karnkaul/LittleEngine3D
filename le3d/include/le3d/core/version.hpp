@@ -13,14 +13,13 @@ namespace le
 struct Version
 {
 private:
-	u32 mj = 0;
-	u32 mn = 0;
-	u32 pa = 0;
-	u32 tw = 0;
+	u32 mj;
+	u32 mn;
+	u32 pa;
+	u32 tw;
 
 public:
-	Version();
-	Version(u32 major, u32 minor, u32 patch, u32 tweak);
+	Version(u32 major = 0, u32 minor = 0, u32 patch = 0, u32 tweak = 0);
 	Version(std::string_view serialised);
 
 public:

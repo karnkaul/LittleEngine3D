@@ -1,5 +1,7 @@
 #pragma once
+#include <string>
 #include "le3d/core/stdtypes.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/engine/input.hpp"
 
 namespace le
@@ -19,7 +21,26 @@ struct Callbacks
 };
 
 inline Callbacks g_callbacks;
-void init(GLFWwindow& window);
+#if defined(LE3D_NON_DESKTOP)
+bool init();
+#else
+bool init(struct GLFWwindow& window);
+#endif
+
+void setCursorMode(CursorMode mode);
+CursorMode cursorMode();
+glm::vec2 cursorPos();
+void setCursorPos(glm::vec2 const& pos);
+
+JoyState getJoyState(s32 id);
+GamepadState getGamepadState(s32 id);
+f32 triggerToAxis(f32 triggerValue);
+std::string getClipboard();
 void clear();
+
+size_t joystickAxesCount(s32 id);
+size_t joysticKButtonsCount(s32 id);
+
+std::string_view toStr(s32 key);
 } // namespace inputImpl
 } // namespace le

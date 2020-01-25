@@ -2,7 +2,9 @@
 #include <filesystem>
 #include <memory>
 #include <glm/glm.hpp>
+#include "le3d/core/tFlags.hpp"
 #include "le3d/core/stdtypes.hpp"
+#include "le3d/core/version.hpp"
 #include "le3d/engine/gfx/colour.hpp"
 #include "le3d/env/env.hpp"
 
@@ -16,6 +18,33 @@ enum class WindowType : u8
 	BorderlessWindow,
 	BorderlessFullscreen,
 	DedicatedFullscreen,
+};
+
+enum class ClearFlag : u8
+{
+	ColorBuffer = 0,
+	DepthBuffer,
+	StencilBuffer,
+	_COUNT
+};
+using ClearFlags = TFlags<size_t(ClearFlag::_COUNT)>;
+
+enum class PolygonFace : u8
+{
+	FrontAndBack,
+	Front,
+	Back
+};
+
+enum class PolygonMode : u8
+{
+	Fill = 0,
+	Line
+};
+
+enum class GFXFlag : u8
+{
+	DepthTest = 0
 };
 
 struct Settings
@@ -38,12 +67,19 @@ struct Settings
 		u16 width = 1280;
 		u16 height = 720;
 		u16 screenID = 0;
+	};
+	struct ContextOpts
+	{
+		Version minVersion = Version(3, 3);
 		bool bVSYNC = true;
 	};
 
+#if !defined(LE3D_NON_DESKTOP)
 	WindowOpts window;
+#endif
 	LogOpts log;
 	EnvOpts env;
+	ContextOpts ctxt;
 	// Invokes `threads::joinAll()` on context destruction
 	bool bJoinThreadsOnDestroy = true;
 };
@@ -57,10 +93,14 @@ std::unique_ptr<HContext> create(Settings const& settings);
 bool isAlive();
 void close();
 bool isClosing();
-void clearFlags(u32 flags, Colour colour = Colour::Black);
+void clearFlags(ClearFlags flags, Colour colour = Colour::Black);
 void pollEvents();
+void setSwapInterval(u8 interval);
 void swapBuffers();
+void setPolygonMode(PolygonMode mode, PolygonFace face = PolygonFace::FrontAndBack);
+void toggle(GFXFlag flag, bool bEnable);
 
+u8 swapInterval();
 u64 swapCount();
 f32 nativeAR();
 glm::vec2 size();

@@ -5,7 +5,7 @@
 #include "le3d/game/object.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/core/transform.hpp"
-#include "le3d/engine/input.hpp"
+#include "le3d/engine/inputTypes.hpp"
 
 namespace le
 {
@@ -50,11 +50,7 @@ public:
 	f32 m_joyLookSens = 50.0f;
 
 protected:
-#if defined(__arm__)
-	f32 m_minJoyRightDPosSqr = 0.5f;
-#else
 	f32 m_minJoyRightDPosSqr = 0.05f;
-#endif
 	f32 m_minCursorDPosSqr = 0.2f;
 	f32 m_pitch = 0.0f;
 	f32 m_yaw = 0.0f;
@@ -64,7 +60,7 @@ protected:
 private:
 	glm::vec2 m_cursorPos = glm::vec2(0.0f);
 	glm::vec2 m_nextCursorPos = glm::vec2(0.0f);
-	std::set<s32> m_heldKeys;
+	std::set<Key> m_heldKeys;
 	OnInput::Token m_tMove;
 	OnMouse::Token m_tLook;
 	OnMouse::Token m_tZoom;
