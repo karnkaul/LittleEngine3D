@@ -4,6 +4,10 @@
 #include "le3d/env/env.hpp"
 #include "le3d/engine/input.hpp"
 
+#if !defined(LE3D_NON_DESKTOP)
+struct GLFWwindow;
+#endif
+
 namespace le
 {
 namespace inputImpl
@@ -24,7 +28,7 @@ inline Callbacks g_callbacks;
 #if defined(LE3D_NON_DESKTOP)
 bool init();
 #else
-bool init(struct GLFWwindow& window);
+bool init(GLFWwindow& window);
 #endif
 
 void setCursorMode(CursorMode mode);

@@ -1,6 +1,10 @@
-#include <GLFW/glfw3.h>
+#include "le3d/core/log.hpp"
 #include "le3d/engine/context.hpp"
+#include "le3d/env/env.hpp"
 #include "inputImpl.hpp"
+#if !defined(LE3D_NON_DESKTOP)
+#include <GLFW/glfw3.h>
+#endif
 
 namespace le
 {
@@ -11,41 +15,44 @@ bool inputImpl::init()
 	LOG_E("FATAL ERROR: Unsupported platform!");
 	return false;
 }
-void setCursorMode(CursorMode) {}
-CursorMode cursorMode()
+void inputImpl::setCursorMode(CursorMode) {}
+CursorMode inputImpl::cursorMode()
 {
 	return {};
 }
-glm::vec2 cursorPos()
+glm::vec2 inputImpl::cursorPos()
 {
 	return {};
 }
-void setCursorPos(glm::vec2) {}
-JoyState getJoyState(s32)
+void inputImpl::setCursorPos(glm::vec2 const&) {}
+JoyState inputImpl::getJoyState(s32)
 {
 	return {};
 }
-GamepadState getGamepadState(s32)
+GamepadState inputImpl::getGamepadState(s32)
 {
 	return {};
 }
-f32 triggerToAxis(f32 triggerValue)
+f32 inputImpl::triggerToAxis(f32)
 {
 	return {};
 }
-std::string getClipboard()
+std::string inputImpl::getClipboard()
 {
 	return {};
 }
-size_t joystickAxesCount(s32)
+size_t inputImpl::joystickAxesCount(s32)
 {
 	return {};
 }
-size_t joysticKButtonsCount(s32)
+size_t inputImpl::joysticKButtonsCount(s32)
 {
 	return {};
 }
-
+std::string_view inputImpl::toStr(s32)
+{
+	return {};
+}
 #else
 
 namespace

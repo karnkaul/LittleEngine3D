@@ -24,7 +24,7 @@ namespace
 {
 void runTest()
 {
-	stdfs::path const resources = stdfs::path(env::dirPath(env::Dir::Executable)).parent_path() / "test/resources";
+	stdfs::path const resources = stdfs::path(env::dirPath(env::Dir::Executable)).parent_path() / "demo/resources";
 	stdfs::path const resourcesZip = resources.parent_path() / "resources.zip";
 	std::unique_ptr<IOReader> uReader;
 	if (std::filesystem::is_regular_file(resourcesZip))

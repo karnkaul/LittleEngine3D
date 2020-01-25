@@ -74,9 +74,7 @@ struct Settings
 		bool bVSYNC = true;
 	};
 
-#if !defined(LE3D_NON_DESKTOP)
 	WindowOpts window;
-#endif
 	LogOpts log;
 	EnvOpts env;
 	ContextOpts ctxt;

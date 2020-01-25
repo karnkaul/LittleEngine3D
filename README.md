@@ -7,11 +7,11 @@ A lightweight, simple, and performant 3D game engine library, being developed in
 >*Note: When viewing this repository's source on GitHub's web interface, add `?ts=4` to the URL to have it use the correct tab spacing (4).*
 
 ### How to Build
->*Note: `le3d-test` requires OpenGL 3.3*
+>*Note: `le3d-demo` requires OpenGL 3.3*
 * VS2019/Ninja: 
 	1. Open root directory in Visual Studio 2019
 	1. Select Build > Build All
-	1. Run le3d-test (or custom executable target)
+	1. Run le3d-demo (or custom executable target)
 * Others:
 	1. Run CMake
 	1. Select root directory as source
@@ -19,7 +19,7 @@ A lightweight, simple, and performant 3D game engine library, being developed in
 	1. Click Configure and pick your build environment; ensure no errors are thrown
 	1. Click Generate
 	1. Open project and build
-	1. Run le3d-test (or custom executable target)
+	1. Run le3d-demo (or custom executable target)
 
 ### Shaders
 LittleEngine3D uses forward rendering with a fixed number of point and directional lights. Each `HMesh` contains one `Material` which supports diffuse and specular textures and various built-in uniforms as defined in `env::g_config` (can be overridden).
@@ -74,9 +74,13 @@ Use `gfx::genVec4VBO()` to generate an instance `HVBO` and attach it to passed V
 - [ ] Trivial collision system
 
 ### Submodules / External:
+
 Public (use via `#include <libName/.../header>`):
+
 - [glm](https://github.com/g-truc/glm)
+
 Private:
+
 - [glfw](https://github.com/glfw/glfw)
 - [glad](https://github.com/Dav1dde/glad)
 - [stb-image](https://github.com/nothings/stb)

@@ -256,13 +256,10 @@ HTexture gfx::genTexture(std::string id, u8 const* pData, TexType type, HSampler
 		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 		glChk(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-#if defined(__arm__)
-		glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_RGBA : GL_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pData));
-#else
-		glChk(glTexImage2D(GL_TEXTURE_2D, 0, bAlpha ? GL_COMPRESSED_RGBA : GL_COMPRESSED_RGB, w, h, 0, bAlpha ? GL_RGBA : GL_RGB,
-						   GL_UNSIGNED_BYTE, pData));
+		GLint const extFormat = bAlpha ? GL_COMPRESSED_RGBA : GL_COMPRESSED_RGB;
+		GLenum const intFormat = bAlpha ? GL_RGBA : GL_RGB;
+		glChk(glTexImage2D(GL_TEXTURE_2D, 0, extFormat, w, h, 0, intFormat, GL_UNSIGNED_BYTE, pData));
 		glChk(glGenerateMipmap(GL_TEXTURE_2D));
-#endif
 		glChk(glBindTexture(GL_TEXTURE_2D, 0));
 		std::string_view typeStr = type == TexType::Diffuse ? "Diffuse" : "Specular";
 		u32 size = u32(w * h * ch);

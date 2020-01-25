@@ -3,13 +3,13 @@
 #include <vector>
 #include "le3d/core/stdtypes.hpp"
 
-#if defined(_WIN32) || defined(_WIN64)
+#if (defined(_WIN32) || defined(_WIN64))
 #define LE3D_OS_WINX
 #if defined(__arm__)
 #define LE3D_ARCH_ARM64
 #define LE3D_NON_DESKTOP
 #elif !defined(_WIN64)
-#define LE3D_ARCH_X64
+#define LE3D_ARCH_X86
 #else
 #define LE3D_ARCH_x64
 #endif
@@ -35,7 +35,7 @@
 
 #if defined(_MSC_VER)
 #define LE3D_RUNTIME_MSVC
-#elif defined(__GNUG__) || defined(__clang__)
+#elif (defined(__GNUG__) || defined(__clang__))
 #define LE3D_RUNTIME_LIBSTDCXX
 #else
 #define LE3D_RUNTIME_UNKNOWN

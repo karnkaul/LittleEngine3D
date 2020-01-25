@@ -35,7 +35,7 @@ namespace input
 std::string_view toStr(s32 key);
 // Callback parameters: (char utf8)
 OnText::Token registerText(OnText::Callback callback);
-// Callback parameters: (s32 key, s32 action, s32 mods)
+// Callback parameters: (Key key, Action action, Mods mods)
 OnInput::Token registerInput(OnInput::Callback callback);
 // Callback parameters: (f64 x, f64 y)
 OnMouse::Token registerMouse(OnMouse::Callback callback);

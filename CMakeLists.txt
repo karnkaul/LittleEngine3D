@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "")
-set(LE3D_VERSION "0.0.2.0" CACHE STRING "LittlEngine3D version" FORCE)
+set(LE3D_VERSION "0.0.3.0" CACHE STRING "LittlEngine3D version" FORCE)
+set(LE3D_LIB_TYPE STATIC CACHE STRING "LittleEngine3D Library type")
 project(LittleEngine3D VERSION ${LE3D_VERSION})
 
 # Includes
@@ -33,11 +34,6 @@ set(LE3D_COMMIT_HASH ${GIT_COMMIT_HASH} CACHE STRING "Commit hash" FORCE)
 set(LE3D_EXECUTABLE_PATH "" CACHE STRING "Force executable to build here")
 set(LE3D_LIBRARIES_PATH "" CACHE STRING "Force libraries to build here")
 
-# Test
-option(LE3D_BUILD_TEST "Build Test executable" ON)
-if(LE3D_BUILD_TEST)
-	add_subdirectory(test)
-endif()
 
 ## Dependencies
 # GLFW
@@ -70,6 +66,12 @@ add_subdirectory(lib/physfs)
 
 ## LittleEngine3D
 add_subdirectory(le3d)
+
+# Demo
+option(LE3D_BUILD_DEMO "Build Test executable" ON)
+if(LE3D_BUILD_DEMO)
+	add_subdirectory(demo)
+endif()
 
 # Footer text
 message(STATUS "Executable path\t: ${LE3D_EXECUTABLE_PATH}")

@@ -9,7 +9,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 configure_file_src_to_bin(src/buildVersion.hpp.in generated/buildVersion.hpp)
 
 # Target
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(${PROJECT_NAME} ${LE3D_LIB_TYPE} ${SOURCES})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME}-$<CONFIG>)
 if(LIBRARIES_PATH)
@@ -24,7 +24,6 @@ target_include_directories(${PROJECT_NAME}
 add_target_compile_definitions(${PROJECT_NAME})
 set_target_compile_options(${PROJECT_NAME})
 add_dependencies(${PROJECT_NAME}
-	glfw
 	glad-d
 	glad
 	glm
@@ -32,6 +31,9 @@ add_dependencies(${PROJECT_NAME}
 	tinyobjloader
 	physfs-static
 )
+if(LE3D_USE_GLFW)
+	add_dependencies(${PROJECT_NAME} glfw)
+endif()
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC 	glm
 PRIVATE	glad$<$<CONFIG:Debug>:-d>

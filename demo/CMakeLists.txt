@@ -1,4 +1,4 @@
-project(le3d-test)
+project(le3d-demo)
 
 if(PLATFORM STREQUAL "Linux")
 	set(EXE_SUFFIX ".lx" PARENT_SCOPE)

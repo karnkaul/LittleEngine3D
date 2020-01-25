@@ -1,47 +1,48 @@
 #include <glad/glad.h>
-#if !defined(LE3D_NON_DESKTOP)
-#include <GLFW/glfw3.h>
-#endif
 #include "le3d/core/assert.hpp"
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/log.hpp"
+#include "le3d/env/env.hpp"
 #include "le3d/env/threads.hpp"
 #include "le3d/engine/context.hpp"
 #include "le3d/game/resources.hpp"
 #include "core/ioImpl.hpp"
 #include "inputImpl.hpp"
 #include "contextImpl.hpp"
+#if !defined(LE3D_NON_DESKTOP)
+#include <GLFW/glfw3.h>
+#endif
 
 namespace le
 {
 #if defined(LE3D_NON_DESKTOP)
 
-bool init(context::Settings const&)
+bool contextImpl::init(context::Settings const&)
 {
 	ASSERT(false, "Unsupported platform!");
 	return false;
 }
-void checkContextThread() {}
-bool isAlive()
+void contextImpl::checkContextThread() {}
+bool contextImpl::isAlive()
 {
 	return false;
 }
-void close() {}
-bool isClosing()
+void contextImpl::close() {}
+bool contextImpl::isClosing()
 {
 	return false;
 }
-bool exists()
+bool contextImpl::exists()
 {
 	return false;
 }
-void clearFlags(u32, Colour) {}
-void pollEvents() {}
-void setSwapInterval(u8) {}
-void swapBuffers() {}
-void setPolygonMode(context::PolygonFace, context::PolygonMode) {}
-void toggle(GFXFlag flag, bool bEnable) {}
-void destroy() {}
+void contextImpl::clearFlags(context::ClearFlags, Colour) {}
+void contextImpl::pollEvents() {}
+void contextImpl::setSwapInterval(u8) {}
+void contextImpl::swapBuffers() {}
+void contextImpl::setPolygonMode(context::PolygonFace, context::PolygonMode) {}
+void contextImpl::toggle(context::GFXFlag, bool) {}
+void contextImpl::destroy() {}
 
 #else
 
@@ -169,6 +170,11 @@ bool contextImpl::init(context::Settings const& settings)
 		glfwTerminate();
 		return {};
 	}
+	if (!inputImpl::init(*pWindow))
+	{
+		LOG_E("FATAL: Failed to initialise input!");
+		return {};
+	}
 	// Success!
 #if defined(FORCE_NO_VSYNC)
 	bVSYNC = false;
@@ -177,7 +183,6 @@ bool contextImpl::init(context::Settings const& settings)
 	setSwapInterval(bVSYNC ? 1 : 0);
 	glfwSetWindowPos(g_pWindow, cX, cY);
 	glfwShowWindow(g_pWindow);
-	inputImpl::init(*g_pWindow);
 	g_contextThreadID = std::this_thread::get_id();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
