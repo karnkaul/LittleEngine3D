@@ -1,6 +1,6 @@
 project(stb-image)
 
-unzip_archive(stb.zip "${CMAKE_CURRENT_SOURCE_DIR}")
+unzip_archive(stb_image.zip "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(SOURCES
 	include/stb/stb_image.h

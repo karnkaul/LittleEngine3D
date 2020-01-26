@@ -2,13 +2,13 @@
 #include "le3d/engine/context.hpp"
 #include "le3d/env/env.hpp"
 #include "inputImpl.hpp"
-#if !defined(LE3D_NON_DESKTOP)
+#if defined(LE3D_USE_GLFW)
 #include <GLFW/glfw3.h>
 #endif
 
 namespace le
 {
-#if defined(LE3D_NON_DESKTOP)
+#if !defined(LE3D_USE_GLFW)
 
 bool inputImpl::init()
 {

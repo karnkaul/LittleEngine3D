@@ -1,6 +1,6 @@
-#include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "le3d/engine/context.hpp"
+#include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/engine/gfx/utils.hpp"
 #include "le3d/core/log.hpp"
 

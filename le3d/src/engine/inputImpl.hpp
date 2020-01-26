@@ -4,7 +4,7 @@
 #include "le3d/env/env.hpp"
 #include "le3d/engine/input.hpp"
 
-#if !defined(LE3D_NON_DESKTOP)
+#if defined(LE3D_USE_GLFW)
 struct GLFWwindow;
 #endif
 
@@ -25,7 +25,7 @@ struct Callbacks
 };
 
 inline Callbacks g_callbacks;
-#if defined(LE3D_NON_DESKTOP)
+#if !defined(LE3D_USE_GLFW)
 bool init();
 #else
 bool init(GLFWwindow& window);

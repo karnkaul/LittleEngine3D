@@ -1,4 +1,5 @@
 #include <string>
+#include <sstream>
 #include <vector>
 #include "le3d/core/version.hpp"
 #include "le3d/core/utils.hpp"
@@ -46,17 +47,17 @@ u32 Version::tweak() const
 
 std::string Version::toString() const
 {
-	static constexpr size_t MAX = 3 + 1 + 3 + 1 + 3 + 1 + 3;
-	std::string ret;
-	ret.reserve(MAX);
-	ret += std::to_string(mj);
-	ret += ".";
-	ret += std::to_string(mn);
-	ret += ".";
-	ret += std::to_string(pa);
-	ret += ".";
-	ret += std::to_string(tw);
-	return ret;
+	std::stringstream ret;
+	ret << mj << "." << mn;
+	if (pa > 0)
+	{
+		ret << "." << pa;
+	}
+	if (tw > 0)
+	{
+		ret << "." << tw;
+	}
+	return ret.str();
 }
 
 bool Version::upgrade(Version const& rhs)

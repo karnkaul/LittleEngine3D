@@ -1,11 +1,11 @@
 #include <algorithm>
 #include <unordered_map>
-#include <glad/glad.h>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/env/engineVersion.hpp"
 #include "le3d/env/env.hpp"
 #include "le3d/engine/gfx/draw.hpp"
+#include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/engine/gfx/vram.hpp"
 #include "le3d/engine/gfx/primitives.hpp"
 #include "le3d/game/resources.hpp"

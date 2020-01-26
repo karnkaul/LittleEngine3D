@@ -37,7 +37,7 @@ set(LE3D_LIBRARIES_PATH "" CACHE STRING "Force libraries to build here")
 
 ## Dependencies
 # GLFW
-option(LE3D_USE_GLFW "Use GLFW for windowing" ON)
+option(LE3D_USE_GLFW "Use GLFW for windowing (desktop only)" ON)
 if(LE3D_USE_GLFW)
 	set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
 	set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
@@ -47,13 +47,15 @@ if(LE3D_USE_GLFW)
 	set_relaxed_compile_options(glfw)
 endif()
 
+# GLAD
+option(LE3D_USE_GLAD "Use GLAD for loading OpenGL functions (Win/Linux) only)" ON)
+if(LE3D_USE_GLAD)
+	add_subdirectory(lib/glad)
+endif()
+
 # GLM
 set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
 add_subdirectory(lib/glm)
-
-# GLAD
-add_subdirectory(lib/glad_debug)
-add_subdirectory(lib/glad)
 
 # stb_image
 add_subdirectory(lib/stb)

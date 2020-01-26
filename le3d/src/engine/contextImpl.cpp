@@ -1,21 +1,22 @@
-#include <glad/glad.h>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/jobs.hpp"
 #include "le3d/core/log.hpp"
+#include "le3d/core/utils.hpp"
 #include "le3d/env/env.hpp"
 #include "le3d/env/threads.hpp"
 #include "le3d/engine/context.hpp"
+#include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/game/resources.hpp"
 #include "core/ioImpl.hpp"
 #include "inputImpl.hpp"
 #include "contextImpl.hpp"
-#if !defined(LE3D_NON_DESKTOP)
+#if defined(LE3D_USE_GLFW)
 #include <GLFW/glfw3.h>
 #endif
 
 namespace le
 {
-#if defined(LE3D_NON_DESKTOP)
+#if !defined(LE3D_USE_GLFW)
 
 bool contextImpl::init(context::Settings const&)
 {
@@ -156,17 +157,25 @@ bool contextImpl::init(context::Settings const& settings)
 		return {};
 	}
 	glfwMakeContextCurrent(pWindow);
+#if defined(LE3D_USE_GLAD)
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		LOG_E("FATAL: Failed to load OpenGL function pointers!");
 		glfwTerminate();
 		return {};
 	}
-	Version glVersion(u32(GLVersion.major), u32(GLVersion.minor));
+#else
+	LOG_E("FATAL: No OpenGL loader exists!");
+	glfwTerminate();
+	return {};
+#endif
+	auto szVersion = (char const*)glGetString(GL_VERSION);
+	auto versionStr = utils::strings::bisect(szVersion, ' ');
+	Version glVersion(versionStr.first);
 	if (glVersion < settings.ctxt.minVersion)
 	{
 		auto const& v = settings.ctxt.minVersion;
-		LOG_E("FATAL: Incompatible OpenGL context: [%d.%d]; required: [%d.%d]", glVersion.major(), glVersion.minor(), v.major(), v.minor());
+		LOG_E("FATAL: Incompatible OpenGL context: [%s]; required: [%s]", glVersion.toString().data(), v.toString().data());
 		glfwTerminate();
 		return {};
 	}
@@ -194,8 +203,7 @@ bool contextImpl::init(context::Settings const& settings)
 		jobs::init(settings.env.jobWorkerCount);
 	}
 	glfwSetWindowCloseCallback(g_pWindow, &windowCloseCallback);
-	LOG_I("== [%d.%d] OpenGL context created using %s [%s]", glVersion.major(), glVersion.minor(), glGetString(GL_RENDERER),
-		  glGetString(GL_VENDOR));
+	LOG_I("== [%s] OpenGL context created using %s [%s]", glVersion.toString().data(), glGetString(GL_RENDERER), glGetString(GL_VENDOR));
 	return true;
 }
 

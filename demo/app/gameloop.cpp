@@ -83,16 +83,16 @@ void runTest()
 	lights.ptLights[1].position = glm::vec4(pl1Pos, 0.0f);
 	lights.dirLights[0].direction = glm::vec4(-1.0f, -1.0f, 1.0f, 0.0f);
 	lights.ptLights[0].clq = lights.ptLights[1].clq = glm::vec4(1.0f, 0.09f, 0.032f, 0.0f);
-	lights.ptLights[0].ambient = lights.ptLights[1].ambient = lights.dirLights[0].ambient = glm::vec4(0.2f);
-	lights.ptLights[0].diffuse = lights.ptLights[1].diffuse = lights.dirLights[0].diffuse = glm::vec4(0.5f);
+	lights.ptLights[0].ambient = lights.ptLights[1].ambient = lights.dirLights[0].ambient = glm::vec4(glm::vec3(0.2f), 1.0f);
+	lights.ptLights[0].diffuse = lights.ptLights[1].diffuse = lights.dirLights[0].diffuse = glm::vec4(glm::vec3(0.5f), 1.0f);
 	lights.ptLights[0].specular = lights.ptLights[1].specular = lights.dirLights[0].specular = glm::vec4(1.0f);
 
-	auto drawLight = [](glm::vec3 const& pos, HVerts light) {
+	auto drawLight = [](glm::vec3 const& pos, HVerts const& light, glm::vec4 const& diffuse) {
 		ModelMats mats;
 		mats.model = glm::translate(mats.model, pos);
-		mats.oNormals = mats.model = glm::scale(mats.model, glm::vec3(0.1f));
+		mats.oNormals = mats.model = glm::scale(mats.model, glm::vec3(0.2f));
 		auto const& tinted = resources::get<HShader>("unlit/tinted");
-		tinted.setV4(env::g_config.uniforms.tint, Colour::White);
+		tinted.setV4(env::g_config.uniforms.tint, diffuse);
 		tinted.setModelMats(mats);
 		gfx::draw(light);
 	};
@@ -189,8 +189,7 @@ void runTest()
 	quadProp.setShader(monolithic);
 	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
 
-	HVerts light0 = gfx::tutorial::newLight(cubeMeshTexd.m_hVerts);
-	HVerts light1 = gfx::tutorial::newLight(cubeMeshTexd.m_hVerts);
+	HVerts lightVerts = gfx::tutorial::newLight(sphereMesh.m_hVerts);
 
 	std::vector<Prop> props;
 	for (s32 i = 0; i < 5; ++i)
@@ -365,8 +364,8 @@ void runTest()
 		// renderMeshes(instanceMesh, monolithic, instanceCount);
 		context::setPolygonMode(context::PolygonMode::Fill);
 
-		drawLight(pl0Pos, light0);
-		drawLight(pl1Pos, light1);
+		drawLight(pl0Pos, lightVerts, lights.ptLights[0].diffuse);
+		drawLight(pl1Pos, lightVerts, lights.ptLights[1].diffuse);
 		quadProp.render();
 
 		debug::Quad2D tl, tr, bl, br;

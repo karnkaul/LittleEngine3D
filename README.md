@@ -8,11 +8,17 @@ A lightweight, simple, and performant 3D game engine library, being developed in
 
 ### How to Build
 >*Note: `le3d-demo` requires OpenGL 3.3*
+
+Supported environments:
+* x86/x64 Windows (MSVC / clang); CRT required
+* x86/x64 Linux (g++ / clang)
+
+Quickstart:
 * VS2019/Ninja: 
 	1. Open root directory in Visual Studio 2019
 	1. Select Build > Build All
 	1. Run le3d-demo (or custom executable target)
-* Others:
+* Others (CMake GUI):
 	1. Run CMake
 	1. Select root directory as source
 	1. Select an output directory (`out/...` is ignored)
@@ -20,9 +26,12 @@ A lightweight, simple, and performant 3D game engine library, being developed in
 	1. Click Generate
 	1. Open project and build
 	1. Run le3d-demo (or custom executable target)
+* Shell:
+	1. `cmake -G <generator> . -B out/<build_dir> -DCMAKE_BUILD_TYPE=<build_config>`
+	1. `cmake --build out/<build_dir>`
 
-### Shaders
-LittleEngine3D uses forward rendering with a fixed number of point and directional lights. Each `HMesh` contains one `Material` which supports diffuse and specular textures and various built-in uniforms as defined in `env::g_config` (can be overridden).
+### Rendering
+LittleEngine3D uses an OpenGL 3.3 Core context by default, with `GL_ARB_texture_filter_anisotropic` loaded, and uses forward rendering with a fixed number of point and directional lights. Each `Mesh` contains one `Material` which supports diffuse and specular textures and various built-in uniforms as defined in `env::g_config` (entire struct can be overridden).
 
 #### Vertex Attributes
 The engine expects vertex shaders to use a specific layout when using `gfx::genVertices()`:
@@ -31,27 +40,7 @@ The engine expects vertex shaders to use a specific layout when using `gfx::genV
 - 2 => `vec2 aTexCoord`
 
 #### Uniforms
-The engine will set these built-in uniforms (default names shown) when drawing a mesh; shaders may choose to use any subset of these:
-- Vertex:
-	- `mat4 model`		// Model Matrix
-	- `mat4 normals`	// Normals Matrix
-	- Transform:
-		- `int transform.isUI`				// Whether to use a UI projection matrix
-		- `int transform.isInstanced`		// Whether to use instance VBO or uniform model
-- Fragment:
-	- `vec4 tint`
-	- Material:
-		- `int material.isTextured`			// Whether shader should use sampler2Ds
-		- `int material.isLit`				// Whether shader should use lighting
-		- `int material.isOpaque`			// Whether shader should force alpha as 1.0
-		- `float material.hasSpecular`		// Whether shader should use specular texture(s)
-		- `float material.shininess`		// Specular shininess
-		- `sampler2D material.diffuseN`		// Diffuse texture(s)
-		- `sampler2D material.specularN`	// Specular texture(s)
-		- Albedo:
-			- `vec4 material.albedo.ambient`
-			- `vec4 material.albedo.diffuse`
-			- `vec4 material.albedo.specular`
+The engine will set some built-in uniforms when drawing a mesh, shaders may choose to use any subset of them; refer to `le3d/env/env.hpp` for an up-to-date list of built-ins.
 
 Monolithic shaders can be reused for multiple `Material`s (lit, textured, opaque, etc) by branching on the corresponding uniforms (individual shaders can skip declaring/using them entirely); however, there are no uniforms to indicate number of textures in use, for performance reasons / OpenGL 3.3 limitations (sampler arrays can only be indexed with constant expressions). Cubemaps like Skyboxes will require their own shader that declares a `samplerCube`.
 

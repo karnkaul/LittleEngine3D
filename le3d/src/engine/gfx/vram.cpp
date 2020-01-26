@@ -1,10 +1,10 @@
-#include <glad/glad.h>
 #include <stb/stb_image.h>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/utils.hpp"
 #include "le3d/env/env.hpp"
 #include "le3d/engine/context.hpp"
+#include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/engine/gfx/primitives.hpp"
 #include "le3d/engine/gfx/vram.hpp"
 #include "le3d/engine/gfx/utils.hpp"
@@ -226,7 +226,7 @@ HSampler gfx::genSampler(std::string id, descriptors::Sampler const& desc)
 		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_WRAP_T, glWrap));
 		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_MIN_FILTER, glMinFilter));
 		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_MAG_FILTER, glMagFilter));
-#if defined(GL_ARB_texture_filter_anisotropic)
+#if defined(LE3D_USE_GLAD) && defined(GL_ARB_texture_filter_anisotropic)
 		if (GLAD_GL_ARB_texture_filter_anisotropic == 1)
 		{
 			glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_MAX_ANISOTROPY, desc.anisotropy));

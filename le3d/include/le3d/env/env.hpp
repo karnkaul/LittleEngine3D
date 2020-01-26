@@ -7,7 +7,6 @@
 #define LE3D_OS_WINX
 #if defined(__arm__)
 #define LE3D_ARCH_ARM64
-#define LE3D_NON_DESKTOP
 #elif !defined(_WIN64)
 #define LE3D_ARCH_X86
 #else
@@ -16,7 +15,6 @@
 #elif defined(__linux__)
 #if defined(__ANDROID__)
 #define LE3D_OS_ANDROID
-#define LE3D_NON_DESKTOP
 #else
 #define LE3D_OS_LINUX
 #endif

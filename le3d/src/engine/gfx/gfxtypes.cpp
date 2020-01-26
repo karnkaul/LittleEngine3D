@@ -1,7 +1,7 @@
 #include <array>
-#include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "le3d/engine/context.hpp"
+#include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
