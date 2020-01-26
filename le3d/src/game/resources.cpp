@@ -264,10 +264,10 @@ u32 resources::count<HShader>()
 	return g_shaders.count();
 }
 
-HSampler& resources::addSampler(std::string const& id, TexWrap wrap, TexFilter minfilter, TexFilter magFilter)
+HSampler& resources::addSampler(std::string const& id, descriptors::Sampler const& desc)
 {
 	ASSERT(!g_samplers.isLoaded(id), "Sampler already added!");
-	HSampler hSampler = gfx::genSampler(id, wrap, minfilter, magFilter);
+	HSampler hSampler = gfx::genSampler(id, desc);
 	if (hSampler.glID > 0)
 	{
 		g_samplers.map[id] = std::move(hSampler);
@@ -291,13 +291,14 @@ void resources::addSamplers(GData const& samplerList)
 		auto wrapStr = samplerData.getString(r.samplerWrap, "repeat");
 		auto minFilterStr = samplerData.getString(r.minFilter, "linearmplinear");
 		auto magFilterStr = samplerData.getString(r.magFilter, "linear");
+		auto anisotropy = samplerData.getS32(r.anisotropy, 4);
 		utils::strings::toLower(wrapStr);
 		utils::strings::toLower(minFilterStr);
 		utils::strings::toLower(magFilterStr);
 		auto wrap = g_strToTexWrap[wrapStr];
 		auto minFilter = g_strToTexFilter[minFilterStr];
 		auto magFilter = g_strToTexFilter[magFilterStr];
-		addSampler(id, wrap, minFilter, magFilter);
+		addSampler(id, {wrap, minFilter, magFilter, (u8)anisotropy});
 	}
 }
 

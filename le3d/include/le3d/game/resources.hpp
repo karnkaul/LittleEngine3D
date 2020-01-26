@@ -48,7 +48,7 @@ HShader& loadShader(std::string const& id, std::string_view vertCode, std::strin
 // Shader data fields: id, vertCodeID, fragCodeID
 u32 loadShaders(GData const& shaderList, IOReader const& reader);
 
-HSampler& addSampler(std::string const& id, TexWrap wrap, TexFilter minFilter, TexFilter magFilter = TexFilter::Linear);
+HSampler& addSampler(std::string const& id, descriptors::Sampler const& desc);
 // Sampler data fields: id, wrap, minFilter, magFilter
 void addSamplers(GData const& samplerList);
 

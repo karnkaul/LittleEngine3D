@@ -43,6 +43,30 @@ enum class TexFilter : u8
 	NearestMpNearest
 };
 
+namespace descriptors
+{
+struct VBO
+{
+	// Number of attributes (instances)
+	u32 attribCount = 1;
+	u16 attribLocation = 10;
+	// Vertex attribute divisor: 1 for regular instancing
+	u16 attribDivisor = 1;
+	// Units of 16 bytes (each attribute is allocated as a glm::vec4)
+	u8 vec4sPerAttrib = 1;
+	DrawType type = DrawType::Static;
+	bool bNormalised = false;
+};
+
+struct Sampler
+{
+	TexWrap wrap = TexWrap::Repeat;
+	TexFilter minFilter = TexFilter::LinearMpLinear;
+	TexFilter magFilter = TexFilter::Linear;
+	u8 anisotropy = 16;
+};
+} // namespace GFXDesc
+
 #pragma region Data
 // Vertex Attribute layout:
 // 0 => vec3 aPos [required]

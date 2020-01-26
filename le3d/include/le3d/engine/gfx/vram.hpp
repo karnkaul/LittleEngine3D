@@ -7,21 +7,8 @@
 
 namespace le::gfx
 {
-struct VBODescriptor
-{
-	// Number of attributes (instances)
-	u32 attribCount = 1;
-	u16 attribLocation = 10;
-	// Vertex attribute divisor: 1 for regular instancing
-	u16 attribDivisor = 1;
-	// Units of 16 bytes (each attribute is allocated as a glm::vec4)
-	u8 vec4sPerAttrib = 1;
-	DrawType type = DrawType::Static;
-	bool bNormalised = false;
-};
-
 // Generate a VBO and activate its attribLocation for each passed hVAO
-HVBO genVec4VBO(VBODescriptor const& descriptor, std::vector<GLObj> const& hVAOs);
+HVBO genVec4VBO(descriptors::VBO const& desc, std::vector<GLObj> const& hVAOs);
 // pData size must match hVBO.size!
 void setVBO(HVBO const& hVBO, void const* pData);
 void releaseVBO(HVBO& outVBO, std::vector<GLObj> const& hVAOs);
@@ -31,7 +18,7 @@ HVerts genVerts(Vertices const& vertices, DrawType DrawTypeType = DrawType::Dyna
 void releaseVerts(HVerts& outhVerts);
 
 // Add samplers to HTextures to override default texture parameters
-HSampler genSampler(std::string id, TexWrap wrap, TexFilter minFilter, TexFilter magFilter = TexFilter::Linear);
+HSampler genSampler(std::string id, descriptors::Sampler const& desc);
 void releaseSampler(HSampler& outhSampler);
 
 // Add pSampler to generated HTexture if passed

@@ -93,6 +93,7 @@ struct EngineConfig
 			std::string samplerWrap = "wrap";
 			std::string minFilter = "minFilter";
 			std::string magFilter = "magFilter";
+			std::string anisotropy = "anisotropy";
 
 			std::string shaders = "shaders";
 			std::string shaderID = "id";

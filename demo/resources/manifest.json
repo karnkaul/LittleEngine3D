@@ -4,17 +4,20 @@
 		{
 			"id": "default",
 			"wrap": "Repeat",
-			"minFilter": "LinearMpLinear"
+			"minFilter": "LinearMpLinear",
+			"anisotropy": 16
 		},
 		{
 			"id": "font",
 			"wrap": "ClampEdge",
-			"minFilter": "Linear"
+			"minFilter": "Linear",
+			"anisotropy": 1
 		},
 		{
 			"id": "plant",
 			"wrap": "Repeat",
-			"minFilter": "Nearest"
+			"minFilter": "Nearest",
+			"anisotropy": 16
 		}
 	],
 	"shaders":

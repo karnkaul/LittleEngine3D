@@ -12,7 +12,7 @@
 
 namespace le
 {
-HVBO gfx::genVec4VBO(VBODescriptor const& descriptor, std::vector<GLObj> const& hVAOs)
+HVBO gfx::genVec4VBO(descriptors::VBO const& desc, std::vector<GLObj> const& hVAOs)
 {
 	HVBO vbo;
 	if (!context::isAlive())
@@ -20,10 +20,10 @@ HVBO gfx::genVec4VBO(VBODescriptor const& descriptor, std::vector<GLObj> const& 
 		return vbo;
 	}
 	static GLint const vaSize = 4;
-	GLboolean const glNorm = descriptor.bNormalised ? GL_TRUE : GL_FALSE;
-	GLsizei const stride = GLsizei(descriptor.vec4sPerAttrib * sizeof(glm::vec4));
-	vbo.size = descriptor.attribCount * (u32)stride;
-	vbo.type = descriptor.type == DrawType::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+	GLboolean const glNorm = desc.bNormalised ? GL_TRUE : GL_FALSE;
+	GLsizei const stride = GLsizei(desc.vec4sPerAttrib * sizeof(glm::vec4));
+	vbo.size = desc.attribCount * (u32)stride;
+	vbo.type = desc.type == DrawType::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 	glChk(glGenBuffers(1, &vbo.glID.handle));
 	glChk(glBindBuffer(GL_ARRAY_BUFFER, vbo.glID));
 	glChk(glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(vbo.size), nullptr, GLenum(vbo.type)));
@@ -35,15 +35,15 @@ HVBO gfx::genVec4VBO(VBODescriptor const& descriptor, std::vector<GLObj> const& 
 			continue;
 		}
 		glChk(glBindVertexArray(vao.handle));
-		for (u32 idx = 0; idx < descriptor.vec4sPerAttrib; ++idx)
+		for (u32 idx = 0; idx < desc.vec4sPerAttrib; ++idx)
 		{
 			auto offset = idx * sizeof(glm::vec4);
-			u32 loc = u32(descriptor.attribLocation) + idx;
+			u32 loc = u32(desc.attribLocation) + idx;
 			glChk(glVertexAttribPointer(loc, vaSize, GL_FLOAT, glNorm, (GLsizei)(stride), (void*)offset));
 			glChk(glEnableVertexAttribArray(loc));
-			if (descriptor.attribDivisor > 0)
+			if (desc.attribDivisor > 0)
 			{
-				glChk(glVertexAttribDivisor(loc, descriptor.attribDivisor));
+				glChk(glVertexAttribDivisor(loc, desc.attribDivisor));
 			}
 			if (vaoCount == 0)
 			{
@@ -180,13 +180,13 @@ void gfx::releaseVerts(HVerts& outhVerts)
 	outhVerts = HVerts();
 }
 
-HSampler gfx::genSampler(std::string id, TexWrap wrap, TexFilter minFilter, TexFilter magFilter)
+HSampler gfx::genSampler(std::string id, descriptors::Sampler const& desc)
 {
 	HSampler hSampler;
 	if (context::isAlive())
 	{
 		GLint glWrap;
-		switch (wrap)
+		switch (desc.wrap)
 		{
 		case TexWrap::ClampEdge:
 			glWrap = GL_CLAMP_TO_EDGE;
@@ -219,13 +219,19 @@ HSampler gfx::genSampler(std::string id, TexWrap wrap, TexFilter minFilter, TexF
 				return GL_LINEAR_MIPMAP_NEAREST;
 			}
 		};
-		GLint glMinFilter = getGLFilter(minFilter);
-		GLint glMagFilter = getGLFilter(magFilter);
+		GLint glMinFilter = getGLFilter(desc.minFilter);
+		GLint glMagFilter = getGLFilter(desc.magFilter);
 		glChk(glGenSamplers(1, &hSampler.glID.handle));
 		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_WRAP_S, glWrap));
 		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_WRAP_T, glWrap));
 		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_MIN_FILTER, glMinFilter));
 		glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_MAG_FILTER, glMagFilter));
+#if defined(GL_ARB_texture_filter_anisotropic)
+		if (GLAD_GL_ARB_texture_filter_anisotropic == 1)
+		{
+			glChk(glSamplerParameteri(hSampler.glID, GL_TEXTURE_MAX_ANISOTROPY, desc.anisotropy));
+		}
+#endif
 		hSampler.id = std::move(id);
 		LOG_I("== [%s] [%s] created", hSampler.id.data(), Typename<HSampler>().data());
 	}

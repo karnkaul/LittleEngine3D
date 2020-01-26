@@ -136,11 +136,11 @@ void runTest()
 			instanceMats.emplace_back(glm::translate(glm::mat4(1.0f), pos));
 		}
 	}
-	gfx::VBODescriptor descriptor;
-	descriptor.attribCount = instanceCount;
-	descriptor.attribLocation = 5;
-	descriptor.vec4sPerAttrib = 4;
-	HVBO instanceVBO = gfx::genVec4VBO(descriptor, {instanceMesh.m_hVerts.hVAO});
+	descriptors::VBO vboDesc;
+	vboDesc.attribCount = instanceCount;
+	vboDesc.attribLocation = 5;
+	vboDesc.vec4sPerAttrib = 4;
+	HVBO instanceVBO = gfx::genVec4VBO(vboDesc, {instanceMesh.m_hVerts.hVAO});
 	gfx::setVBO(instanceVBO, instanceMats.data());
 
 	Model cube;
