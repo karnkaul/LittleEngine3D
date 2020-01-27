@@ -64,7 +64,7 @@ public:
 	bool operator<=(Fixed rhs) const;
 	bool operator>=(Fixed rhs) const;
 
-	std::string toStr() const;
+	std::string toString() const;
 
 private:
 	friend Fixed operator-(Fixed rhs);

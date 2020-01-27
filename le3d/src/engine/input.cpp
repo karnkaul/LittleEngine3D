@@ -20,9 +20,9 @@ bool GamepadState::isPressed(Key button) const
 	return idx < inputImpl::joysticKButtonsCount(id) ? joyState.buttons[idx] : false;
 }
 
-std::string_view input::toStr(s32 key)
+std::string_view input::toString(s32 key)
 {
-	return inputImpl::toStr(key);
+	return inputImpl::toString(key);
 }
 
 OnText::Token input::registerText(OnText::Callback callback)

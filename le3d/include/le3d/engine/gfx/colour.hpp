@@ -31,7 +31,7 @@ public:
 	Colour& operator+=(Colour rhs);
 	Colour& operator-=(Colour rhs);
 
-	std::string toStr() const;
+	std::string toString() const;
 };
 
 Colour operator+(Colour lhs, Colour rhs);

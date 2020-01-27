@@ -6,9 +6,8 @@
 
 namespace le
 {
-FileLogger::FileLogger(std::filesystem::path path)
+FileLogger::FileLogger(std::filesystem::path path) : m_path(std::move(path))
 {
-	m_path = std::move(path);
 	m_bLog.store(true, std::memory_order_relaxed);
 	std::ifstream iFile(m_path);
 	if (iFile.good())

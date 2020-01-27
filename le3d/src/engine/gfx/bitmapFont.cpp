@@ -6,10 +6,10 @@ namespace le
 void FontAtlasData::deserialise(std::string json)
 {
 	GData data(std::move(json));
-	cellSize = {data.getS32("cellX", cellSize.x), data.getS32("cellY", cellSize.y)};
-	offset = {data.getS32("offsetX", offset.x), data.getS32("offsetY", offset.y)};
-	colsRows = {data.getS32("cols", colsRows.x), data.getS32("rows", colsRows.y)};
-	startCode = (u8)data.getS32("startCode", startCode);
-	samplerID = data.getString("sampler", "font");
+	cellSize = {data.get<s32>("cellX", cellSize.x), data.get<s32>("cellY", cellSize.y)};
+	offset = {data.get<s32>("offsetX", offset.x), data.get<s32>("offsetY", offset.y)};
+	colsRows = {data.get<s32>("cols", colsRows.x), data.get<s32>("rows", colsRows.y)};
+	startCode = (u8)data.get<s32>("startCode", startCode);
+	samplerID = data.get<std::string>("sampler", "font");
 }
 } // namespace le

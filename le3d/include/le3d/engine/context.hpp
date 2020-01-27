@@ -27,7 +27,7 @@ enum class ClearFlag : u8
 	StencilBuffer,
 	_COUNT
 };
-using ClearFlags = TFlags<size_t(ClearFlag::_COUNT)>;
+using ClearFlags = TFlags<size_t(ClearFlag::_COUNT), ClearFlag>;
 
 enum class PolygonFace : u8
 {

@@ -25,7 +25,7 @@ public:
 		_COUNT,
 	};
 
-	using Flags = TFlags<size_t(Flag::_COUNT)>;
+	using Flags = TFlags<size_t(Flag::_COUNT), Flag>;
 
 #if defined(DEBUGGING)
 	static HShader s_gizmoShader;
@@ -47,7 +47,7 @@ public:
 	Entity();
 
 public:
-	virtual void render();
+	virtual void render() const;
 
 public:
 	bool isEnabled() const;
@@ -58,17 +58,17 @@ public:
 class Prop : public Entity
 {
 public:
-	std::optional<Colour> m_oTintOverride;
+	std::optional<Colour> m_oTint;
 
 protected:
-	std::vector<Model*> m_models;
+	std::vector<Model const*> m_models;
 	HShader m_shader;
 
 public:
-	void render() override;
+	void render() const override;
 
 public:
-	void addModel(Model& model);
+	void addModel(Model const& model);
 	void clearModels();
 
 	void setShader(HShader shader);

@@ -8,18 +8,18 @@ namespace le
 // \brief Pseudo-JSON serialisable data container
 class GData
 {
-private:
+protected:
 	std::unordered_map<std::string, std::string> m_fieldMap;
 
 public:
 	GData();
 	// Pass serialised data to marhshall and load fields
 	GData(std::string serialised);
-	GData(GData const& rhs) = default;
-	GData(GData&&) = default;
-	GData& operator=(GData const&) = default;
-	GData& operator=(GData&&) = default;
-	~GData();
+	GData(GData const& rhs);
+	GData(GData&&);
+	GData& operator=(GData const&);
+	GData& operator=(GData&&);
+	virtual ~GData();
 
 	// Marhshalls and load fields from serialised data
 	bool marshall(std::string serialised);
@@ -28,15 +28,22 @@ public:
 	// Clears raw data and fields
 	void clear();
 
-	std::string getString(std::string const& key, std::string defaultValue = "") const;
-	std::string getString(std::string const& key, char spaceDelimiter, std::string defaultValue) const;
-	bool getBool(std::string const& key, bool defaultValue = false) const;
-	s32 getS32(std::string const& key, s32 defaultValue = -1) const;
-	f64 getF64(std::string const& key, f64 defaultValue = -1.0) const;
-	GData getGData(std::string const& key) const;
+	template <typename Type>
+	Type get(std::string const& key, Type defaultValue = Type()) const;
 
+	template <>
+	std::string get(std::string const& key, std::string defaultValue) const;
+	template <>
+	bool get(std::string const& key, bool defaultValue) const;
+	template <>
+	s32 get(std::string const& key, s32 defaultValue) const;
+	template <>
+	f64 get(std::string const& key, f64 defaultValue) const;
+	template <>
+	std::vector<std::string> get(std::string const& key, std::vector<std::string> defaultValue) const;
+
+	GData getGData(std::string const& key) const;
 	std::vector<GData> getGDatas(std::string const& key) const;
-	std::vector<std::string> getStrs(std::string const& key) const;
 
 	std::unordered_map<std::string, std::string> const& allFields() const;
 	bool addField(std::string key, GData& gData);
@@ -45,4 +52,10 @@ public:
 	u32 fieldCount() const;
 	bool contains(std::string const& id) const;
 };
+
+template <typename Type>
+Type GData::get(std::string const&, Type) const
+{
+	static_assert(alwaysFalse<Type>, "Invalid type!");
+}
 } // namespace le

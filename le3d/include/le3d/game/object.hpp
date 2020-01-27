@@ -7,7 +7,7 @@ namespace le
 class Object
 {
 public:
-	std::string m_name;
+	std::string m_id;
 	std::string m_type;
 	bool m_bLogThis = true;
 
@@ -18,6 +18,6 @@ public:
 	virtual ~Object();
 
 public:
-	virtual void setup(std::string name);
+	virtual void setup(std::string id);
 };
 } // namespace le

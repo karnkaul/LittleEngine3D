@@ -1,3 +1,4 @@
+#include "le3d/core/maths.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/io.hpp"
 #include "le3d/engine/context.hpp"
@@ -42,7 +43,7 @@ void runTest()
 	camera.setup("freecam");
 	// input::setCursorMode(CursorMode::Disabled);
 	camera.m_position = {0.0f, 0.0f, 3.0f};
-	camera.m_flags.set((s32)FreeCam::Flag::FixedSpeed, false);
+	camera.m_flags.set(FreeCam::Flag::FixedSpeed, false);
 
 	AsyncTexturesLoader::Request texturesRequest = {
 		"textures",
@@ -119,7 +120,7 @@ void runTest()
 	// cubeMesh.textures = {resources::getTexture("textures/container2.png")};
 	Mesh blankCubeMesh = cubeMeshTexd;
 	blankCubeMesh.m_material.textures.clear();
-	blankCubeMesh.m_material.flags.set(s32(Material::Flag::Textured), false);
+	blankCubeMesh.m_material.flags.set(Material::Flag::Textured, false);
 	Mesh sphereMesh = gfx::createCubedSphere(1.0f, "testSphere", 8, {});
 	sphereMesh.m_material = cubeMeshTexd.m_material;
 
@@ -180,7 +181,7 @@ void runTest()
 	prop0.m_transform.setParent(&prop1.m_transform);
 	// prop1.setShader(resources::get<HShader>("lit/tinted"));
 	prop1.setShader(monolithic);
-	prop1.m_oTintOverride = Colour::Yellow;
+	prop1.m_oTint = Colour::Yellow;
 
 	Prop quadProp;
 	quadProp.setup("quad");
@@ -232,8 +233,8 @@ void runTest()
 			if (key == Key::W && mods & Mods::CONTROL)
 			{
 				bWireframe = !bWireframe;
-				prop0.m_flags.set((s32)Entity::Flag::Wireframe, bWireframe);
-				props[3].m_flags.set((s32)Entity::Flag::Wireframe, bWireframe);
+				prop0.m_flags.set(Entity::Flag::Wireframe, bWireframe);
+				props[3].m_flags.set(Entity::Flag::Wireframe, bWireframe);
 			}
 			if (key == Key::P && mods & Mods::CONTROL)
 			{
@@ -280,7 +281,7 @@ void runTest()
 	f32 uiAR = uiSpace.x / uiSpace.y;
 
 	context::ClearFlags clearFlags;
-	clearFlags.set({s32(context::ClearFlag::ColorBuffer), s32(context::ClearFlag::DepthBuffer)}, true);
+	clearFlags.set({context::ClearFlag::ColorBuffer, context::ClearFlag::DepthBuffer}, true);
 	while (context::isAlive())
 	{
 		dt = Time::elapsed() - t;
@@ -330,7 +331,6 @@ void runTest()
 		gfx::setUBO(hMatricesUBO, mats);
 
 		renderSkybox(skybox, resources::get<HShader>("unlit/skybox"));
-
 		prop0.render();
 		prop1.render();
 		std::vector<ModelMats> m(3, ModelMats());
@@ -369,7 +369,7 @@ void runTest()
 		quadProp.render();
 
 		debug::Quad2D tl, tr, bl, br;
-		HTexture& quadTex = resources::get<HTexture>("textures/awesomeface.png");
+		HTexture const& quadTex = resources::get<HTexture>("textures/awesomeface.png");
 		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f, 0.0f};
 		tl.pos = {-tr.pos.x, tr.pos.y, 0.0f};

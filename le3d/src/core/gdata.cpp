@@ -29,6 +29,10 @@ GData::GData(std::string serialised)
 }
 
 GData::GData() = default;
+GData::GData(GData const& rhs) = default;
+GData::GData(GData&&) = default;
+GData& GData::operator=(GData const&) = default;
+GData& GData::operator=(GData&&) = default;
 GData::~GData() = default;
 
 bool GData::marshall(std::string serialised)
@@ -81,7 +85,8 @@ void GData::clear()
 	m_fieldMap.clear();
 }
 
-std::string GData::getString(std::string const& key, std::string defaultValue) const
+template <>
+std::string GData::get(std::string const& key, std::string defaultValue) const
 {
 	auto search = m_fieldMap.find(key);
 	if (search != m_fieldMap.end())
@@ -91,29 +96,20 @@ std::string GData::getString(std::string const& key, std::string defaultValue) c
 	return defaultValue;
 }
 
-std::string GData::getString(std::string const& key, char spaceDelimiter, std::string defaultValue) const
-{
-	std::string ret = std::move(defaultValue);
-	auto search = m_fieldMap.find(key);
-	if (search != m_fieldMap.end())
-	{
-		ret = search->second;
-		utils::strings::substituteChars(ret, {std::pair<char, char>(spaceDelimiter, ' ')});
-	}
-	return ret;
-}
-
-bool GData::getBool(std::string const& key, bool defaultValue) const
+template <>
+bool GData::get(std::string const& key, bool defaultValue) const
 {
 	return Get<bool>(m_fieldMap, key, &utils::strings::toBool, defaultValue);
 }
 
-s32 GData::getS32(std::string const& key, s32 defaultValue) const
+template <>
+s32 GData::get(std::string const& key, s32 defaultValue) const
 {
 	return Get<s32>(m_fieldMap, key, &utils::strings::toS32, defaultValue);
 }
 
-f64 GData::getF64(std::string const& key, f64 defaultValue) const
+template <>
+f64 GData::get(std::string const& key, f64 defaultValue) const
 {
 	return Get<f64>(m_fieldMap, key, &utils::strings::toF64, defaultValue);
 }
@@ -131,7 +127,7 @@ GData GData::getGData(std::string const& key) const
 std::vector<GData> GData::getGDatas(std::string const& key) const
 {
 	std::vector<GData> ret;
-	std::vector<std::string> rawStrings = getStrs(key);
+	std::vector<std::string> rawStrings = get<std::vector<std::string>>(key);
 	for (auto& rawString : rawStrings)
 	{
 		utils::strings::trim(rawString, {'"', ' '});
@@ -140,7 +136,8 @@ std::vector<GData> GData::getGDatas(std::string const& key) const
 	return ret;
 }
 
-std::vector<std::string> GData::getStrs(std::string const& key) const
+template <>
+std::vector<std::string> GData::get(std::string const& key, std::vector<std::string> defaultValue) const
 {
 	auto search = m_fieldMap.find(key);
 	if (search != m_fieldMap.end())
@@ -162,7 +159,7 @@ std::vector<std::string> GData::getStrs(std::string const& key) const
 			}
 		}
 	}
-	return std::vector<std::string>();
+	return defaultValue;
 }
 
 std::unordered_map<std::string, std::string> const& GData::allFields() const

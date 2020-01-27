@@ -20,7 +20,7 @@ namespace le
 namespace
 {
 std::mutex g_logMutex;
-std::list<std::string> g_logCache;
+std::deque<std::string> g_logCache;
 std::unordered_map<LogLevel, char const*> g_prefixes = {
 	{LogLevel::Debug, "[D] "}, {LogLevel::Info, "[I] "}, {LogLevel::Warning, "[W] "}, {LogLevel::Error, "[E] "}};
 
@@ -68,7 +68,7 @@ void logInternal(char const* szText, char const*, u64, LogLevel level, va_list a
 }
 } // namespace
 
-std::list<std::string> logCache()
+std::deque<std::string> logCache()
 {
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	return std::move(g_logCache);

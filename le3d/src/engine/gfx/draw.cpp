@@ -146,9 +146,9 @@ void gfx::setMaterial(HShader const& shader, Material const& material)
 		{
 			cxChk();
 			shader.use();
-			bool const bIsLit = material.flags.isSet((s32)Material::Flag::Lit);
+			bool const bIsLit = material.flags.isSet(Material::Flag::Lit);
 			shader.setBool(u.material.isLit, bIsLit);
-			bool const bIsTextured = material.flags.isSet((s32)Material::Flag::Textured);
+			bool const bIsTextured = material.flags.isSet(Material::Flag::Textured);
 			shader.setBool(u.material.isTextured, bIsTextured);
 			if (bIsLit)
 			{
@@ -159,7 +159,7 @@ void gfx::setMaterial(HShader const& shader, Material const& material)
 			}
 			if (bIsTextured)
 			{
-				shader.setBool(u.material.isOpaque, material.flags.isSet((s32)Material::Flag::Opaque));
+				shader.setBool(u.material.isOpaque, material.flags.isSet(Material::Flag::Opaque));
 			}
 		}
 	}

@@ -10,21 +10,13 @@ using Time = le::Time;
 
 // Returns val E [min, max]
 template <typename T>
-T clamp(T val, T min, T max);
-
-// Returns val E [0, 1]
-template <typename T>
-T clamp01(T val);
-
-// Returns val E [-1, 1]
-template <typename T>
-T clamp_11(T val);
+T const& clamp(T const& val, T const& min, T const& max);
 
 template <typename T>
-T transformRange(T value, T oldMin, T oldMax, T newMin, T newMax);
+T randomRange(T min, T max);
 
 template <typename T>
-T lerp(T min, T max, f32 alpha);
+T lerp(T const& min, T const& max, f32 alpha);
 
 bool isNearlyEqual(f32 lhs, f32 rhs, f32 epsilon = std::numeric_limits<f32>::epsilon());
 
@@ -41,6 +33,7 @@ protected:
 
 public:
 	RandomGen(s32 minS32, s32 maxS32, f32 minF32 = 0.0f, f32 maxF32 = 1.0f);
+	virtual ~RandomGen();
 
 public:
 	void seed(s32 seed);
@@ -48,44 +41,27 @@ public:
 	f32 nextF32();
 };
 
-s32 randomNDet(s32 min, s32 max);
-f32 randomNDet(f32 min, f32 max);
-
 template <typename T>
-inline T clamp(T val, T min, T max)
+T const& clamp(T const& val, T const& min, T const& max)
 {
 	return (val < min) ? min : (val > max) ? max : val;
 }
 
 template <typename T>
-inline T clamp01(T val)
+T randomRange(T, T)
 {
-	return (val < T(0)) ? T(0) : (val > T(1)) ? T(1) : val;
+	static_assert(alwaysFalse<T>, "Only s32 and f32 are supported as T!");
 }
 
-template <typename T>
-inline T clamp_11(T val)
-{
-	return (val < T(-1)) ? T(-1) : (val > T(1)) ? T(1) : val;
-}
+template <>
+s32 randomRange<s32>(s32 min, s32 max);
+
+template <>
+f32 randomRange<f32>(f32 min, f32 max);
 
 template <typename T>
-T transformRange(T value, T oldMin, T oldMax, T newMin, T newMax)
+T lerp(T const& min, T const& max, f32 alpha)
 {
-	T oldRange = oldMax - oldMin;
-	T newRange = newMax - newMin;
-	return oldRange == T(0) ? newMin : (((value - oldMin) * newRange) / oldRange) + newMin;
-}
-
-template <typename T>
-inline T lerp(T min, T max, f32 alpha)
-{
-	return min * alpha * (1.0f - alpha) * max;
-}
-
-template <typename T>
-inline T scale(T val, f32 coeff)
-{
-	return static_cast<T>(static_cast<f32>(val) * coeff);
+	return min == max ? max : alpha * max + (1.0f - alpha) * min;
 }
 } // namespace le::maths

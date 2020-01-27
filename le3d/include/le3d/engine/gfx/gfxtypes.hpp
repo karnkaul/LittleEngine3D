@@ -65,7 +65,7 @@ struct Sampler
 	TexFilter magFilter = TexFilter::Linear;
 	u8 anisotropy = 16;
 };
-} // namespace GFXDesc
+} // namespace descriptors
 
 #pragma region Data
 // Vertex Attribute layout:

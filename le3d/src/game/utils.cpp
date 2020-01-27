@@ -135,7 +135,7 @@ Mesh& debug::Cube()
 	if (cube.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
-		flags.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured)}, true);
+		flags.set({Material::Flag::Lit, Material::Flag::Textured}, true);
 		cube = gfx::createCube(1.0f, "dCube", flags);
 	}
 	return cube;
@@ -147,7 +147,7 @@ Mesh& debug::Quad()
 	if (quad.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
-		flags.set(s32(Material::Flag::Textured), true);
+		flags.set(Material::Flag::Textured, true);
 		quad = gfx::createQuad(1.0f, 1.0f, "dQuad", flags);
 	}
 	return quad;
@@ -159,7 +159,7 @@ Mesh& debug::Circle()
 	if (circle.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
-		flags.set(s32(Material::Flag::Lit), true);
+		flags.set(Material::Flag::Lit, true);
 		circle = gfx::createCircle(1.0f, 32, "dCircle", flags);
 	}
 	return circle;
@@ -171,7 +171,7 @@ Mesh& debug::Pyramid()
 	if (pyramid.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
-		flags.set(s32(Material::Flag::Lit), true);
+		flags.set(Material::Flag::Lit, true);
 		pyramid = gfx::create4Pyramid(1.0f, "dPyramid", flags);
 	}
 	return pyramid;
@@ -183,7 +183,7 @@ Mesh& debug::Tetrahedron()
 	if (tetrahedron.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
-		flags.set(s32(Material::Flag::Lit), true);
+		flags.set(Material::Flag::Lit, true);
 		tetrahedron = gfx::createTetrahedron(1.0f, "dTetrahedron", flags);
 	}
 	return tetrahedron;
@@ -195,7 +195,7 @@ Mesh& debug::Cone()
 	if (cone.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
-		flags.set(s32(Material::Flag::Lit), true);
+		flags.set(Material::Flag::Lit, true);
 		cone = gfx::createCone(1.0f, 1.0f, 16, "dCone", flags);
 	}
 	return cone;
@@ -207,7 +207,7 @@ Mesh& debug::Cylinder()
 	if (cylinder.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
-		flags.set(s32(Material::Flag::Lit), true);
+		flags.set(Material::Flag::Lit, true);
 		cylinder = gfx::createCylinder(1.0f, 1.0f, 16, "dCylinder", flags);
 	}
 	return cylinder;
@@ -219,7 +219,7 @@ Mesh& debug::Sphere()
 	if (sphere.m_hVerts.hVAO <= 0)
 	{
 		Material::Flags flags;
-		flags.set(s32(Material::Flag::Lit), true);
+		flags.set(Material::Flag::Lit, true);
 		sphere = gfx::createCubedSphere(1.0f, "dSphere", 8, flags);
 		sphere.m_material.shininess = 5.0f;
 	}

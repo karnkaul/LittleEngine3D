@@ -181,7 +181,7 @@ void OBJParser::setMaterials(Model::MeshData& outMesh, tinyobj::shape_t const& s
 		}
 		if (pMat)
 		{
-			outMesh.flags.set({s32(Material::Flag::Lit), s32(Material::Flag::Textured), s32(Material::Flag::Opaque)}, true);
+			outMesh.flags.set({Material::Flag::Lit, Material::Flag::Textured, Material::Flag::Opaque}, true);
 			switch (pMat->illum)
 			{
 			default:
@@ -189,12 +189,12 @@ void OBJParser::setMaterials(Model::MeshData& outMesh, tinyobj::shape_t const& s
 			case 0:
 			case 1:
 			{
-				outMesh.flags.set(s32(Material::Flag::Lit), false);
+				outMesh.flags.set(Material::Flag::Lit, false);
 				break;
 			}
 			case 4:
 			{
-				outMesh.flags.set(s32(Material::Flag::Opaque), false);
+				outMesh.flags.set(Material::Flag::Opaque, false);
 				break;
 			}
 			}
@@ -207,7 +207,7 @@ void OBJParser::setMaterials(Model::MeshData& outMesh, tinyobj::shape_t const& s
 			}
 			if (pMat->diffuse_texname.empty())
 			{
-				outMesh.flags.set(s32(Material::Flag::Textured), false);
+				outMesh.flags.set(Material::Flag::Textured, false);
 			}
 			if (!pMat->diffuse_texname.empty())
 			{
@@ -299,7 +299,7 @@ void Model::addFixture(Mesh const& mesh, std::optional<glm::mat4> model /* = std
 void Model::setupModel(std::string name)
 {
 	m_id = std::move(name);
-	m_type = Typename(*this);
+	m_type = typeName(*this);
 	LOG_D("[%s] [%s] setup", m_id.data(), m_type.data());
 }
 
@@ -309,7 +309,7 @@ void Model::setupModel(Data const& data)
 	{
 		m_id = data.id;
 	}
-	m_type = Typename(*this);
+	m_type = typeName(*this);
 	{
 #if defined(PROFILE_MODEL_LOADS)
 		Profiler pr(data.id + "-Model", LogLevel::Info);
@@ -372,7 +372,7 @@ void Model::setupModel(Data const& data)
 	LOG_D("[%s] %s setup", m_id.data(), m_type.data());
 }
 
-void Model::render(HShader const& shader, ModelMats const& mats)
+void Model::render(HShader const& shader, ModelMats const& mats, Colour tint) const
 {
 	ASSERT(shader.glID.handle > 0, "null shader!");
 #if defined(DEBUGGING)
@@ -381,13 +381,13 @@ void Model::render(HShader const& shader, ModelMats const& mats)
 #endif
 	for (auto& fixture : m_fixtures)
 	{
-		ASSERT(fixture.mesh.m_hVerts.hVAO > 0, "Mesh VAO is null!");
-		shader.setV4(env::g_config.uniforms.tint, m_tint);
+		ASSERT(fixture.mesh.m_hVerts.hVAO.handle > 0, "Mesh VAO is null!");
+		shader.setV4(env::g_config.uniforms.tint, tint);
 #if defined(DEBUGGING)
-		m_renderFlags.set((s32)DrawFlag::BlankMagenta, m_bDEBUG);
-		if (m_renderFlags.isSet((s32)DrawFlag::Blank) || m_renderFlags.isSet((s32)DrawFlag::BlankMagenta))
+		m_renderFlags.set(DrawFlag::BlankMagenta, m_renderFlags.isSet(DrawFlag::BlankMagenta) | m_bDEBUG);
+		if (m_renderFlags.isSet(DrawFlag::Blank) || m_renderFlags.isSet(DrawFlag::BlankMagenta))
 		{
-			bResetTint = m_renderFlags.isSet((s32)DrawFlag::BlankMagenta);
+			bResetTint = m_renderFlags.isSet(DrawFlag::BlankMagenta);
 			bSkipTextures = true;
 			gfx::setBlankTex(shader, 0, bResetTint);
 		}
@@ -410,7 +410,7 @@ void Model::render(HShader const& shader, ModelMats const& mats)
 		if (!bSkipTextures)
 		{
 #endif
-			if (fixture.mesh.m_material.flags.isSet((s32)Material::Flag::Textured))
+			if (fixture.mesh.m_material.flags.isSet(Material::Flag::Textured))
 			{
 				gfx::setTextures(shader, fixture.mesh.m_material.textures);
 			}

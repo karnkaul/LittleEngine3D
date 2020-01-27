@@ -15,7 +15,7 @@ struct Material
 		_COUNT
 	};
 
-	using Flags = TFlags<(size_t)Flag::_COUNT>;
+	using Flags = TFlags<(size_t)Flag::_COUNT, Flag>;
 
 	Albedo albedo;
 	std::vector<HTexture> textures;

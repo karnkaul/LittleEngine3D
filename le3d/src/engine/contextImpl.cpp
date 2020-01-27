@@ -246,16 +246,16 @@ void contextImpl::clearFlags(context::ClearFlags flags, Colour colour)
 	{
 		cxChk();
 		GLbitfield glFlags = 0;
-		if (flags.isSet(s32(context::ClearFlag::ColorBuffer)))
+		if (flags.isSet(context::ClearFlag::ColorBuffer))
 		{
 			glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
 			glFlags |= GL_COLOR_BUFFER_BIT;
 		}
-		if (flags.isSet(s32(context::ClearFlag::DepthBuffer)))
+		if (flags.isSet(context::ClearFlag::DepthBuffer))
 		{
 			glFlags |= GL_DEPTH_BUFFER_BIT;
 		}
-		if (flags.isSet(s32(context::ClearFlag::StencilBuffer)))
+		if (flags.isSet(context::ClearFlag::StencilBuffer))
 		{
 			glFlags |= GL_STENCIL_BUFFER_BIT;
 		}

@@ -14,7 +14,7 @@ private:
 
 public:
 	static Time const Zero;
-	static std::string toStr(Time time);
+	static std::string toString(Time time);
 	static Time musecs(s64 microSeconds);
 	static Time msecs(s32 milliSeconds);
 	static Time secs(f32 seconds);

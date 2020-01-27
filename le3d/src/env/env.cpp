@@ -25,7 +25,7 @@ void SetConfigStrIfPresent(std::string const& id, GData const& data, std::string
 {
 	if (data.contains(id))
 	{
-		member = data.getString(id);
+		member = data.get<std::string>(id);
 		LOG_D("[EngineConfig] Extracted [%s] = [%s]", id.data(), member.data());
 	}
 }
@@ -133,7 +133,7 @@ std::string env::argv0()
 	return g_exeLocation.generic_string();
 }
 
-std::string env::dirPath(Dir dir)
+stdfs::path env::dirPath(Dir dir)
 {
 	switch (dir)
 	{
@@ -143,14 +143,14 @@ std::string env::dirPath(Dir dir)
 		{
 			g_workingDir = stdfs::absolute(stdfs::current_path());
 		}
-		return g_workingDir.generic_string();
+		return g_workingDir;
 	case env::Dir::Executable:
 		if (g_exePath.empty())
 		{
 			LOG_E("[Env] Unknown executable path! Using working directory instead [%s]", g_workingDir.generic_string().data());
 			g_exePath = dirPath(Dir::Working);
 		}
-		return g_exePath.generic_string();
+		return g_exePath;
 	}
 }
 

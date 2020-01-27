@@ -49,7 +49,7 @@ size_t inputImpl::joysticKButtonsCount(s32)
 {
 	return {};
 }
-std::string_view inputImpl::toStr(s32)
+std::string_view inputImpl::toString(s32)
 {
 	return {};
 }
@@ -277,7 +277,7 @@ size_t inputImpl::joysticKButtonsCount(s32 id)
 	return size_t(max);
 }
 
-std::string_view inputImpl::toStr(s32 key)
+std::string_view inputImpl::toString(s32 key)
 {
 	return glfwGetKeyName(key, 0);
 }

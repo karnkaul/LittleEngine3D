@@ -3,7 +3,7 @@
 namespace le
 {
 template <typename T, s32 Z = 0>
-struct TZero
+struct TZero final
 {
 	T handle = Z;
 

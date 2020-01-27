@@ -9,7 +9,7 @@ namespace le
 class FileLogger final
 {
 private:
-	std::filesystem::path m_path;
+	std::filesystem::path const m_path;
 	HThread m_hThread;
 	std::atomic<bool> m_bLog;
 

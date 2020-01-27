@@ -233,7 +233,7 @@ HSampler gfx::genSampler(std::string id, descriptors::Sampler const& desc)
 		}
 #endif
 		hSampler.id = std::move(id);
-		LOG_I("== [%s] [%s] created", hSampler.id.data(), Typename<HSampler>().data());
+		LOG_I("== [%s] [%s] created", hSampler.id.data(), typeName<HSampler>().data());
 	}
 	return hSampler;
 }
@@ -243,7 +243,7 @@ void gfx::releaseSampler(HSampler& outhSampler)
 	if (contextImpl::exists() && outhSampler.glID > 0)
 	{
 		glDeleteSamplers(1, &outhSampler.glID.handle);
-		LOG_I("-- [%s] [%s] destroyed", outhSampler.id.data(), Typename<HSampler>().data());
+		LOG_I("-- [%s] [%s] destroyed", outhSampler.id.data(), typeName<HSampler>().data());
 	}
 	outhSampler = HSampler();
 }
@@ -271,7 +271,7 @@ HTexture gfx::genTexture(std::string id, u8 const* pData, TexType type, HSampler
 		u32 size = u32(w * h * ch);
 		auto fsize = utils::friendlySize(size);
 		LOG_I("== [%s] [%.1f%s] (%s) [%s] created", id.data(), fsize.first, fsize.second.data(), typeStr.data(),
-			  Typename<HTexture>().data());
+			  typeName<HTexture>().data());
 		ret.id = std::move(id);
 		ret.byteCount = size;
 		ret.type = type;
@@ -314,7 +314,7 @@ void gfx::releaseTexture(HTexture& outhTexture)
 		if (outhTexture.glID > 0)
 		{
 			auto size = utils::friendlySize(outhTexture.byteCount);
-			LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outhTexture.id.data(), size.first, size.second.data(), Typename<HTexture>().data());
+			LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outhTexture.id.data(), size.first, size.second.data(), typeName<HTexture>().data());
 		}
 		GLuint t[] = {outhTexture.glID};
 		glChk(glDeleteTextures(1, t));
@@ -338,7 +338,7 @@ void gfx::releaseTextures(std::vector<HTexture>& outhTextures)
 			bytes += texture.byteCount;
 #endif
 			auto size = utils::friendlySize(texture.byteCount);
-			LOG_I("-- [%s] [%.1f%s] [%s] destroyed", texture.id.data(), size.first, size.second.data(), Typename<HTexture>().data());
+			LOG_I("-- [%s] [%.1f%s] [%s] destroyed", texture.id.data(), size.first, size.second.data(), typeName<HTexture>().data());
 		}
 		texture = HTexture();
 	}
@@ -396,7 +396,7 @@ HCubemap gfx::genCubemap(std::string id, std::array<bytearray, 6> const& rludfb)
 		auto fsize = utils::friendlySize(ret.byteCount);
 		auto fin = utils::friendlySize(inTotal);
 		LOG_I("== [%s] [%.1f%s => %.1f%s] [%s] created", ret.id.data(), fin.first, fin.second.data(), fsize.first, fsize.second.data(),
-			  Typename<HCubemap>().data());
+			  typeName<HCubemap>().data());
 	}
 	return ret;
 }
@@ -409,7 +409,7 @@ void gfx::releaseCubemap(HCubemap& outhCube)
 		GLuint texID[] = {outhCube.glID.handle};
 		glChk(glDeleteTextures(1, texID));
 		auto size = utils::friendlySize(outhCube.byteCount);
-		LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outhCube.id.data(), size.first, size.second.data(), Typename<HCubemap>().data());
+		LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outhCube.id.data(), size.first, size.second.data(), typeName<HCubemap>().data());
 	}
 	outhCube = HCubemap();
 }
@@ -470,7 +470,7 @@ HShader gfx::genShader(std::string id, std::string_view vertCode, std::string_vi
 
 		glDeleteShader(vsh);
 		glDeleteShader(fsh);
-		LOG_I("== [%s] [%s] created", id.data(), Typename<HShader>().data());
+		LOG_I("== [%s] [%s] created", id.data(), typeName<HShader>().data());
 		ret.id = std::move(id);
 	}
 	return ret;
@@ -481,7 +481,7 @@ void gfx::releaseShader(HShader& outhShader)
 	if (contextImpl::exists() && outhShader.glID > 0)
 	{
 		cxChk();
-		LOG_I("-- [%s] [%s] destroyed", outhShader.id.data(), Typename<HShader>().data());
+		LOG_I("-- [%s] [%s] destroyed", outhShader.id.data(), typeName<HShader>().data());
 		glChk(glDeleteProgram(outhShader.glID));
 	}
 	outhShader = HShader();
@@ -504,7 +504,7 @@ HUBO gfx::genUBO(std::string id, s64 size, u32 bindingPoint, DrawType type)
 		ret.byteCount = (u32)size;
 		auto fsize = utils::friendlySize((u32)size);
 		LOG_I("== [%s] [%.1f%s] [%s] (%d) added for future shaders", ret.id.data(), fsize.first, fsize.second.data(),
-			  Typename<HUBO>().data(), ret.bindingPoint);
+			  typeName<HUBO>().data(), ret.bindingPoint);
 	}
 	return ret;
 }
@@ -526,7 +526,7 @@ void gfx::releaseUBO(HUBO& outhUBO)
 	{
 		cxChk();
 		auto size = utils::friendlySize(outhUBO.byteCount);
-		LOG_I("-- [%s] [%.1f%s] [%s] (%d) destroyed", outhUBO.id.data(), size.first, size.second.data(), Typename<HUBO>().data(),
+		LOG_I("-- [%s] [%.1f%s] [%s] (%d) destroyed", outhUBO.id.data(), size.first, size.second.data(), typeName<HUBO>().data(),
 			  outhUBO.bindingPoint);
 		glChk(glDeleteBuffers(1, &outhUBO.glID.handle));
 	}
@@ -544,7 +544,7 @@ Mesh gfx::newMesh(std::string id, Vertices const& vertices, DrawType type, Mater
 		mesh.m_hVerts = genVerts(vertices, type, pShader);
 		auto size = utils::friendlySize(mesh.m_hVerts.byteCount);
 		LOGIF_I(!mesh.m_id.empty(), "== [%s] [%.1f%s] [%s] set up (%u vertices)", mesh.m_id.data(), size.first, size.second.data(),
-				Typename<Mesh>().data(), mesh.m_hVerts.vCount);
+				typeName<Mesh>().data(), mesh.m_hVerts.vCount);
 		mesh.m_material.flags = flags;
 	}
 	return mesh;
@@ -556,7 +556,7 @@ void gfx::releaseMesh(Mesh& outMesh)
 	{
 		cxChk();
 		auto size = utils::friendlySize(outMesh.m_hVerts.byteCount);
-		LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outMesh.m_id.data(), size.first, size.second.data(), Typename<Mesh>().data());
+		LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outMesh.m_id.data(), size.first, size.second.data(), typeName<Mesh>().data());
 		releaseVerts(outMesh.m_hVerts);
 	}
 	outMesh = Mesh();
@@ -573,13 +573,13 @@ BitmapFont gfx::newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSi
 		f32 width = cellAR < 1.0f ? 1.0f * cellAR : 1.0f;
 		f32 height = cellAR > 1.0f ? 1.0f / cellAR : 1.0f;
 		Material::Flags flags;
-		flags.set(s32(Material::Flag::Textured), true);
+		flags.set(Material::Flag::Textured, true);
 		ret.quad = createQuad(width, height, id + "_quad", flags);
 		ret.sheet = genTexture(id + "_sheet", std::move(spritesheet), TexType::Diffuse);
 		ret.sheet.hSampler = hSampler;
 		ret.id = std::move(id);
 		ret.cellSize = cellSize;
-		LOG_I("== [%s] [%s] created", ret.id.data(), Typename<BitmapFont>().data());
+		LOG_I("== [%s] [%s] created", ret.id.data(), typeName<BitmapFont>().data());
 	}
 	return ret;
 }
@@ -591,7 +591,7 @@ void gfx::releaseFont(BitmapFont& outFont)
 		cxChk();
 		releaseMesh(outFont.quad);
 		releaseTexture(outFont.sheet);
-		LOG_I("-- [%s] [%s] destroyed", outFont.id.data(), Typename<BitmapFont>().data());
+		LOG_I("-- [%s] [%s] destroyed", outFont.id.data(), typeName<BitmapFont>().data());
 	}
 	outFont = BitmapFont();
 }

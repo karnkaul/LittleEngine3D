@@ -45,6 +45,6 @@ void clear();
 size_t joystickAxesCount(s32 id);
 size_t joysticKButtonsCount(s32 id);
 
-std::string_view toStr(s32 key);
+std::string_view toString(s32 key);
 } // namespace inputImpl
 } // namespace le

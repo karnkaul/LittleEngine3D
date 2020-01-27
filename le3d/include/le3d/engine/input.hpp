@@ -32,7 +32,7 @@ struct GamepadState
 
 namespace input
 {
-std::string_view toStr(s32 key);
+std::string_view toString(s32 key);
 // Callback parameters: (char utf8)
 OnText::Token registerText(OnText::Callback callback);
 // Callback parameters: (Key key, Action action, Mods mods)

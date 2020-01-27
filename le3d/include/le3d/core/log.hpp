@@ -1,6 +1,6 @@
 #pragma once
 #include <functional>
-#include <list>
+#include <deque>
 #include <string>
 #include "le3d/core/stdtypes.hpp"
 
@@ -63,5 +63,5 @@ enum class LogLevel
 void log(LogLevel level, char const* szText, char const* szFile, u64 line, ...);
 
 inline u32 g_logCacheSize = 128;
-std::list<std::string> logCache();
+std::deque<std::string> logCache();
 } // namespace le

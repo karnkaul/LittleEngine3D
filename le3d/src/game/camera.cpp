@@ -53,7 +53,7 @@ glm::mat4 Camera::uiProj(glm::vec3 const& uiSpace) const
 FreeCam::FreeCam()
 {
 	m_tMove = input::registerInput([this](Key key, Action action, Mods /*mods*/) {
-		if (m_flags.isSet((s32)Flag::Enabled))
+		if (m_flags.isSet(Flag::Enabled))
 		{
 			switch (action)
 			{
@@ -64,7 +64,7 @@ FreeCam::FreeCam()
 			}
 			case Action::RELEASE:
 			{
-				if (!m_flags.isSet((s32)Flag::FixedSpeed) && key == Key::MOUSE_BUTTON_3)
+				if (!m_flags.isSet(Flag::FixedSpeed) && key == Key::MOUSE_BUTTON_3)
 				{
 					m_speed = m_defaultSpeed;
 				}
@@ -77,41 +77,41 @@ FreeCam::FreeCam()
 			if (key == Key::MOUSE_BUTTON_2)
 			{
 				bool bLook = action == Action::PRESS;
-				if (m_flags.isSet((s32)Flag::Looking) ^ bLook)
+				if (m_flags.isSet(Flag::Looking) ^ bLook)
 				{
-					m_flags.set((s32)Flag::InitPos, false);
+					m_flags.set(Flag::InitPos, false);
 				}
-				m_flags.set((s32)Flag::Looking, bLook);
+				m_flags.set(Flag::Looking, bLook);
 				input::setCursorMode(bLook ? CursorMode::Disabled : CursorMode::Default);
 			}
 		}
 	});
 	m_tLook = input::registerMouse([this](f64 x, f64 y) {
-		if (m_flags.isSet((s32)Flag::Enabled) && m_flags.isSet((s32)Flag::Looking))
+		if (m_flags.isSet(Flag::Enabled) && m_flags.isSet(Flag::Looking))
 		{
 			m_nextCursorPos = {(f32)x, (f32)y};
-			if (!m_flags.isSet((s32)Flag::InitPos))
+			if (!m_flags.isSet(Flag::InitPos))
 			{
 				m_cursorPos = {(f32)x, (f32)y};
-				m_flags.set((s32)Flag::InitPos, true);
+				m_flags.set(Flag::InitPos, true);
 			}
 		}
 	});
 	m_tZoom = input::registerScroll([this](f64 /*dx*/, f64 dy) { m_dSpeed += (f32)dy; });
-	m_tFocus = input::registerFocus([this](bool /*bFocus*/) { m_flags.set((s32)Flag::InitPos, false); });
-	m_flags.set((s32)Flag::Enabled, true);
+	m_tFocus = input::registerFocus([this](bool /*bFocus*/) { m_flags.set(Flag::InitPos, false); });
+	m_flags.set(Flag::Enabled, true);
 }
 
 void FreeCam::tick(Time dt)
 {
-	if (!m_flags.isSet((s32)Flag::Enabled))
+	if (!m_flags.isSet(Flag::Enabled))
 	{
 		return;
 	}
 	GamepadState pad0 = input::getGamepadState(0);
 
 	// Speed
-	if (!m_flags.isSet((s32)Flag::FixedSpeed))
+	if (!m_flags.isSet(Flag::FixedSpeed))
 	{
 		if (pad0.isPressed(Key::GAMEPAD_BUTTON_LEFT_BUMPER))
 		{

@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <string>
 #include <vector>
 #include "le3d/core/stdtypes.hpp"
@@ -131,7 +132,7 @@ struct Args
 void init(Args const& args);
 void setConfig(std::string json);
 std::string argv0();
-std::string dirPath(Dir dir);
+std::filesystem::path dirPath(Dir dir);
 std::vector<std::string_view> const& args();
 bool isDefined(std::string_view arg);
 } // namespace env

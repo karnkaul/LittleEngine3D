@@ -5,31 +5,31 @@
 
 namespace le
 {
-template <size_t N>
+template <size_t N, typename Enum>
 struct TFlags
 {
 	std::bitset<N> flags;
 
-	bool isSet(s32 flag) const;
-	void set(s32 flag, bool bValue);
-	void set(std::initializer_list<s32> flagList, bool bValue);
-	void set(std::vector<s32> const& flagList, bool bValue);
+	bool isSet(Enum flag) const;
+	void set(Enum flag, bool bValue);
+	void set(std::initializer_list<Enum> flagList, bool bValue);
+	void set(std::vector<Enum> const& flagList, bool bValue);
 };
 
-template <size_t N>
-bool TFlags<N>::isSet(s32 flag) const
+template <size_t N, typename Enum>
+bool TFlags<N, Enum>::isSet(Enum flag) const
 {
 	return flags[(size_t)flag];
 }
 
-template <size_t N>
-void TFlags<N>::set(s32 flag, bool bValue)
+template <size_t N, typename Enum>
+void TFlags<N, Enum>::set(Enum flag, bool bValue)
 {
 	flags[(size_t)flag] = bValue;
 }
 
-template <size_t N>
-void TFlags<N>::set(std::initializer_list<s32> flagList, bool bValue)
+template <size_t N, typename Enum>
+void TFlags<N, Enum>::set(std::initializer_list<Enum> flagList, bool bValue)
 {
 	for (auto flag : flagList)
 	{
@@ -37,8 +37,8 @@ void TFlags<N>::set(std::initializer_list<s32> flagList, bool bValue)
 	}
 }
 
-template <size_t N>
-void TFlags<N>::set(std::vector<s32> const& flagList, bool bValue)
+template <size_t N, typename Enum>
+void TFlags<N, Enum>::set(std::vector<Enum> const& flagList, bool bValue)
 {
 	for (auto flag : flagList)
 	{

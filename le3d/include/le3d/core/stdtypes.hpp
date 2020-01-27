@@ -29,6 +29,12 @@ using f64 = double;
 using size_t = std::size_t;
 using bytearray = std::vector<std::byte>;
 
+template <typename... Ts>
+constexpr bool alwaysFalse = false;
+
+template <typename... Ts>
+constexpr bool alwaysTrue = true;
+
 template <typename Base, typename Derived>
 constexpr bool isDerived()
 {
@@ -36,39 +42,15 @@ constexpr bool isDerived()
 }
 
 template <typename T>
-std::string Typename(T const& t)
+std::string demangle(std::string_view typeName)
 {
-	std::string name = typeid(t).name();
+	std::string ret(typeName);
 #if defined(__GNUG__)
 	s32 status = -1;
-	char* szRes = abi::__cxa_demangle(name.data(), nullptr, nullptr, &status);
+	char* szRes = abi::__cxa_demangle(typeName.data(), nullptr, nullptr, &status);
 	if (status == 0)
 	{
-		name = szRes;
-	}
-	std::free(szRes);
-#else
-	constexpr std::string_view CLASS = "class ";
-	constexpr size_t CLASS_LEN = CLASS.length();
-	auto idx = name.find(CLASS);
-	if (idx == 0)
-	{
-		name = name.substr(CLASS_LEN);
-	}
-#endif
-	return name;
-}
-
-template <typename T>
-std::string Typename()
-{
-	std::string name = typeid(T).name();
-#if defined(__GNUG__)
-	s32 status = -1;
-	char* szRes = abi::__cxa_demangle(name.data(), nullptr, nullptr, &status);
-	if (status == 0)
-	{
-		name = szRes;
+		ret = szRes;
 	}
 	std::free(szRes);
 #else
@@ -76,17 +58,29 @@ std::string Typename()
 	constexpr std::string_view STRUCT = "struct ";
 	constexpr size_t CLASS_LEN = CLASS.length();
 	constexpr size_t STRUCT_LEN = STRUCT.length();
-	auto idx = name.find(CLASS);
+	auto idx = ret.find(CLASS);
 	if (idx == 0)
 	{
-		name = name.substr(CLASS_LEN);
+		ret = ret.substr(CLASS_LEN);
 	}
-	idx = name.find(STRUCT);
+	idx = ret.find(STRUCT);
 	if (idx == 0)
 	{
-		name = name.substr(STRUCT_LEN);
+		ret = ret.substr(STRUCT_LEN);
 	}
 #endif
-	return name;
+	return ret;
+}
+
+template <typename T>
+std::string typeName(T const& t)
+{
+	return demangle<T>(typeid(t).name());
+}
+
+template <typename T>
+std::string typeName()
+{
+	return demangle<T>(typeid(T).name());
 }
 } // namespace le

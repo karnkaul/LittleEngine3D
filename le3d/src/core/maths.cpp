@@ -18,6 +18,8 @@ maths::RandomGen::RandomGen(s32 minS32, s32 maxS32, f32 minF32, f32 maxF32)
 {
 }
 
+maths::RandomGen::~RandomGen() = default;
+
 void maths::RandomGen::seed(s32 seed)
 {
 	m_intGen = std::mt19937(u32(seed));
@@ -34,18 +36,19 @@ f32 maths::RandomGen::nextF32()
 	return m_realDist(m_realGen);
 }
 
-s32 maths::randomNDet(s32 min, s32 max)
+template <>
+s32 maths::randomRange<s32>(s32 min, s32 max)
 {
 	static std::mt19937 nDetMt(rd());
 	std::uniform_int_distribution<s32> distribution(min, max);
 	return distribution(nDetMt);
 }
 
-f32 maths::randomNDet(f32 min, f32 max)
+template <>
+f32 maths::randomRange<f32>(f32 min, f32 max)
 {
 	static std::mt19937 nDetMt(rd());
 	std::uniform_real_distribution<f32> distribution(min, max);
 	return distribution(nDetMt);
 }
-
 } // namespace le

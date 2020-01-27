@@ -24,7 +24,7 @@ Entity::Entity()
 #endif
 }
 
-void Entity::render()
+void Entity::render() const
 {
 #if defined(DEBUGGING)
 	if (m_pArrow && s_gizmoShader.glID.handle > 0)
@@ -37,14 +37,11 @@ void Entity::render()
 		glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);
 		ModelMats mats;
 		mats.model = mX;
-		m_pArrow->m_tint = Colour::Red;
-		m_pArrow->render(s_gizmoShader, mats);
+		m_pArrow->render(s_gizmoShader, mats, Colour::Red);
 		mats.model = mY;
-		m_pArrow->m_tint = Colour::Green;
-		m_pArrow->render(s_gizmoShader, mats);
+		m_pArrow->render(s_gizmoShader, mats, Colour::Green);
 		mats.model = mZ;
-		m_pArrow->m_tint = Colour::Blue;
-		m_pArrow->render(s_gizmoShader, mats);
+		m_pArrow->render(s_gizmoShader, mats, Colour::Blue);
 		context::toggle(context::GFXFlag::DepthTest, true);
 	}
 #endif
@@ -52,17 +49,17 @@ void Entity::render()
 
 bool Entity::isEnabled() const
 {
-	return m_flags.isSet((s32)Flag::Enabled);
+	return m_flags.isSet(Flag::Enabled);
 }
 
 void Entity::setEnabled(bool bEnabled)
 {
-	m_flags.set((s32)Flag::Enabled, bEnabled);
+	m_flags.set(Flag::Enabled, bEnabled);
 }
 
-void Prop::render()
+void Prop::render() const
 {
-	if (m_flags.isSet((s32)Flag::Wireframe))
+	if (m_flags.isSet(Flag::Wireframe))
 	{
 		context::setPolygonMode(context::PolygonMode::Line);
 	}
@@ -73,32 +70,22 @@ void Prop::render()
 #if defined(DEBUGGING)
 		if (m_bDEBUG)
 		{
-			pModel->m_renderFlags.set((s32)DrawFlag::BlankMagenta, true);
+			pModel->m_renderFlags.set(DrawFlag::BlankMagenta, true);
 		}
 #endif
-		Colour tint;
-		if (m_oTintOverride)
-		{
-			tint = pModel->m_tint;
-			pModel->m_tint = *m_oTintOverride;
-		}
 		ModelMats mats;
 		mats.model = m_transform.model();
 		mats.oNormals = m_transform.normalModel();
-		pModel->render(m_shader, mats);
-		if (m_oTintOverride)
-		{
-			pModel->m_tint = tint;
-		}
+		pModel->render(m_shader, mats, m_oTint ? *m_oTint : Colour::White);
 	}
-	if (m_flags.isSet((s32)Flag::Wireframe))
+	if (m_flags.isSet(Flag::Wireframe))
 	{
 		context::setPolygonMode(context::PolygonMode::Fill);
 	}
 	Entity::render();
 }
 
-void Prop::addModel(Model& model)
+void Prop::addModel(Model const& model)
 {
 	m_models.emplace_back(&model);
 }

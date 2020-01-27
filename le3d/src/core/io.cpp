@@ -86,7 +86,7 @@ FileReader::FileReader(stdfs::path prefix) : IOReader(std::move(prefix))
 	m_medium = "Filesystem (";
 	m_medium += std::move(m_prefix.generic_string());
 	m_medium += ")";
-	LOG_D("[%s] Filesystem mounted, idPrefix: [%s]", Typename(*this).data(), m_prefix.generic_string().data());
+	LOG_D("[%s] Filesystem mounted, idPrefix: [%s]", typeName(*this).data(), m_prefix.generic_string().data());
 }
 
 bool FileReader::isPresent(stdfs::path const& id) const
@@ -133,12 +133,12 @@ ZIPReader::ZIPReader(stdfs::path zipPath, stdfs::path idPrefix /* = "" */) : IOR
 	m_medium += ")";
 	if (!stdfs::is_regular_file(m_zipPath))
 	{
-		LOG_E("[%s] [%s] not found on Filesystem!", Typename<ZIPReader>().data(), m_zipPath.generic_string().data());
+		LOG_E("[%s] [%s] not found on Filesystem!", typeName<ZIPReader>().data(), m_zipPath.generic_string().data());
 	}
 	else
 	{
 		PHYSFS_mount(m_zipPath.string().data(), nullptr, 0);
-		LOG_D("[%s] [%s] archive mounted, idPrefix: [%s]", Typename(*this).data(), m_zipPath.generic_string().data(),
+		LOG_D("[%s] [%s] archive mounted, idPrefix: [%s]", typeName(*this).data(), m_zipPath.generic_string().data(),
 			  m_prefix.generic_string().data());
 	}
 }

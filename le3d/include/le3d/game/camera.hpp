@@ -38,7 +38,7 @@ public:
 		_COUNT
 	};
 
-	using Flags = TFlags<(size_t)Flag::_COUNT>;
+	using Flags = TFlags<(size_t)Flag::_COUNT, Flag>;
 
 public:
 	Flags m_flags;

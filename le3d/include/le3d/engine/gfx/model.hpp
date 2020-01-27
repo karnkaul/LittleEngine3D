@@ -71,18 +71,17 @@ public:
 		std::optional<glm::mat4> oWorld;
 	};
 
-	using Flags = TFlags<size_t(DrawFlag::_COUNT)>;
+	using Flags = TFlags<size_t(DrawFlag::_COUNT), DrawFlag>;
 
 #if defined(DEBUGGING)
 public:
-	Flags m_renderFlags;
-	bool m_bDEBUG = false;
+	mutable Flags m_renderFlags;
+	mutable bool m_bDEBUG = false;
 #endif
 
 public:
 	std::string m_id;
 	std::string m_type;
-	Colour m_tint = Colour::White;
 	std::vector<Fixture> m_fixtures;
 
 private:
@@ -104,7 +103,7 @@ public:
 	void setupModel(std::string name);
 	void setupModel(Data const& data);
 	void addFixture(Mesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
-	void render(HShader const& shader, ModelMats const& mats);
+	void render(HShader const& shader, ModelMats const& mats, Colour tint = Colour::White) const;
 
 	u32 meshCount() const;
 	void release();

@@ -75,11 +75,11 @@ AsyncModelsLoader::AsyncModelsLoader(Request request) : TLoader<stdfs::path, Mod
 			{
 				GData gData(m_request.pReader->getStr(jsonPath).str());
 				auto prefix = m_request.idPrefix / sRequest->resIn;
-				auto objPath = prefix / gData.getString("obj");
-				auto mtlPath = prefix / gData.getString("mtl");
-				auto samplerID = gData.getString("sampler", "default");
-				auto scale = (f32)gData.getF64("scale", 1.0f);
-				auto id = gData.getString("id", "UNNAMED");
+				auto objPath = prefix / gData.get<std::string>("obj");
+				auto mtlPath = prefix / gData.get<std::string>("mtl");
+				auto samplerID = gData.get<std::string>("sampler", "default");
+				auto scale = (f32)gData.get<f64>("scale", 1.0f);
+				auto id = gData.get<std::string>("id", "UNNAMED");
 				auto sampler = resources::get<HSampler>(samplerID);
 				if (gData.fieldCount() == 0 || !gData.contains("mtl") || !gData.contains("obj"))
 				{
@@ -99,7 +99,7 @@ AsyncModelsLoader::AsyncModelsLoader(Request request) : TLoader<stdfs::path, Mod
 						mlr.modelSampler = sampler;
 						sRequest->resOut = Model::loadOBJ(mlr);
 					};
-					enqueueRequest(sRequest, getRequest, gData.getString("id", "UNNAMED"));
+					enqueueRequest(sRequest, getRequest, gData.get<std::string>("id", "UNNAMED"));
 				}
 			}
 		}

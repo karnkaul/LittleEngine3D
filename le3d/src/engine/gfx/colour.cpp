@@ -1,3 +1,4 @@
+#include <sstream>
 #include "le3d/engine/gfx/colour.hpp"
 #include "le3d/core/maths.hpp"
 
@@ -13,16 +14,25 @@ Colour const Colour::Magenta(255, 0, 255);
 Colour const Colour::Cyan(0, 255, 255);
 Colour const Colour::Transparent(0, 0, 0, 0);
 
+Colour::Colour(UByte r, UByte g, UByte b, UByte a) : r(r), g(g), b(b), a(a) {}
+
 Colour Colour::lerp(Colour min, Colour max, f32 alpha)
 {
-	if (min == max)
+	if (alpha > 0.004f)
 	{
-		return min;
+		auto lerpChannel = [&](UByte& out_l, UByte const& r) {
+			if (out_l != r)
+			{
+				out_l = maths::lerp(out_l, r, alpha);
+			}
+		};
+		lerpChannel(min.r, max.r);
+		lerpChannel(min.g, max.g);
+		lerpChannel(min.b, max.b);
+		lerpChannel(min.a, max.a);
 	}
-	return ((1.0f - alpha) * min) + (alpha * max);
+	return min;
 }
-
-Colour::Colour(UByte r, UByte g, UByte b, UByte a) : r(r), g(g), b(b), a(a) {}
 
 Colour& Colour::operator+=(Colour rhs)
 {
@@ -42,21 +52,11 @@ Colour& Colour::operator-=(Colour rhs)
 	return *this;
 }
 
-std::string Colour::toStr() const
+std::string Colour::toString() const
 {
-	static constexpr size_t MAX = 1 + 3 + 1 + 3 + 1 + 3 + 1 + 3 + 1;
-	std::string ret;
-	ret.reserve(MAX);
-	ret += "[";
-	ret += r.toStr();
-	ret += ", ";
-	ret += g.toStr();
-	ret += ", ";
-	ret += b.toStr();
-	ret += ", ";
-	ret += a.toStr();
-	ret += "]";
-	return ret;
+	std::stringstream ret;
+	ret << r.toString() << ", " << g.toString() << ", " << b.toString() << ", " << a.toString();
+	return ret.str();
 }
 
 Colour operator+(Colour lhs, Colour rhs)
@@ -71,7 +71,7 @@ Colour operator-(Colour lhs, Colour rhs)
 
 Colour& operator*=(f32 n, Colour& c)
 {
-	n = maths::clamp01(n);
+	n = maths::clamp(n, 0.0f, 1.0f);
 	c.r = n * c.r;
 	c.g = n * c.g;
 	c.b = n * c.b;
