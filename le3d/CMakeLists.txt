@@ -23,23 +23,21 @@ target_include_directories(${PROJECT_NAME}
 )
 add_target_compile_definitions(${PROJECT_NAME})
 set_target_compile_options(${PROJECT_NAME})
-add_dependencies(${PROJECT_NAME}
-	glm
-	stb-image
-	tinyobjloader
-	physfs-static
-)
 if(LE3D_USE_GLFW)
-	add_dependencies(${PROJECT_NAME} glfw)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE LE3D_USE_GLFW)
 endif()
 if(LE3D_USE_GLAD)
-	add_dependencies(${PROJECT_NAME} glad)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE LE3D_USE_GLAD)
 endif()
-target_link_libraries(${PROJECT_NAME} 
-PUBLIC 	glm
-PRIVATE	$<$<BOOL:${LE3D_USE_GLAD}>:glad>
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+	$<$<BOOL:${LE3D_USE_GLAD}>:LE3D_USE_GLAD>
+	$<$<BOOL:${LE3D_USE_GLFW}>:LE3D_USE_GLFW>
+)
+target_link_libraries(${PROJECT_NAME}
+	PUBLIC
+		glm
+	PRIVATE
+		$<$<BOOL:${LE3D_USE_GLAD}>:glad>
 		$<$<BOOL:${LE3D_USE_GLFW}>:glfw>
 		stb-image
 		tinyobjloader
