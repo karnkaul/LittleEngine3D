@@ -77,7 +77,7 @@ OBJParser::OBJParser(Model::LoadRequest const& loadRequest) : m_reader(loadReque
 #endif
 			for (auto const& shape : m_shapes)
 			{
-				m_data.meshes.emplace_back(processShape(shape));
+				m_data.meshes.push_back(processShape(shape));
 			}
 		}
 		if (m_request.getTexBytes)
@@ -107,7 +107,7 @@ size_t OBJParser::getTexIdx(std::string id, std::string_view texName, TexType ty
 	tex.id = std::move(id);
 	tex.type = type;
 	tex.hSampler = m_request.modelSampler;
-	m_data.textures.emplace_back(std::move(tex));
+	m_data.textures.push_back(std::move(tex));
 	return m_data.textures.size() - 1;
 }
 
@@ -231,7 +231,7 @@ bool Model::Data::loadTextures(u16 count)
 	bool bDone = true;
 	for (auto& tex : textures)
 	{
-		if (tex.hTex.glID.handle <= 0)
+		if (tex.hTex.glID <= 0)
 		{
 			if (count > 0)
 			{
@@ -253,7 +253,7 @@ bool Model::Data::loadMeshes(u16 count)
 	bool bDone = true;
 	for (auto& mesh : meshes)
 	{
-		if (mesh.mesh.m_hVerts.hVAO.handle <= 0)
+		if (mesh.mesh.m_hVerts.hVAO <= 0)
 		{
 			if (count > 0)
 			{
@@ -293,7 +293,7 @@ Model::Data Model::loadOBJ(LoadRequest const& request)
 
 void Model::addFixture(Mesh const& mesh, std::optional<glm::mat4> model /* = std::nullopt */)
 {
-	m_fixtures.emplace_back(Fixture{mesh, model});
+	m_fixtures.push_back(Fixture{mesh, model});
 }
 
 void Model::setupModel(std::string name)
@@ -320,7 +320,7 @@ void Model::setupModel(Data const& data)
 			ASSERT(search == m_loadedTextures.end(), "Duplicate texture!");
 			if (search == m_loadedTextures.end())
 			{
-				if (texData.hTex.glID.handle > 0)
+				if (texData.hTex.glID > 0)
 				{
 					m_loadedTextures[texData.id] = texData.hTex;
 				}
@@ -341,7 +341,7 @@ void Model::setupModel(Data const& data)
 		for (auto const& meshData : data.meshes)
 		{
 			Mesh hMesh;
-			if (meshData.mesh.m_hVerts.hVAO.handle > 0)
+			if (meshData.mesh.m_hVerts.hVAO > 0)
 			{
 				hMesh = meshData.mesh;
 			}
@@ -365,7 +365,7 @@ void Model::setupModel(Data const& data)
 				}
 			}
 			addFixture(hMesh);
-			m_loadedMeshes.emplace_back(std::move(hMesh));
+			m_loadedMeshes.push_back(std::move(hMesh));
 		}
 	}
 	LOGIF_W(data.meshes.empty(), "[Model::Data] [%s] Model: No meshes present in passed data!", m_id.data());
@@ -374,14 +374,14 @@ void Model::setupModel(Data const& data)
 
 void Model::render(HShader const& shader, ModelMats const& mats, Colour tint) const
 {
-	ASSERT(shader.glID.handle > 0, "null shader!");
+	ASSERT(shader.glID > 0, "null shader!");
 #if defined(DEBUGGING)
 	bool bResetTint = false;
 	bool bSkipTextures = false;
 #endif
 	for (auto& fixture : m_fixtures)
 	{
-		ASSERT(fixture.mesh.m_hVerts.hVAO.handle > 0, "Mesh VAO is null!");
+		ASSERT(fixture.mesh.m_hVerts.hVAO > 0, "Mesh VAO is null!");
 		shader.setV4(env::g_config.uniforms.tint, tint);
 #if defined(DEBUGGING)
 		m_renderFlags.set(DrawFlag::BlankMagenta, m_renderFlags.isSet(DrawFlag::BlankMagenta) | m_bDEBUG);

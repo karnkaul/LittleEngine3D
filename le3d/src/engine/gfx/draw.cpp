@@ -28,8 +28,8 @@ void setTexture(s32 txID, GLObj const& samplerID, GLObj const& textureID)
 	{
 		g_texUnitSamplerMap[txID] = {samplerID, textureID};
 		glChk(glActiveTexture(GL_TEXTURE0 + (GLuint)txID));
-		glChk(glBindSampler((GLuint)txID, samplerID.handle));
-		glChk(glBindTexture(GL_TEXTURE_2D, textureID.handle));
+	glChk(glBindSampler((GLuint)txID, samplerID));
+	glChk(glBindTexture(GL_TEXTURE_2D, textureID));
 	}
 }
 } // namespace
@@ -97,7 +97,7 @@ bool gfx::setTextures(HShader const& shader, std::vector<HTexture> const& textur
 				continue;
 			}
 			id << number;
-			if (texture.glID.handle > 0)
+			if (texture.glID > 0)
 			{
 				setTexture(txID, texture.hSampler.glID, texture.glID);
 				shader.setS32(id.str(), txID++);
@@ -151,7 +151,7 @@ void gfx::setMaterial(HShader const& shader, Material const& material)
 	if (context::isAlive())
 	{
 		auto const& u = env::g_config.uniforms;
-		ASSERT(shader.glID.handle > 0, "shader is null!");
+		ASSERT(shader.glID > 0, "shader is null!");
 		{
 			cxChk();
 			shader.use();
@@ -179,8 +179,8 @@ void gfx::draw(HVerts const& hVerts, u32 count)
 	if (context::isAlive())
 	{
 		cxChk();
-		glChk(glBindVertexArray(hVerts.hVAO.handle));
-		if (hVerts.hEBO.handle > 0)
+		glChk(glBindVertexArray(hVerts.hVAO));
+		if (hVerts.hEBO > 0)
 		{
 			if (count > 0)
 			{

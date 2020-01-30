@@ -131,7 +131,7 @@ std::vector<GData> GData::getGDatas(std::string const& key) const
 	for (auto& rawString : rawStrings)
 	{
 		utils::strings::trim(rawString, {'"', ' '});
-		ret.emplace_back(std::move(rawString));
+		ret.push_back(std::move(rawString));
 	}
 	return ret;
 }

@@ -24,11 +24,11 @@ public:
 	~Transform();
 
 public:
-	void setPosition(glm::vec3 position);
-	void setOrientation(glm::quat orientation);
-	void setScale(f32 scale);
-	void setScale(glm::vec3 scale);
-	void setParent(Transform* pParent);
+	Transform& setPosition(glm::vec3 position);
+	Transform& setOrientation(glm::quat orientation);
+	Transform& setScale(f32 scale);
+	Transform& setScale(glm::vec3 scale);
+	Transform& setParent(Transform* pParent);
 
 	glm::vec3 position() const;
 	glm::quat orientation() const;

@@ -257,7 +257,7 @@ Mesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Materi
 		{
 			u = col * duv;
 			glm::vec3 const o = s * glm::vec3((f32)col, (f32)row, 0.0f);
-			points.emplace_back(std::make_pair(glm::vec3(bl + o), glm::vec2(u, v)));
+			points.push_back(std::make_pair(glm::vec3(bl + o), glm::vec2(u, v)));
 			points.push_back(std::make_pair(glm::vec3(bl + glm::vec3(s, 0.0f, 0.0f) + o), glm::vec2(u + duv, v)));
 			points.push_back(std::make_pair(glm::vec3(bl + glm::vec3(s, s, 0.0f) + o), glm::vec2(u + duv, v + duv)));
 			points.push_back(std::make_pair(glm::vec3(bl + glm::vec3(0.0f, s, 0.0f) + o), glm::vec2(u, v + duv)));

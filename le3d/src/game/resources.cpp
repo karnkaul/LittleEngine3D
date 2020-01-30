@@ -99,7 +99,7 @@ HShader& resources::loadShader(std::string const& id, std::string_view vertCode,
 {
 	ASSERT(!g_shaders.isLoaded(id), "Shader ID already loaded!");
 	HShader shader = gfx::genShader(id, vertCode, fragCode);
-	if (shader.glID.handle > 0)
+	if (shader.glID > 0)
 	{
 		for (auto const& kvp : g_ubos.getMap())
 		{

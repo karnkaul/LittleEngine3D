@@ -1,14 +1,19 @@
 #pragma once
+#include <deque>
 #include "le3d/core/time.hpp"
 #include "le3d/core/stdtypes.hpp"
+#include "le3d/engine/gfx/bitmapFont.hpp"
 #include "le3d/engine/gfx/colour.hpp"
 #include "le3d/engine/gfx/gfxtypes.hpp"
+#include "le3d/game/ec/components/cprop.hpp"
 
 namespace le
 {
 void renderSkybox(struct Skybox const& skybox, HShader const& shader, Colour tint = Colour::White);
 void renderMeshes(Mesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader, Colour tint = Colour::White);
 void renderMeshes(Mesh const& mesh, HShader const& shader, u32 count, Colour tint = Colour::White);
+
+CProp* spawnProp(ECDB& ecdb, std::string name, HShader const& shader, bool bDebugGizmo = true);
 
 namespace debug
 {

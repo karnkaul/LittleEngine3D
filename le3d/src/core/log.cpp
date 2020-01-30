@@ -56,7 +56,7 @@ void logInternal(char const* szText, [[maybe_unused]] char const* szFile, [[mayb
 #if _MSC_VER
 	OutputDebugStringA(logStr.data());
 #endif
-	g_logCache.emplace_back(std::move(logStr));
+	g_logCache.push_back(std::move(logStr));
 	while (g_logCache.size() > g_logCacheSize)
 	{
 		g_logCache.pop_front();

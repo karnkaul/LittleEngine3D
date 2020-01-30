@@ -30,11 +30,11 @@ HVBO gfx::genVec4VBO(descriptors::VBO const& desc, std::vector<GLObj> const& hVA
 	s32 vaoCount = 0;
 	for (auto const& vao : hVAOs)
 	{
-		if (vao.handle == 0)
+		if (vao == 0)
 		{
 			continue;
 		}
-		glChk(glBindVertexArray(vao.handle));
+		glChk(glBindVertexArray(vao));
 		for (u32 idx = 0; idx < desc.vec4sPerAttrib; ++idx)
 		{
 			auto offset = idx * sizeof(glm::vec4);
@@ -58,7 +58,7 @@ HVBO gfx::genVec4VBO(descriptors::VBO const& desc, std::vector<GLObj> const& hVA
 
 void gfx::setVBO(HVBO const& hVBO, void const* pData)
 {
-	if (context::isAlive() && hVBO.glID.handle > 0)
+	if (context::isAlive() && hVBO.glID > 0)
 	{
 		glChk(glBufferData(GL_ARRAY_BUFFER, (s64)hVBO.size, pData, (GLenum)hVBO.type));
 	}
@@ -71,14 +71,14 @@ void gfx::releaseVBO(HVBO& outVBO, std::vector<GLObj> const& hVAOs)
 		cxChk();
 		for (auto const& vao : hVAOs)
 		{
-			if (vao.handle == 0)
+			if (vao == 0)
 			{
 				continue;
 			}
-			glChk(glBindVertexArray(vao.handle));
+			glChk(glBindVertexArray(vao));
 			for (auto const& vaID : outVBO.vaIDs)
 			{
-				glChk(glDisableVertexAttribArray(vaID.handle));
+				glChk(glDisableVertexAttribArray(vaID));
 			}
 		}
 		glChk(glDeleteBuffers(1, &outVBO.glID.handle));
@@ -128,7 +128,7 @@ HVerts gfx::genVerts(Vertices const& vertices, DrawType drawType, HShader const*
 		GLint loc = 0;
 		if (pShader)
 		{
-			loc = glGetAttribLocation(pShader->glID.handle, "aPos");
+			loc = glGetAttribLocation(pShader->glID, "aPos");
 		}
 		if (loc >= 0)
 		{
@@ -141,7 +141,7 @@ HVerts gfx::genVerts(Vertices const& vertices, DrawType drawType, HShader const*
 		loc = 1;
 		if (pShader)
 		{
-			loc = glGetAttribLocation(pShader->glID.handle, "aNormal");
+			loc = glGetAttribLocation(pShader->glID, "aNormal");
 		}
 		if (loc >= 0)
 		{
@@ -154,7 +154,7 @@ HVerts gfx::genVerts(Vertices const& vertices, DrawType drawType, HShader const*
 		loc = 2;
 		if (pShader)
 		{
-			loc = glGetAttribLocation(pShader->glID.handle, "aTexCoord");
+			loc = glGetAttribLocation(pShader->glID, "aTexCoord");
 		}
 		if (loc >= 0)
 		{
@@ -331,9 +331,9 @@ void gfx::releaseTextures(std::vector<HTexture>& outhTextures)
 #endif
 	for (auto& texture : outhTextures)
 	{
-		if (texture.glID.handle > 0)
+		if (texture.glID > 0)
 		{
-			texIDs.push_back(texture.glID.handle);
+			texIDs.push_back(texture.glID);
 #if defined(DEBUG_LOG)
 			bytes += texture.byteCount;
 #endif
@@ -363,7 +363,7 @@ HCubemap gfx::genCubemap(std::string id, std::array<bytearray, 6> const& rludfb)
 	{
 		cxChk();
 		glChk(glGenTextures(1, &ret.glID.handle));
-		glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, ret.glID.handle));
+		glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, ret.glID));
 		s32 w, h, ch;
 		u32 idx = 0;
 		u32 inTotal = 0;
@@ -406,7 +406,7 @@ void gfx::releaseCubemap(HCubemap& outhCube)
 	if (contextImpl::exists() && outhCube.glID > 0)
 	{
 		cxChk();
-		GLuint texID[] = {outhCube.glID.handle};
+		GLuint texID[] = {outhCube.glID};
 		glChk(glDeleteTextures(1, texID));
 		auto size = utils::friendlySize(outhCube.byteCount);
 		LOG_I("-- [%s] [%.1f%s] [%s] destroyed", outhCube.id.data(), size.first, size.second.data(), typeName<HCubemap>().data());
@@ -494,10 +494,10 @@ HUBO gfx::genUBO(std::string id, s64 size, u32 bindingPoint, DrawType type)
 	{
 		cxChk();
 		glChk(glGenBuffers(1, &ret.glID.handle));
-		glChk(glBindBuffer(GL_UNIFORM_BUFFER, ret.glID.handle));
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, ret.glID));
 		GLenum drawType = type == DrawType::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 		glChk(glBufferData(GL_UNIFORM_BUFFER, size, nullptr, drawType));
-		glChk(glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ret.glID.handle));
+		glChk(glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ret.glID));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 		ret.id = std::move(id);
 		ret.bindingPoint = bindingPoint;
@@ -511,10 +511,10 @@ HUBO gfx::genUBO(std::string id, s64 size, u32 bindingPoint, DrawType type)
 
 void gfx::setUBO(HUBO const& hUBO, s64 offset, s64 size, void const* pData)
 {
-	if (hUBO.glID.handle > 0 && context::isAlive())
+	if (hUBO.glID > 0 && context::isAlive())
 	{
 		cxChk();
-		glChk(glBindBuffer(GL_UNIFORM_BUFFER, hUBO.glID.handle));
+		glChk(glBindBuffer(GL_UNIFORM_BUFFER, hUBO.glID));
 		glChk(glBufferSubData(GL_UNIFORM_BUFFER, offset, size, pData));
 		glChk(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 	}
@@ -552,7 +552,7 @@ Mesh gfx::newMesh(std::string id, Vertices const& vertices, DrawType type, Mater
 
 void gfx::releaseMesh(Mesh& outMesh)
 {
-	if (outMesh.m_hVerts.hVAO.handle > 0 && contextImpl::exists())
+	if (outMesh.m_hVerts.hVAO > 0 && contextImpl::exists())
 	{
 		cxChk();
 		auto size = utils::friendlySize(outMesh.m_hVerts.byteCount);
@@ -586,7 +586,7 @@ BitmapFont gfx::newFont(std::string id, bytearray spritesheet, glm::ivec2 cellSi
 
 void gfx::releaseFont(BitmapFont& outFont)
 {
-	if (contextImpl::exists() && outFont.quad.m_hVerts.hVAO.handle > 0 && outFont.sheet.glID.handle > 0)
+	if (contextImpl::exists() && outFont.quad.m_hVerts.hVAO > 0 && outFont.sheet.glID > 0)
 	{
 		cxChk();
 		releaseMesh(outFont.quad);

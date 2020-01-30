@@ -44,7 +44,7 @@ JobManager::JobManager(u8 workerCount)
 	JobWorker::s_bWork.store(true, std::memory_order_seq_cst);
 	for (u8 i = 0; i < workerCount; ++i)
 	{
-		m_jobWorkers.emplace_back(std::make_unique<JobWorker>(*this, i));
+		m_jobWorkers.push_back(std::make_unique<JobWorker>(*this, i));
 	}
 }
 
@@ -72,7 +72,7 @@ std::shared_ptr<HJob> JobManager::enqueue(Task task, std::string name, bool bSil
 
 JobCatalog* JobManager::createCatalogue(std::string name)
 {
-	m_catalogs.emplace_back(std::make_unique<JobCatalog>(*this, std::move(name)));
+	m_catalogs.push_back(std::make_unique<JobCatalog>(*this, std::move(name)));
 	return m_catalogs.back().get();
 }
 
@@ -93,7 +93,7 @@ std::vector<std::shared_ptr<HJob>> JobManager::forEach(IndexedTask const& indexe
 			name << indexedTask.name << start << "-" << (end - 1);
 			taskName = name.str();
 		}
-		handles.emplace_back(enqueue(
+		handles.push_back(enqueue(
 			[start, end, &indexedTask]() -> std::any {
 				for (size_t i = start; i < end; ++i)
 				{
@@ -115,7 +115,7 @@ std::vector<std::shared_ptr<HJob>> JobManager::forEach(IndexedTask const& indexe
 			name << indexedTask.name << start << "-" << (end - 1);
 			taskName = name.str();
 		}
-		handles.emplace_back(enqueue(
+		handles.push_back(enqueue(
 			[start, end, &indexedTask]() -> std::any {
 				for (size_t i = start; i < end; ++i)
 				{

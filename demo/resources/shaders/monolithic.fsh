@@ -182,6 +182,10 @@ void main()
 			{
 				result.a = 1.0;
 			}
+			if (result.a < 0.1)
+			{
+				discard;
+			}
 		}
 		else
 		{

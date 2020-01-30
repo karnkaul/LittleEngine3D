@@ -2,7 +2,7 @@
 
 namespace le
 {
-template <typename T, s32 Z = 0>
+template <typename T, T Z = 0>
 struct TZero final
 {
 	T handle = Z;
@@ -15,27 +15,24 @@ struct TZero final
 	TZero& operator=(TZero const&);
 	~TZero();
 
-	operator T() const
-	{
-		return handle;
-	}
+	operator T() const;
 };
 
-template <typename T, s32 Z>
+template <typename T, T Z>
 TZero<T, Z>::TZero() = default;
 
-template <typename T, s32 Z>
+template <typename T, T Z>
 TZero<T, Z>::TZero(T h) : handle(h)
 {
 }
 
-template <typename T, s32 Z>
+template <typename T, T Z>
 TZero<T, Z>::TZero(TZero&& rhs)
 {
 	*this = std::move(rhs);
 }
 
-template <typename T, s32 Z>
+template <typename T, T Z>
 TZero<T, Z>& TZero<T, Z>::operator=(TZero&& rhs)
 {
 	handle = rhs.handle;
@@ -43,12 +40,18 @@ TZero<T, Z>& TZero<T, Z>::operator=(TZero&& rhs)
 	return *this;
 }
 
-template <typename T, s32 Z>
+template <typename T, T Z>
 TZero<T, Z>::TZero(TZero const& rhs) = default;
 
-template <typename T, s32 Z>
+template <typename T, T Z>
 TZero<T, Z>& TZero<T, Z>::operator=(TZero const& rhs) = default;
 
-template <typename T, s32 Z>
+template <typename T, T Z>
 TZero<T, Z>::~TZero() = default;
+
+template <typename T, T Z>
+TZero<T, Z>::operator T() const
+{
+	return handle;
+}
 } // namespace le

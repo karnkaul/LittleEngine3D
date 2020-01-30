@@ -1,19 +1,16 @@
-#include <assert.h>
-#include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/core/maths.hpp"
 #include "le3d/engine/context.hpp"
-#include "le3d/engine/input.hpp"
-#include "le3d/game/camera.hpp"
 #include "le3d/engine/gfx/utils.hpp"
+#include "le3d/engine/input.hpp"
+#include "le3d/game/ec/components/ccamera.hpp"
 
 namespace le
 {
-void Camera::tick(Time /*dt*/) {}
-
 bool s_bTEST = false;
-glm::mat4 Camera::view() const
+glm::mat4 CCamera::view() const
 {
 #if defined(DEBUGGING)
 	if (s_bTEST)
@@ -29,12 +26,12 @@ glm::mat4 Camera::view() const
 	}
 }
 
-glm::mat4 Camera::perspectiveProj(f32 near, f32 far) const
+glm::mat4 CCamera::perspectiveProj(f32 near, f32 far) const
 {
 	return glm::perspective(glm::radians(m_fov), context::nativeAR(), near, far);
 }
 
-glm::mat4 Camera::orthographicProj(f32 zoom, f32 near, f32 far) const
+glm::mat4 CCamera::orthographicProj(f32 zoom, f32 near, f32 far) const
 {
 	ASSERT(zoom > 0.0f, "Invalid zoom!");
 	f32 ar = context::nativeAR();
@@ -43,14 +40,14 @@ glm::mat4 Camera::orthographicProj(f32 zoom, f32 near, f32 far) const
 	return glm::ortho(-w / zoom, w / zoom, -h / zoom, h / zoom, near, far);
 }
 
-glm::mat4 Camera::uiProj(glm::vec3 const& uiSpace) const
+glm::mat4 CCamera::uiProj(glm::vec3 const& uiSpace) const
 {
 	f32 const w = uiSpace.x * 0.5f;
 	f32 const h = uiSpace.y * 0.5f;
 	return glm::ortho(-w, w, -h, h, -uiSpace.z, uiSpace.z);
 }
 
-FreeCam::FreeCam()
+void CFreeCam::onCreate()
 {
 	m_tMove = input::registerInput([this](Key key, Action action, Mods /*mods*/) {
 		if (m_flags.isSet(Flag::Enabled))
@@ -102,7 +99,7 @@ FreeCam::FreeCam()
 	m_flags.set(Flag::Enabled, true);
 }
 
-void FreeCam::tick(Time dt)
+void CFreeCam::tick(Time dt)
 {
 	if (!m_flags.isSet(Flag::Enabled))
 	{

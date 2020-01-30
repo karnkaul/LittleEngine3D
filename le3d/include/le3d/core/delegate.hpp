@@ -44,15 +44,15 @@ private:
 public:
 	// Returns shared_ptr to be owned by caller
 	[[nodiscard]] Token subscribe(Callback callback);
-	// Execute alive callbacks; returns live count
+	// Cleans up dead callbacks; returns live count
 	uint32_t operator()(Args... t);
+	// Skips dead callbacks; returns live count
+	uint32_t operator()(Args... t) const;
 	// Returns true if any previously distributed Token is still alive
 	bool isAlive();
 	void clear();
-
-private:
 	// Remove expired weak_ptrs
-	void Cleanup();
+	void cleanup();
 };
 
 template <typename... Args>
@@ -71,18 +71,33 @@ typename Delegate<Args...>::Token Delegate<Args...>::subscribe(Callback callback
 template <typename... Args>
 uint32_t Delegate<Args...>::operator()(Args... t)
 {
-	Cleanup();
+	cleanup();
 	for (auto const& c : m_callbacks)
 	{
 		c.callback(t...);
 	}
-	return static_cast<uint32_t>(m_callbacks.size());
+	return uint32_t(m_callbacks.size());
+}
+
+template <typename... Args>
+uint32_t Delegate<Args...>::operator()(Args... t) const
+{
+	uint32_t ret = 0;
+	for (auto const& c : m_callbacks)
+	{
+		if (c.wToken.lock())
+		{
+			c.callback(t...);
+			++ret;
+		}
+	}
+	return ret;
 }
 
 template <typename... Args>
 bool Delegate<Args...>::isAlive()
 {
-	Cleanup();
+	cleanup();
 	return !m_callbacks.empty();
 }
 
@@ -93,7 +108,7 @@ void Delegate<Args...>::clear()
 }
 
 template <typename... Args>
-void Delegate<Args...>::Cleanup()
+void Delegate<Args...>::cleanup()
 {
 	m_callbacks.erase(
 		std::remove_if(m_callbacks.begin(), m_callbacks.end(), [](Wrapper& wrapper) -> bool { return wrapper.wToken.expired(); }),

@@ -10,6 +10,7 @@
 #include "le3d/engine/gfx/primitives.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
+#include "le3d/game/ec.hpp"
 
 namespace le
 {
@@ -36,11 +37,11 @@ void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 	shader.setV4(env::g_config.uniforms.tint, tint);
 	glChk(glActiveTexture(GL_TEXTURE0));
 	glChk(glBindSampler(0, 0));
-	glChk(glBindVertexArray(skybox.mesh.m_hVerts.hVAO.handle));
-	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.hCube.glID.handle));
-	if (skybox.mesh.m_hVerts.hEBO.handle > 0)
+	glChk(glBindVertexArray(skybox.mesh.m_hVerts.hVAO));
+	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.hCube.glID));
+	if (skybox.mesh.m_hVerts.hEBO > 0)
 	{
-		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox.mesh.m_hVerts.hEBO.handle));
+		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox.mesh.m_hVerts.hEBO));
 		glChk(glDrawElements(GL_TRIANGLES, skybox.mesh.m_hVerts.iCount, GL_UNSIGNED_INT, 0));
 	}
 	else
@@ -53,7 +54,7 @@ void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 
 void renderMeshes(Mesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader, Colour tint)
 {
-	ASSERT(shader.glID.handle > 0, "null shader!");
+	ASSERT(shader.glID > 0, "null shader!");
 	shader.setV4(env::g_config.uniforms.tint, tint);
 	bool bResetTint = gfx::setTextures(shader, mesh.m_material.textures, true);
 	gfx::drawMeshes(mesh, mats, shader);
@@ -66,7 +67,7 @@ void renderMeshes(Mesh const& mesh, std::vector<ModelMats> const& mats, HShader 
 
 void renderMeshes(Mesh const& mesh, HShader const& shader, u32 count, Colour tint)
 {
-	ASSERT(shader.glID.handle > 0, "null shader!");
+	ASSERT(shader.glID > 0, "null shader!");
 	shader.setV4(env::g_config.uniforms.tint, tint);
 	bool bResetTint = gfx::setTextures(shader, mesh.m_material.textures, true);
 	gfx::drawMeshes(mesh, shader, count);
@@ -75,6 +76,23 @@ void renderMeshes(Mesh const& mesh, HShader const& shader, u32 count, Colour tin
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
 	gfx::unsetTextures((s32)mesh.m_material.textures.size());
+}
+
+CProp* spawnProp(ECDB& ecdb, std::string name, HShader const& shader, bool bDebugGizmo)
+{
+	auto eID = ecdb.spawnEntity<CProp, CTransform>(std::move(name));
+	auto pProp = ecdb.getComponent<CProp>(eID);
+	if (pProp)
+	{
+		pProp->m_shader = shader;
+		if (bDebugGizmo)
+		{
+#if defined(DEBUGGING)
+			ecdb.addComponent<CGizmo>(eID);
+#endif
+		}
+	}
+	return pProp;
 }
 
 void debug::DArrow::setupDArrow(const glm::quat& orientation)
@@ -311,7 +329,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 
 void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont const& hFont, f32 const uiAR, bool bOneDrawCall)
 {
-	ASSERT(hFont.sheet.glID.handle > 0, "Font has no texture!");
+	ASSERT(hFont.sheet.glID > 0, "Font has no texture!");
 	f32 cellAR = (f32)hFont.cellSize.x / hFont.cellSize.y;
 	glm::vec2 cell(text.height * cellAR, text.height);
 	glm::vec2 duv = {(f32)hFont.cellSize.x / hFont.sheet.size.x, (f32)hFont.cellSize.y / hFont.sheet.size.y};
@@ -347,8 +365,8 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 	bResetTint |= gfx::setTextures(shader, {hFont.sheet}, true);
 	if (!bOneDrawCall)
 	{
-		glBindVertexArray(hFont.quad.m_hVerts.hVAO.handle);
-		glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.m_hVerts.hVBO.glID.handle);
+		glBindVertexArray(hFont.quad.m_hVerts.hVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.m_hVerts.hVBO.glID);
 	}
 	gfx::cropViewport(uiAR);
 	Vertices verts;

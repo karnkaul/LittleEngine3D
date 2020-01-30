@@ -1,23 +1,18 @@
 #pragma once
-#include <bitset>
-#include <set>
+#include <unordered_set>
+#include <glm/glm.hpp>
 #include "le3d/core/tFlags.hpp"
-#include "le3d/game/object.hpp"
-#include "le3d/core/time.hpp"
-#include "le3d/core/transform.hpp"
 #include "le3d/engine/inputTypes.hpp"
+#include "le3d/game/ec/component.hpp"
 
 namespace le
 {
-class Camera : public Object
+class CCamera : public Component
 {
 public:
 	glm::vec3 m_position = glm::vec3(0.0f);
 	glm::quat m_orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	f32 m_fov = 45.0f;
-
-public:
-	virtual void tick(Time dt);
 
 public:
 	glm::mat4 view() const;
@@ -26,7 +21,7 @@ public:
 	glm::mat4 uiProj(glm::vec3 const& uiSpace) const;
 };
 
-class FreeCam : public Camera
+class CFreeCam : public CCamera
 {
 public:
 	enum class Flag
@@ -60,15 +55,14 @@ protected:
 private:
 	glm::vec2 m_cursorPos = glm::vec2(0.0f);
 	glm::vec2 m_nextCursorPos = glm::vec2(0.0f);
-	std::set<Key> m_heldKeys;
+	std::unordered_set<Key> m_heldKeys;
 	OnInput::Token m_tMove;
 	OnMouse::Token m_tLook;
 	OnMouse::Token m_tZoom;
 	OnFocus::Token m_tFocus;
 
-public:
-	FreeCam();
-
+protected:
+	void onCreate() override;
 	void tick(Time dt) override;
 };
 } // namespace le

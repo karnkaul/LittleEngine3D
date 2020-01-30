@@ -9,10 +9,9 @@
 #include "le3d/engine/gfx/utils.hpp"
 #include "le3d/engine/gfx/vram.hpp"
 #include "le3d/game/asyncLoaders.hpp"
-#include "le3d/game/camera.hpp"
-#include "le3d/game/entity.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
+#include "le3d/game/ec.hpp"
 
 #include "ubotypes.hpp"
 #include "gameloop.hpp"
@@ -39,12 +38,6 @@ void runTest()
 		LOG_I("[GameLoop] Using Filesystem");
 	}
 
-	FreeCam camera;
-	camera.setup("freecam");
-	// input::setCursorMode(CursorMode::Disabled);
-	camera.m_position = {0.0f, 0.0f, 3.0f};
-	camera.m_flags.set(FreeCam::Flag::FixedSpeed, false);
-
 	AsyncTexturesLoader::Request texturesRequest = {
 		"textures",
 		"",
@@ -63,16 +56,14 @@ void runTest()
 	resources::loadFonts(manifestJSON, *uReader);
 
 	auto& litTinted = resources::get<HShader>("lit/tinted");
-	auto& litTextured = resources::get<HShader>("lit/textured");
 	auto& uiTextured = resources::get<HShader>("ui/textured");
 	auto& monolithic = resources::get<HShader>("monolithic");
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
 	auto& font = resources::get<BitmapFont>("default");
 
 #if defined(DEBUGGING)
-	Entity::s_gizmoShader = monolithic;
+	CGizmo::s_gizmoShader = monolithic;
 #endif
-	Skybox skybox;
 	AsyncSkyboxLoader::Request skyboxRequest = {
 		"skybox", "textures/skybox", {"right.jpg", "left.jpg", "up.jpg", "down.jpg", "front.jpg", "back.jpg"}, uReader.get()};
 	AsyncSkyboxLoader skyboxLoader(std::move(skyboxRequest));
@@ -134,7 +125,7 @@ void runTest()
 		for (s32 col = -instanceSide; col < instanceSide; ++col)
 		{
 			glm::vec3 pos{row * 2.0f, col * 2.0f, -2.0f};
-			instanceMats.emplace_back(glm::translate(glm::mat4(1.0f), pos));
+			instanceMats.push_back(glm::translate(glm::mat4(1.0f), pos));
 		}
 	}
 	descriptors::VBO vboDesc;
@@ -165,49 +156,87 @@ void runTest()
 	static bool bWireframe = false;
 	static bool bParented = true;
 
-	Prop prop0;
-	prop0.setup("awesome-container");
-	prop0.addModel(cubeStack);
-	prop0.m_transform.setPosition({2.0f, 2.5f, -2.0f});
-	prop0.m_transform.setScale(2.0f);
-	// prop0.setShader(resources::get<HShader>("lit/textured"));
-	prop0.setShader(monolithic);
+	ECDB ecdb;
+	std::vector<ec::SpawnID> entities;
 
-	Prop prop1;
-	prop1.setup("prop1");
-	prop1.addModel(blankCube);
-	prop1.m_transform.setPosition({0.5f, -0.5f, -0.5f});
-	prop1.m_transform.setScale(0.25f);
-	prop0.m_transform.setParent(&prop1.m_transform);
-	// prop1.setShader(resources::get<HShader>("lit/tinted"));
-	prop1.setShader(monolithic);
-	prop1.m_oTint = Colour::Yellow;
+	auto eCamera = ecdb.spawnEntity("camera");
+	CFreeCam* pCamera = nullptr;
+	if (auto pCam = ecdb.getEntity(eCamera))
+	{
+		pCamera = pCam->addComponent<CFreeCam>();
+		pCamera->m_position = {0.0f, 0.0f, 3.0f};
+		pCamera->m_flags.set(CFreeCam::Flag::FixedSpeed, false);
+		entities.push_back(eCamera);
+	}
 
-	Prop quadProp;
-	quadProp.setup("quad");
-	quadProp.addModel(quad);
-	// quadProp.setShader(resources::get<HShader>("unlit/textured"));
-	quadProp.setShader(monolithic);
-	quadProp.m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
+	auto eSkybox = ecdb.spawnEntity<CSkybox>("skybox");
+	if (auto pSkybox = ecdb.getComponent<CSkybox>(eSkybox))
+	{
+		pSkybox->m_shader = resources::get<HShader>("unlit/skybox");
+		entities.push_back(eSkybox);
+	}
+
+	ec::SpawnID eProp1;
+	if (auto pProp1 = spawnProp(ecdb, "prop1", monolithic))
+	{
+		pProp1->m_models = {&blankCube};
+		pProp1->getComponent<CTransform>()->m_transform.setPosition({0.5f, -0.5f, -0.5f}).setScale(0.25f);
+		pProp1->m_oTint = Colour::Yellow;
+		eProp1 = pProp1->getOwner()->spawnID();
+		entities.push_back(eProp1);
+	}
+
+	ec::SpawnID eProp0;
+	if (auto pProp0 = spawnProp(ecdb, "awesome-container", monolithic))
+	{
+		pProp0->m_models = {&cubeStack};
+		if (auto pProp1 = ecdb.getComponent<CTransform>(entities.back()))
+		{
+			pProp0->getComponent<CTransform>()->m_transform.setPosition({2.0f, 2.5f, -2.0f}).setScale(2.0f).setParent(&pProp1->m_transform);
+		}
+		eProp0 = pProp0->getOwner()->spawnID();
+		entities.push_back(eProp0);
+	}
+
+	ec::SpawnID eQuad;
+	if (auto pQuad = spawnProp(ecdb, "quad", monolithic))
+	{
+		pQuad->m_models = {&quad};
+		eQuad = pQuad->getOwner()->spawnID();
+		pQuad->getComponent<CTransform>()->m_transform.setPosition(glm::vec3(-2.0f, 2.0f, -2.0f));
+		entities.push_back(eQuad);
+	}
 
 	HVerts lightVerts = gfx::tutorial::newLight(sphereMesh.m_hVerts);
 
-	std::vector<Prop> props;
+	ec::SpawnID eProps_0, eProps_3, eProps_4;
+	std::vector<CProp*> props;
 	for (s32 i = 0; i < 5; ++i)
 	{
-		Prop prop;
-		prop.setup("prop_" + std::to_string(i));
-		Model& m = cube;
-		prop.addModel(m);
-		std::string shader = "monolithic";
-		prop.setShader(resources::get<HShader>(shader));
-		props.emplace_back(std::move(prop));
+		if (auto pC = spawnProp(ecdb, "prop_" + std::to_string(i), monolithic))
+		{
+			pC->m_models = {&cube};
+			props.push_back(pC);
+			entities.push_back(pC->getOwner()->spawnID());
+			if (i == 0)
+			{
+				eProps_0 = pC->getOwner()->spawnID();
+			}
+			else if (i == 3)
+			{
+				eProps_3 = pC->getOwner()->spawnID();
+			}
+			else if (i == 4)
+			{
+				eProps_4 = pC->getOwner()->spawnID();
+			}
+		}
 	}
-	props[0].m_transform.setPosition({-0.5f, 0.5f, -4.0f});
-	props[1].m_transform.setPosition({-0.5f, 1.5f, 4.0f});
-	props[2].m_transform.setPosition({1.5f, -0.5f, 4.0f});
-	props[3].m_transform.setPosition({-3.0f, -1.0f, 2.0f});
-	props[4].m_transform.setPosition({-4.0f, 1.0f, -2.0f});
+	props[0]->getComponent<CTransform>()->m_transform.setPosition({-0.5f, 0.5f, -4.0f});
+	props[1]->getComponent<CTransform>()->m_transform.setPosition({-0.5f, 1.5f, 4.0f});
+	props[2]->getComponent<CTransform>()->m_transform.setPosition({1.5f, -0.5f, 4.0f});
+	props[3]->getComponent<CTransform>()->m_transform.setPosition({-3.0f, -1.0f, 2.0f});
+	props[4]->getComponent<CTransform>()->m_transform.setPosition({-4.0f, 1.0f, -2.0f});
 
 	auto tOnInput = input::registerInput([&](Key key, Action action, Mods mods) {
 		switch (action)
@@ -233,13 +262,25 @@ void runTest()
 			if (key == Key::W && mods & Mods::CONTROL)
 			{
 				bWireframe = !bWireframe;
-				prop0.m_flags.set(Entity::Flag::Wireframe, bWireframe);
-				props[3].m_flags.set(Entity::Flag::Wireframe, bWireframe);
+				if (auto pProp0 = ecdb.getComponent<CProp>(eProp0))
+				{
+					pProp0->m_flags.set(CProp::Flag::Wireframe, bWireframe);
+				}
+				if (auto pProps_3 = ecdb.getComponent<CProp>(eProps_3))
+				{
+					pProps_3->m_flags.set(CProp::Flag::Wireframe, bWireframe);
+				}
 			}
 			if (key == Key::P && mods & Mods::CONTROL)
 			{
 				bParented = !bParented;
-				prop0.m_transform.setParent(bParented ? &prop1.m_transform : nullptr);
+				if (auto pProp0 = ecdb.getComponent<CTransform>(eProp0))
+				{
+					if (auto pProp1 = ecdb.getComponent<CTransform>(eProp1))
+					{
+						pProp0->m_transform.setParent(bParented ? &pProp1->m_transform : nullptr);
+					}
+				}
 			}
 #if defined(DEBUGGING)
 			if (key == Key::G && mods & Mods::CONTROL)
@@ -280,80 +321,7 @@ void runTest()
 	glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
 	f32 uiAR = uiSpace.x / uiSpace.y;
 
-	context::ClearFlags clearFlags;
-	clearFlags.set({context::ClearFlag::ColorBuffer, context::ClearFlag::DepthBuffer}, true);
-	while (context::isAlive())
-	{
-		dt = Time::elapsed() - t;
-		t = Time::elapsed();
-		camera.tick(dt);
-		// context::glClearFlags(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Colour(50, 40, 10));
-		context::clearFlags(clearFlags);
-
-		if (!bModelsSwapped)
-		{
-			if (modelsLoader.loadNext() == AsyncLoadState::Idle)
-			{
-				bModelsSwapped = true;
-				prop0.clearModels();
-				prop0.addModel(resources::get<Model>("models/" + model0Path.string()));
-				props[4].clearModels();
-				props[4].addModel(resources::get<Model>("models/" + model1Path.string()));
-				if (resources::isLoaded<Model>("models/" + model2Path.string()))
-				{
-					auto& model2 = resources::get<Model>("models/" + model2Path.string());
-					props[0].clearModels();
-					props[0].addModel(model2);
-				}
-			}
-		}
-		if (skybox.hCube.byteCount == 0)
-		{
-			if (skyboxLoader.loadNext() == AsyncLoadState::Idle)
-			{
-				skybox = std::move(skyboxLoader.m_skybox);
-			}
-		}
-
-		prop0.m_transform.setOrientation(
-			glm::rotate(prop0.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
-		prop1.m_transform.setOrientation(
-			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
-		quadProp.m_transform.setOrientation(
-			glm::rotate(prop1.m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
-
-		gfx::setUBO(hLightsUBO, lights);
-		glm::mat4 v = camera.view();
-		glm::mat4 p = camera.perspectiveProj();
-		glm::vec4 c(camera.m_position, 0.0f);
-		// uiSpace = glm::vec3(context::size(), 2.0f);
-		uboData::Matrices mats{v, p, p * v, camera.uiProj(uiSpace), c};
-		gfx::setUBO(hMatricesUBO, mats);
-
-		renderSkybox(skybox, resources::get<HShader>("unlit/skybox"));
-		prop0.render();
-		prop1.render();
-		std::vector<ModelMats> m(3, ModelMats());
-		for (size_t i = 0; i < 3; ++i)
-		{
-			auto& prop = props[i];
-			// prop.setShader(resources::get<HShader>("lit/textured"));
-			m[i].model = prop.m_transform.model();
-			m[i].oNormals = prop.m_transform.normalModel();
-			prop.render();
-		}
-		litTextured.setV4(env::g_config.uniforms.tint, Colour::White);
-		// auto const& cube = debug::debugCube();
-		// renderMeshes(cube, m, litTextured);
-		m = std::vector<ModelMats>(props.size() - 3, ModelMats());
-		for (size_t i = 3; i < props.size(); ++i)
-		{
-			auto& prop = props[i];
-			m[i - 3].model = prop.m_transform.model();
-			m[i - 3].oNormals = prop.m_transform.normalModel();
-			prop.render();
-		}
-		// renderMeshes(cube, m, litTinted);
+	auto midRender = [&]() {
 		ModelMats sphereMat;
 		sphereMat.model = glm::translate(sphereMat.model, {2.0f, -0.5f, 0.0f});
 		if (bWireframe)
@@ -363,10 +331,80 @@ void runTest()
 		renderMeshes(sphereMesh, {sphereMat}, monolithic);
 		// renderMeshes(instanceMesh, monolithic, instanceCount);
 		context::setPolygonMode(context::PolygonMode::Fill);
+	};
+	auto midRenderHandle = ecdb.addRenderSlot(midRender, 10);
+
+	context::ClearFlags clearFlags;
+	clearFlags.set({context::ClearFlag::ColorBuffer, context::ClearFlag::DepthBuffer}, true);
+	while (context::isAlive())
+	{
+		dt = Time::elapsed() - t;
+		t = Time::elapsed();
+		context::clearFlags(clearFlags);
+
+		if (!bModelsSwapped)
+		{
+			if (modelsLoader.loadNext() == AsyncLoadState::Idle)
+			{
+				bModelsSwapped = true;
+				if (auto pProp0 = ecdb.getComponent<CProp>(eProp0))
+				{
+					if (auto pProps_4 = ecdb.getComponent<CProp>(eProps_4))
+					{
+						pProp0->m_models = {&resources::get<Model>("models/" + model0Path.string())};
+						pProps_4->m_models = {&resources::get<Model>("models/" + model1Path.string())};
+						auto pProp0 = ecdb.getComponent<CProp>(eProps_0);
+						if (resources::isLoaded<Model>("models/" + model2Path.string()) && pProp0)
+						{
+							auto& model2 = resources::get<Model>("models/" + model2Path.string());
+							pProp0->m_models = {&model2};
+						}
+					}
+				}
+			}
+		}
+		if (auto pSkybox = ecdb.getComponent<CSkybox>(eSkybox))
+		{
+			if (pSkybox->m_skybox.hCube.byteCount == 0)
+			{
+				if (skyboxLoader.loadNext() == AsyncLoadState::Idle)
+				{
+					pSkybox->m_skybox = std::move(skyboxLoader.m_skybox);
+				}
+			}
+		}
+
+		if (auto pProp0 = ecdb.getComponent<CTransform>(eProp0))
+		{
+			pProp0->m_transform.setOrientation(
+				glm::rotate(pProp0->m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
+		}
+		if (auto pProp1 = ecdb.getComponent<CTransform>(eProp1))
+		{
+			pProp1->m_transform.setOrientation(
+				glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
+			if (auto pQuad = ecdb.getComponent<CTransform>(eQuad))
+			{
+				pQuad->m_transform.setOrientation(
+					glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
+			}
+		}
+
+		ecdb.tick(dt);
+
+		gfx::setUBO(hLightsUBO, lights);
+		glm::mat4 v = pCamera->view();
+		glm::mat4 p = pCamera->perspectiveProj();
+		glm::vec4 c(pCamera->m_position, 0.0f);
+		// uiSpace = glm::vec3(context::size(), 2.0f);
+		uboData::Matrices mats{v, p, p * v, pCamera->uiProj(uiSpace), c};
+		gfx::setUBO(hMatricesUBO, mats);
+
+		ecdb.render();
 
 		drawLight(pl0Pos, lightVerts, lights.ptLights[0].diffuse);
 		drawLight(pl1Pos, lightVerts, lights.ptLights[1].diffuse);
-		quadProp.render();
+		// quadProp.render();
 
 		debug::Quad2D tl, tr, bl, br;
 		HTexture const& quadTex = resources::get<HTexture>("textures/awesomeface.png");
@@ -390,9 +428,13 @@ void runTest()
 		context::swapBuffers();
 		context::pollEvents();
 	}
+	for (auto spawnID : entities)
+	{
+		ecdb.destroyEntity(spawnID);
+	}
+	ecdb.cleanDestroyed();
 	gfx::releaseMesh(sphereMesh);
 	modelsLoader.waitAll();
-	resources::destroySkybox(skybox);
 }
 } // namespace
 

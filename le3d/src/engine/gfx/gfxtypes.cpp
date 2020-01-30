@@ -13,15 +13,15 @@ namespace le
 {
 void HShader::use() const
 {
-	ASSERT(glID.handle > 0, "Invalid shader program!");
-	glChk(glUseProgram(glID.handle));
+	ASSERT(glID > 0, "Invalid shader program!");
+	glChk(glUseProgram(glID));
 }
 
 bool HShader::setBool(std::string_view id, bool bVal) const
 {
 	if (!id.empty())
 	{
-		auto glID_ = glGetUniformLocation(glID.handle, id.data());
+		auto glID_ = glGetUniformLocation(glID, id.data());
 		if (glID_ >= 0)
 		{
 			use();
@@ -36,7 +36,7 @@ bool HShader::setS32(std::string_view id, s32 val) const
 {
 	if (!id.empty())
 	{
-		auto glID_ = glGetUniformLocation(glID.handle, id.data());
+		auto glID_ = glGetUniformLocation(glID, id.data());
 		if (glID_ >= 0)
 		{
 			use();
@@ -51,7 +51,7 @@ bool HShader::setF32(std::string_view id, f32 val) const
 {
 	if (!id.empty())
 	{
-		auto glID_ = glGetUniformLocation(glID.handle, id.data());
+		auto glID_ = glGetUniformLocation(glID, id.data());
 		if (glID_ >= 0)
 		{
 			use();
@@ -66,7 +66,7 @@ bool HShader::setV2(std::string_view id, glm::vec2 const& val) const
 {
 	if (!id.empty())
 	{
-		auto glID_ = glGetUniformLocation(glID.handle, id.data());
+		auto glID_ = glGetUniformLocation(glID, id.data());
 		if (glID_ >= 0)
 		{
 			use();
@@ -81,7 +81,7 @@ bool HShader::setV3(std::string_view id, glm::vec3 const& val) const
 {
 	if (!id.empty())
 	{
-		auto glID_ = glGetUniformLocation(glID.handle, id.data());
+		auto glID_ = glGetUniformLocation(glID, id.data());
 		if (glID_ >= 0)
 		{
 			use();
@@ -101,7 +101,7 @@ bool HShader::setV4(std::string_view id, glm::vec4 const& val) const
 {
 	if (!id.empty())
 	{
-		auto glID_ = glGetUniformLocation(glID.handle, id.data());
+		auto glID_ = glGetUniformLocation(glID, id.data());
 		if (glID_ >= 0)
 		{
 			use();
@@ -115,23 +115,23 @@ bool HShader::setV4(std::string_view id, glm::vec4 const& val) const
 void HShader::setModelMats(ModelMats const& mats) const
 {
 	use();
-	auto temp = glGetUniformLocation(glID.handle, env::g_config.uniforms.modelMatrix.data());
+	auto temp = glGetUniformLocation(glID, env::g_config.uniforms.modelMatrix.data());
 	glChk(glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(mats.model)));
 	auto pNMat = &mats.model;
 	if (mats.oNormals)
 	{
 		pNMat = &(*mats.oNormals);
 	}
-	temp = glGetUniformLocation(glID.handle, env::g_config.uniforms.normalMatrix.data());
+	temp = glGetUniformLocation(glID, env::g_config.uniforms.normalMatrix.data());
 	glUniformMatrix4fv(temp, 1, GL_FALSE, glm::value_ptr(*pNMat));
 }
 
 void HShader::bindUBO(std::string_view id, HUBO const& ubo) const
 {
-	u32 idx = glGetUniformBlockIndex(glID.handle, id.data());
+	u32 idx = glGetUniformBlockIndex(glID, id.data());
 	if ((s32)idx >= 0)
 	{
-		glChk(glUniformBlockBinding(glID.handle, idx, ubo.bindingPoint));
+		glChk(glUniformBlockBinding(glID, idx, ubo.bindingPoint));
 	}
 }
 
