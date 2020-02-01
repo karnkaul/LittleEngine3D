@@ -2,18 +2,15 @@
 #include "le3d/core/stdtypes.hpp"
 #include "le3d/core/time.hpp"
 #include "le3d/core/tZero.hpp"
-#include "le3d/game/ec/ecCommon.hpp"
+#include "le3d/game/ecs/ecsCommon.hpp"
 
 namespace le
 {
 class Component
 {
-public:
-	ec::Timing m_defaultTiming = 0.0f;
-
 private:
-	ec::Signature m_signature = 0;
-	class ECDB* m_pDB = nullptr;
+	ecs::Signature m_signature = 0;
+	class ECSDB* m_pDB = nullptr;
 
 protected:
 	class Entity* m_pOwner = nullptr;
@@ -34,19 +31,14 @@ public:
 	template <typename Comp>
 	Comp const* getComponent() const;
 
-public:
-	virtual ec::Timing timing() const;
-
 protected:
 	virtual void onCreate();
-	virtual void tick(Time dt);
-	virtual void render() const;
 
 private:
-	void create(Entity* pOwner, ECDB* pDB, ec::Signature sign);
+	void create(Entity* pOwner, ECSDB* pDB, ecs::Signature sign);
 
 private:
-	friend class ECDB;
+	friend class ECSDB;
 };
 
 // Template implementations in ecImpl.hpp

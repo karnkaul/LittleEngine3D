@@ -1,9 +1,10 @@
 #pragma once
 #include <unordered_set>
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include "le3d/core/tFlags.hpp"
 #include "le3d/engine/inputTypes.hpp"
-#include "le3d/game/ec/component.hpp"
+#include "le3d/game/ecs/component.hpp"
 
 namespace le
 {
@@ -13,6 +14,7 @@ public:
 	glm::vec3 m_position = glm::vec3(0.0f);
 	glm::quat m_orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	f32 m_fov = 45.0f;
+	f32 m_aspectRatio = 0.0f;
 
 public:
 	glm::mat4 view() const;
@@ -44,7 +46,6 @@ public:
 	f32 m_mouseLookSens = 0.1f;
 	f32 m_joyLookSens = 50.0f;
 
-protected:
 	f32 m_minJoyRightDPosSqr = 0.05f;
 	f32 m_minCursorDPosSqr = 0.2f;
 	f32 m_pitch = 0.0f;
@@ -52,10 +53,11 @@ protected:
 	f32 m_dSpeed = 0.0f;
 	bool m_bTicked = false;
 
-private:
 	glm::vec2 m_cursorPos = glm::vec2(0.0f);
 	glm::vec2 m_nextCursorPos = glm::vec2(0.0f);
 	std::unordered_set<Key> m_heldKeys;
+
+private:
 	OnInput::Token m_tMove;
 	OnMouse::Token m_tLook;
 	OnMouse::Token m_tZoom;
@@ -63,6 +65,5 @@ private:
 
 protected:
 	void onCreate() override;
-	void tick(Time dt) override;
 };
 } // namespace le

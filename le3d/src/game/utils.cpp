@@ -4,13 +4,14 @@
 #include "le3d/core/time.hpp"
 #include "le3d/env/engineVersion.hpp"
 #include "le3d/env/env.hpp"
+#include "le3d/engine/context.hpp"
 #include "le3d/engine/gfx/draw.hpp"
 #include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/engine/gfx/vram.hpp"
 #include "le3d/engine/gfx/primitives.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
-#include "le3d/game/ec.hpp"
+#include "le3d/game/ecs.hpp"
 
 namespace le
 {
@@ -78,7 +79,7 @@ void renderMeshes(Mesh const& mesh, HShader const& shader, u32 count, Colour tin
 	gfx::unsetTextures((s32)mesh.m_material.textures.size());
 }
 
-CProp* spawnProp(ECDB& ecdb, std::string name, HShader const& shader, bool bDebugGizmo)
+CProp* spawnProp(ECSDB& ecdb, std::string name, HShader const& shader, bool bDebugGizmo)
 {
 	auto eID = ecdb.spawnEntity<CProp, CTransform>(std::move(name));
 	auto pProp = ecdb.getComponent<CProp>(eID);
@@ -263,7 +264,8 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 		u32 quadCount = (u32)quads.size();
 		verts.reserve(4 * quadCount, 6 * quadCount);
 	}
-	gfx::cropViewport(uiAR);
+	auto view = gfx::view();
+	gfx::setViewport(gfx::cropView(view, uiAR));
 	auto const& u = env::g_config.uniforms;
 	shader.setBool(u.transform.isUI, true);
 	shader.setBool(u.material.isLit, false);
@@ -324,7 +326,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 	}
 	shader.setBool(env::g_config.uniforms.transform.isUI, false);
 	gfx::unsetTextures(0);
-	gfx::resetViewport();
+	gfx::setViewport(view);
 }
 
 void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont const& hFont, f32 const uiAR, bool bOneDrawCall)
@@ -368,7 +370,8 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 		glBindVertexArray(hFont.quad.m_hVerts.hVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.m_hVerts.hVBO.glID);
 	}
-	gfx::cropViewport(uiAR);
+	auto view = gfx::view();
+	gfx::setViewport(gfx::cropView(view, uiAR));
 	Vertices verts;
 	if (bOneDrawCall)
 	{
@@ -439,7 +442,7 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
 	gfx::unsetTextures(0);
-	gfx::resetViewport();
+	gfx::setViewport(view);
 }
 
 void debug::renderFPS(BitmapFont const& font, HShader const& shader, f32 const uiAR)

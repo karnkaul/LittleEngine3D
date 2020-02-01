@@ -101,14 +101,14 @@ u64 context::swapCount()
 	return contextImpl::g_context.swapCount;
 }
 
-f32 context::nativeAR()
+f32 context::windowAspect()
 {
-	return contextImpl::g_context.nativeAR;
+	return contextImpl::g_context.windowAR;
 }
 
-glm::vec2 context::size()
+glm::vec2 context::windowSize()
 {
-	return contextImpl::g_context.size;
+	return contextImpl::g_context.windowSize;
 }
 
 glm::vec2 context::project(glm::vec2 nPos, glm::vec2 space)
@@ -118,13 +118,13 @@ glm::vec2 context::project(glm::vec2 nPos, glm::vec2 space)
 
 glm::vec2 context::projectScreen(glm::vec2 nPos)
 {
-	return project(nPos, contextImpl::g_context.size);
+	return project(nPos, contextImpl::g_context.windowSize);
 }
 
 glm::vec2 context::worldToScreen(glm::vec2 world)
 {
-	return contextImpl::g_context.size == glm::vec2(0.0f)
-			   ? contextImpl::g_context.size
-			   : glm::vec2(world.x / contextImpl::g_context.size.x, world.y / contextImpl::g_context.size.y);
+	return contextImpl::g_context.windowSize == glm::vec2(0.0f)
+			   ? contextImpl::g_context.windowSize
+			   : glm::vec2(world.x / contextImpl::g_context.windowSize.x, world.y / contextImpl::g_context.windowSize.y);
 }
 } // namespace le

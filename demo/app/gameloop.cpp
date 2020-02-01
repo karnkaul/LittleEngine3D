@@ -11,7 +11,7 @@
 #include "le3d/game/asyncLoaders.hpp"
 #include "le3d/game/resources.hpp"
 #include "le3d/game/utils.hpp"
-#include "le3d/game/ec.hpp"
+#include "le3d/game/ecs.hpp"
 
 #include "ubotypes.hpp"
 #include "gameloop.hpp"
@@ -154,30 +154,50 @@ void runTest()
 	// mesh.m_textures = {bad};
 	// lightingShader.setS32("mix_textures", 1);
 	static bool bWireframe = false;
-	static bool bParented = true;
+	[[maybe_unused]] static bool bParented = true;
+	[[maybe_unused]] static bool bPaused = false;
 
-	ECDB ecdb;
-	std::vector<ec::SpawnID> entities;
+	ECSDB ecsdb;
+	ecsdb.addSystem<FreeCamController, PropRenderer, SkyboxRenderer>();
+#if defined(DEBUGGING)
+	ecsdb.addSystem<GizmoSystem>();
+#endif
 
-	auto eCamera = ecdb.spawnEntity("camera");
+	std::vector<ecs::SpawnID> entities;
+
+	/*constexpr s32 stress = 1000;
+	constexpr s32 noise = 500;
+	for (s32 i = 0; i < stress; ++i)
+	{
+		auto id = ecsdb.spawnEntity<CTransform, CProp>("Stress_" + std::to_string(i));
+		entities.push_back(id);
+	}
+	for (s32 i = 0; i < noise; ++i)
+	{
+		auto id = ecsdb.spawnEntity<CTransform>("Noise_" + std::to_string(i));
+		entities.push_back(id);
+	}*/
+
+	auto eCamera = ecsdb.spawnEntity("camera");
 	CFreeCam* pCamera = nullptr;
-	if (auto pCam = ecdb.getEntity(eCamera))
+	if (auto pCam = ecsdb.getEntity(eCamera))
 	{
 		pCamera = pCam->addComponent<CFreeCam>();
 		pCamera->m_position = {0.0f, 0.0f, 3.0f};
 		pCamera->m_flags.set(CFreeCam::Flag::FixedSpeed, false);
+		pCamera->m_flags.set(CFreeCam::Flag::Enabled, true);
 		entities.push_back(eCamera);
 	}
 
-	auto eSkybox = ecdb.spawnEntity<CSkybox>("skybox");
-	if (auto pSkybox = ecdb.getComponent<CSkybox>(eSkybox))
+	auto eSkybox = ecsdb.spawnEntity<CSkybox>("skybox");
+	if (auto pSkybox = ecsdb.getComponent<CSkybox>(eSkybox))
 	{
 		pSkybox->m_shader = resources::get<HShader>("unlit/skybox");
 		entities.push_back(eSkybox);
 	}
 
-	ec::SpawnID eProp1;
-	if (auto pProp1 = spawnProp(ecdb, "prop1", monolithic))
+	ecs::SpawnID eProp1;
+	if (auto pProp1 = spawnProp(ecsdb, "prop1", monolithic))
 	{
 		pProp1->m_models = {&blankCube};
 		pProp1->getComponent<CTransform>()->m_transform.setPosition({0.5f, -0.5f, -0.5f}).setScale(0.25f);
@@ -186,11 +206,11 @@ void runTest()
 		entities.push_back(eProp1);
 	}
 
-	ec::SpawnID eProp0;
-	if (auto pProp0 = spawnProp(ecdb, "awesome-container", monolithic))
+	ecs::SpawnID eProp0;
+	if (auto pProp0 = spawnProp(ecsdb, "awesome-container", monolithic))
 	{
 		pProp0->m_models = {&cubeStack};
-		if (auto pProp1 = ecdb.getComponent<CTransform>(entities.back()))
+		if (auto pProp1 = ecsdb.getComponent<CTransform>(entities.back()))
 		{
 			pProp0->getComponent<CTransform>()->m_transform.setPosition({2.0f, 2.5f, -2.0f}).setScale(2.0f).setParent(&pProp1->m_transform);
 		}
@@ -198,8 +218,8 @@ void runTest()
 		entities.push_back(eProp0);
 	}
 
-	ec::SpawnID eQuad;
-	if (auto pQuad = spawnProp(ecdb, "quad", monolithic))
+	ecs::SpawnID eQuad;
+	if (auto pQuad = spawnProp(ecsdb, "quad", monolithic))
 	{
 		pQuad->m_models = {&quad};
 		eQuad = pQuad->getOwner()->spawnID();
@@ -209,11 +229,11 @@ void runTest()
 
 	HVerts lightVerts = gfx::tutorial::newLight(sphereMesh.m_hVerts);
 
-	ec::SpawnID eProps_0, eProps_3, eProps_4;
+	ecs::SpawnID eProps_0, eProps_3, eProps_4;
 	std::vector<CProp*> props;
 	for (s32 i = 0; i < 5; ++i)
 	{
-		if (auto pC = spawnProp(ecdb, "prop_" + std::to_string(i), monolithic))
+		if (auto pC = spawnProp(ecsdb, "prop_" + std::to_string(i), monolithic))
 		{
 			pC->m_models = {&cube};
 			props.push_back(pC);
@@ -237,6 +257,7 @@ void runTest()
 	props[2]->getComponent<CTransform>()->m_transform.setPosition({1.5f, -0.5f, 4.0f});
 	props[3]->getComponent<CTransform>()->m_transform.setPosition({-3.0f, -1.0f, 2.0f});
 	props[4]->getComponent<CTransform>()->m_transform.setPosition({-4.0f, 1.0f, -2.0f});
+	std::unordered_set<Key> held;
 
 	auto tOnInput = input::registerInput([&](Key key, Action action, Mods mods) {
 		switch (action)
@@ -246,6 +267,7 @@ void runTest()
 
 		case Action::RELEASE:
 		{
+			held.erase(key);
 			if (key == Key::ESCAPE)
 			{
 				context::close();
@@ -259,28 +281,33 @@ void runTest()
 		}
 		case Action::PRESS:
 		{
+			held.insert(key);
 			if (key == Key::W && mods & Mods::CONTROL)
 			{
 				bWireframe = !bWireframe;
-				if (auto pProp0 = ecdb.getComponent<CProp>(eProp0))
+				if (auto pProp0 = ecsdb.getComponent<CProp>(eProp0))
 				{
 					pProp0->m_flags.set(CProp::Flag::Wireframe, bWireframe);
 				}
-				if (auto pProps_3 = ecdb.getComponent<CProp>(eProps_3))
+				if (auto pProps_3 = ecsdb.getComponent<CProp>(eProps_3))
 				{
 					pProps_3->m_flags.set(CProp::Flag::Wireframe, bWireframe);
 				}
 			}
 			if (key == Key::P && mods & Mods::CONTROL)
 			{
-				bParented = !bParented;
-				if (auto pProp0 = ecdb.getComponent<CTransform>(eProp0))
+				/*bParented = !bParented;
+				if (auto pProp0 = ecsdb.getComponent<CTransform>(eProp0))
 				{
-					if (auto pProp1 = ecdb.getComponent<CTransform>(eProp1))
+					if (auto pProp1 = ecsdb.getComponent<CTransform>(eProp1))
 					{
 						pProp0->m_transform.setParent(bParented ? &pProp1->m_transform : nullptr);
 					}
-				}
+				}*/
+				bPaused = !bPaused;
+				ecsdb.setAll(System::Flag::Ticking, !bPaused);
+				auto uCamera = ecsdb.getSystem<FreeCamController>();
+				uCamera->setFlag(System::Flag::Ticking, true);
 			}
 #if defined(DEBUGGING)
 			if (key == Key::G && mods & Mods::CONTROL)
@@ -321,7 +348,15 @@ void runTest()
 	glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
 	f32 uiAR = uiSpace.x / uiSpace.y;
 
-	auto midRender = [&]() {
+	Rect2 view = Rect2::sizeCentre(context::windowSize() * 0.75f);
+	//gfx::setView(view);
+	auto onWindowSizeChange = input::registerResize([&](s32, s32) {
+		view = Rect2::sizeCentre(context::windowSize() * 0.75f, view.centre());
+		pCamera->m_aspectRatio = context::windowAspect();
+		//gfx::setView(view);
+	});
+
+	auto midRender = [&](ECSDB const&) {
 		ModelMats sphereMat;
 		sphereMat.model = glm::translate(sphereMat.model, {2.0f, -0.5f, 0.0f});
 		if (bWireframe)
@@ -332,7 +367,25 @@ void runTest()
 		// renderMeshes(instanceMesh, monolithic, instanceCount);
 		context::setPolygonMode(context::PolygonMode::Fill);
 	};
-	auto midRenderHandle = ecdb.addRenderSlot(midRender, 10);
+	auto midRenderHandle = ecsdb.addRenderSlot(midRender, 10);
+	auto midTick = [eProp0, eProp1, eQuad](ECSDB& ecsdb, Time dt) {
+		if (auto pProp0 = ecsdb.getComponent<CTransform>(eProp0))
+		{
+			pProp0->m_transform.setOrientation(
+				glm::rotate(pProp0->m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
+		}
+		if (auto pProp1 = ecsdb.getComponent<CTransform>(eProp1))
+		{
+			pProp1->m_transform.setOrientation(
+				glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
+			if (auto pQuad = ecsdb.getComponent<CTransform>(eQuad))
+			{
+				pQuad->m_transform.setOrientation(
+					glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
+			}
+		}
+	};
+	auto midTickHandle = ecsdb.addTickSlot(midTick, 10);
 
 	context::ClearFlags clearFlags;
 	clearFlags.set({context::ClearFlag::ColorBuffer, context::ClearFlag::DepthBuffer}, true);
@@ -342,18 +395,25 @@ void runTest()
 		t = Time::elapsed();
 		context::clearFlags(clearFlags);
 
+		/*bool bDraggingView = held.find(Key::LEFT_CONTROL) != held.end() && held.find(Key::MOUSE_BUTTON_1) != held.end();
+		if (bDraggingView)
+		{
+			view = Rect2::sizeCentre(view.size(), input::cursorPos());
+			gfx::setView(view);
+		}*/
+
 		if (!bModelsSwapped)
 		{
 			if (modelsLoader.loadNext() == AsyncLoadState::Idle)
 			{
 				bModelsSwapped = true;
-				if (auto pProp0 = ecdb.getComponent<CProp>(eProp0))
+				if (auto pProp0 = ecsdb.getComponent<CProp>(eProp0))
 				{
-					if (auto pProps_4 = ecdb.getComponent<CProp>(eProps_4))
+					if (auto pProps_4 = ecsdb.getComponent<CProp>(eProps_4))
 					{
 						pProp0->m_models = {&resources::get<Model>("models/" + model0Path.string())};
 						pProps_4->m_models = {&resources::get<Model>("models/" + model1Path.string())};
-						auto pProp0 = ecdb.getComponent<CProp>(eProps_0);
+						auto pProp0 = ecsdb.getComponent<CProp>(eProps_0);
 						if (resources::isLoaded<Model>("models/" + model2Path.string()) && pProp0)
 						{
 							auto& model2 = resources::get<Model>("models/" + model2Path.string());
@@ -363,7 +423,7 @@ void runTest()
 				}
 			}
 		}
-		if (auto pSkybox = ecdb.getComponent<CSkybox>(eSkybox))
+		if (auto pSkybox = ecsdb.getComponent<CSkybox>(eSkybox))
 		{
 			if (pSkybox->m_skybox.hCube.byteCount == 0)
 			{
@@ -374,23 +434,9 @@ void runTest()
 			}
 		}
 
-		if (auto pProp0 = ecdb.getComponent<CTransform>(eProp0))
-		{
-			pProp0->m_transform.setOrientation(
-				glm::rotate(pProp0->m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
-		}
-		if (auto pProp1 = ecdb.getComponent<CTransform>(eProp1))
-		{
-			pProp1->m_transform.setOrientation(
-				glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
-			if (auto pQuad = ecdb.getComponent<CTransform>(eQuad))
-			{
-				pQuad->m_transform.setOrientation(
-					glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
-			}
-		}
+		
 
-		ecdb.tick(dt);
+		ecsdb.tick(dt);
 
 		gfx::setUBO(hLightsUBO, lights);
 		glm::mat4 v = pCamera->view();
@@ -400,7 +446,7 @@ void runTest()
 		uboData::Matrices mats{v, p, p * v, pCamera->uiProj(uiSpace), c};
 		gfx::setUBO(hMatricesUBO, mats);
 
-		ecdb.render();
+		ecsdb.render();
 
 		drawLight(pl0Pos, lightVerts, lights.ptLights[0].diffuse);
 		drawLight(pl1Pos, lightVerts, lights.ptLights[1].diffuse);
@@ -430,9 +476,9 @@ void runTest()
 	}
 	for (auto spawnID : entities)
 	{
-		ecdb.destroyEntity(spawnID);
+		ecsdb.destroyEntity(spawnID);
 	}
-	ecdb.cleanDestroyed();
+	ecsdb.destroySystem<FreeCamController, PropRenderer, SkyboxRenderer, GizmoSystem>();
 	gfx::releaseMesh(sphereMesh);
 	modelsLoader.waitAll();
 }

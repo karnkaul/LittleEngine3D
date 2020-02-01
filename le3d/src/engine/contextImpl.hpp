@@ -2,6 +2,7 @@
 #include <mutex>
 #include <thread>
 #include "le3d/core/fileLogger.hpp"
+#include "le3d/core/rect2.hpp"
 #include "le3d/engine/context.hpp"
 
 namespace le
@@ -28,8 +29,8 @@ namespace contextImpl
 struct LEContext
 {
 	std::unique_ptr<FileLogger> uFileLogger;
-	glm::vec2 size;
-	f32 nativeAR = 1.0f;
+	glm::vec2 windowSize = glm::vec2(0.0f);
+	f32 windowAR = 1.0f;
 	u64 swapCount = 0;
 	u8 swapInterval = 0;
 	bool bJoinThreadsOnDestroy = true;

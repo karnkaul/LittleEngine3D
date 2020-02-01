@@ -3,6 +3,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include "le3d/core/tFlags.hpp"
+#include "le3d/core/rect2.hpp"
 #include "le3d/core/stdtypes.hpp"
 #include "le3d/core/version.hpp"
 #include "le3d/engine/gfx/colour.hpp"
@@ -100,8 +101,8 @@ void toggle(GFXFlag flag, bool bEnable);
 
 u8 swapInterval();
 u64 swapCount();
-f32 nativeAR();
-glm::vec2 size();
+f32 windowAspect();
+glm::vec2 windowSize();
 glm::vec2 project(glm::vec2 nPos, glm::vec2 space);
 glm::vec2 projectScreen(glm::vec2 nPos);
 glm::vec2 worldToScreen(glm::vec2 world);

@@ -1,6 +1,6 @@
 #pragma once
 #include "le3d/core/transform.hpp"
-#include "le3d/game/ec/component.hpp"
+#include "le3d/game/ecs/component.hpp"
 
 namespace le
 {

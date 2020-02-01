@@ -1,5 +1,5 @@
-#include "le3d/game/ec/ecdb.hpp"
-#include "le3d/game/ec/component.hpp"
+#include "le3d/game/ecs/ecsdb.hpp"
+#include "le3d/game/ecs/component.hpp"
 
 namespace le
 {
@@ -18,16 +18,9 @@ Entity const* Component::getOwner() const
 	return m_pOwner;
 }
 
-ec::Timing Component::timing() const
-{
-	return m_defaultTiming;
-}
-
 void Component::onCreate() {}
-void Component::tick(Time) {}
-void Component::render() const {}
 
-void Component::create(Entity* pOwner, ECDB* pDB, ec::Signature sign)
+void Component::create(Entity* pOwner, ECSDB* pDB, ecs::Signature sign)
 {
 	m_pOwner = pOwner;
 	m_pDB = pDB;

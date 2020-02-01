@@ -195,7 +195,8 @@ glm::vec2 inputImpl::cursorPos()
 	{
 		f64 x, y;
 		glfwGetCursorPos(g_pWindow, &x, &y);
-		return {(f32)x, (f32)y};
+		auto size = context::windowSize() * 0.5f;
+		return {(f32)x - size.x, size.y - (f32)y};
 	}
 	return {};
 }

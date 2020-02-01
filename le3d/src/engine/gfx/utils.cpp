@@ -1,11 +1,18 @@
+#include <deque>
 #include <glm/gtc/type_ptr.hpp>
 #include "le3d/engine/context.hpp"
+#include "le3d/engine/gfx/gfxtypes.hpp"
 #include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/engine/gfx/utils.hpp"
 #include "le3d/core/log.hpp"
 
 namespace le
 {
+namespace
+{
+Rect2 g_view;
+}
+
 s32 gfx::glCheckError(char const* szFile, s32 line)
 {
 	GLenum errorCode = 0;
@@ -73,19 +80,53 @@ s32 gfx::glCheckError(char const* szFile, s32 line)
 	return (s32)errorCode;
 }
 
-void gfx::cropViewport(f32 spaceAR)
+void gfx::setViewport(Rect2 const& view)
 {
-	glm::vec2 const vpSize = context::size();
-	f32 const vpAR = vpSize.x / vpSize.y;
-	spaceAR = spaceAR <= 0.0f ? vpAR : spaceAR;
-	f32 const uiW = vpAR > spaceAR ? vpSize.x * spaceAR / vpAR : vpSize.x;
-	f32 const uiH = vpAR < spaceAR ? vpSize.y * vpAR / spaceAR : vpSize.y;
-	glViewport((s32)((vpSize.x - uiW) * 0.5f), (s32)((vpSize.y - uiH) * 0.5f), (s32)uiW, (s32)uiH);
+	auto bl = view.bl + context::windowSize() * 0.5f;
+	auto size = view.size();
+	setViewport((s32)bl.x, (s32)bl.y, (s32)size.x, (s32)size.y);
 }
 
-void gfx::resetViewport()
+void gfx::setViewport(s32 x, s32 y, s32 dx, s32 dy)
 {
-	glm::vec2 const vpSize = context::size();
-	glViewport(0, 0, (s32)vpSize.x, (s32)vpSize.y);
+	glViewport(x, y, dx, dy);
+}
+
+//Rect2 gfx::cropView(glm::vec2 const& viewSize, f32 spaceAR)
+//{
+//	f32 const vpAR = viewSize.x / viewSize.y;
+//	spaceAR = spaceAR <= 0.0f ? vpAR : spaceAR;
+//	f32 const uiW = vpAR > spaceAR ? viewSize.x * spaceAR / vpAR : viewSize.x;
+//	f32 const uiH = vpAR < spaceAR ? viewSize.y * vpAR / spaceAR : viewSize.y;
+//	return Rect2::sizeCentre({uiW, uiH});
+//	// glViewport((s32)((viewSize.x - uiW) * 0.5f), (s32)((viewSize.y - uiH) * 0.5f), (s32)uiW, (s32)uiH);
+//}
+
+Rect2 gfx::cropView(Rect2 const& view, f32 spaceAspect)
+{
+	f32 const viewAspect = view.aspect();
+	glm::vec2 const viewSize = view.size();
+	if (spaceAspect <= 0.0f)
+	{
+		spaceAspect = viewAspect;
+	}
+	f32 const width = viewAspect > spaceAspect ? viewSize.x * spaceAspect / viewAspect : viewSize.x;
+	f32 const height = viewAspect < spaceAspect ? viewSize.y * viewAspect / spaceAspect : viewSize.y;
+	return Rect2::sizeCentre({width, height}, view.centre());
+}
+
+Rect2 const& gfx::view()
+{
+	if (glm::length2(g_view.size()) == 0.0f)
+	{
+		g_view = Rect2::sizeCentre(context::windowSize());
+	}
+	return g_view;
+}
+
+void gfx::setView(Rect2 const& view)
+{
+	g_view = view;
+	setViewport(g_view);
 }
 } // namespace le

@@ -62,6 +62,6 @@ enum class LogLevel
 
 void log(LogLevel level, char const* szText, char const* szFile, u64 line, ...);
 
-inline u32 g_logCacheSize = 128;
+inline u32 g_logCacheSize = 512;
 std::deque<std::string> logCache();
 } // namespace le

@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include "le3d/core/stdtypes.hpp"
+#include "le3d/core/rect2.hpp"
 
 namespace le
 {
@@ -22,7 +23,11 @@ namespace gfx
 {
 s32 glCheckError(char const* szFile, s32 line);
 
-void cropViewport(f32 spaceAR);
-void resetViewport();
+void setViewport(Rect2 const& view);
+void setViewport(s32 x, s32 dx, s32 y, s32 dy);
+
+Rect2 cropView(Rect2 const& view, f32 spaceAspect);
+Rect2 const& view();
+void setView(Rect2 const& view);
 } // namespace gfx
 } // namespace le

@@ -6,6 +6,7 @@
 #include "le3d/env/threads.hpp"
 #include "le3d/engine/context.hpp"
 #include "le3d/engine/gfx/le3dgl.hpp"
+#include "le3d/engine/gfx/utils.hpp"
 #include "le3d/game/resources.hpp"
 #include "core/ioImpl.hpp"
 #include "inputImpl.hpp"
@@ -55,9 +56,10 @@ void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 {
 	if (pWindow == g_pWindow)
 	{
-		contextImpl::g_context.size = {width, height};
-		contextImpl::g_context.nativeAR = height > 0 ? (f32)width / height : 0.0f;
-		glViewport(0, 0, width, height);
+		contextImpl::g_context.windowSize = {width, height};
+		contextImpl::g_context.windowAR = height > 0 ? (f32)width / height : 0.0f;
+		// TODO: Store somewhere else, don't immediately set? Might be cropped...
+		gfx::setViewport(0, 0, width, height);
 		inputImpl::g_callbacks.onResize(width, height);
 	}
 }
@@ -140,7 +142,7 @@ bool contextImpl::init(context::Settings const& settings)
 		break;
 	}
 	}
-	g_context.size = glm::vec2(width, height);
+	g_context.windowSize = glm::vec2(width, height);
 	s32 cX = (mode->width - width) / 2;
 	s32 cY = (mode->height - height) / 2;
 	ASSERT(cX >= 0 && cY >= 0, "Invalid centre-screen!");
