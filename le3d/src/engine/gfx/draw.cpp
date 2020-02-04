@@ -1,6 +1,7 @@
 #include <array>
 #include <cstddef>
 #include <sstream>
+#include <unordered_map>
 #include <glm/gtc/type_ptr.hpp>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
@@ -17,11 +18,19 @@ namespace
 {
 s32 g_maxTexIdx = 0;
 
+//
+std::unordered_map<s32, std::pair<GLObj, GLObj>> g_texUnitSamplerMap;
+
 void setTexture(s32 txID, GLObj const& samplerID, GLObj const& textureID)
 {
-	glChk(glActiveTexture(GL_TEXTURE0 + (GLuint)txID));
-	glChk(glBindSampler((GLuint)txID, samplerID.handle));
-	glChk(glBindTexture(GL_TEXTURE_2D, textureID.handle));
+	auto const& pair = g_texUnitSamplerMap[txID];
+	if (pair.first != samplerID || pair.second != textureID)
+	{
+		g_texUnitSamplerMap[txID] = {samplerID, textureID};
+		glChk(glActiveTexture(GL_TEXTURE0 + (GLuint)txID));
+		glChk(glBindSampler((GLuint)txID, samplerID.handle));
+		glChk(glBindTexture(GL_TEXTURE_2D, textureID.handle));
+	}
 }
 } // namespace
 

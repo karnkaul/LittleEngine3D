@@ -415,7 +415,6 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
-	glChk(glBindTexture(GL_TEXTURE_2D, 0));
 	shader.setBool(env::g_config.uniforms.transform.isUI, false);
 	if (bResetTint)
 	{

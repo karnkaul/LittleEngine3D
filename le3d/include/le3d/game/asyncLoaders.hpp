@@ -220,9 +220,7 @@ AsyncLoadState const& TLoader<ResIn, ResOut>::loadNext(u16 count)
 	{
 		updateJobs();
 	}
-#if defined(DEBUGGING)
-	auto requestCount = m_loadRequests.size();
-#endif
+	[[maybe_unused]] auto requestCount = m_loadRequests.size();
 	if (m_state == AsyncLoadState::LoadingRequests)
 	{
 		u16 done = 0;

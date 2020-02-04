@@ -35,11 +35,7 @@ std::tm* TM(std::time_t const& time)
 #endif
 }
 
-#if defined(LOG_SOURCE_LOCATION)
-void logInternal(char const* szText, char const* szFile, u64 line, LogLevel level, va_list args)
-#else
-void logInternal(char const* szText, char const*, u64, LogLevel level, va_list args)
-#endif
+void logInternal(char const* szText, [[maybe_unused]] char const* szFile, [[maybe_unused]] u64 line, LogLevel level, va_list args)
 {
 	static std::array<char, 1024> cacheStr;
 	std::lock_guard<std::mutex> lock(g_logMutex);

@@ -15,7 +15,7 @@ struct TZero final
 	TZero& operator=(TZero const&);
 	~TZero();
 
-	operator T const()
+	operator T() const
 	{
 		return handle;
 	}

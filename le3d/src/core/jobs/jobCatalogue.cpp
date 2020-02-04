@@ -48,9 +48,7 @@ void JobCatalog::update()
 		auto const& subJob = *iter;
 		if (subJob->hasCompleted())
 		{
-#if defined(DEBUG_LOG)
-			auto id = subJob->ID();
-#endif
+			[[maybe_unused]] auto id = subJob->ID();
 			iter = m_pendingJobs.erase(iter);
 #if defined(DEBUG_LOG)
 			LOG_D("%s Job %d completed. %d jobs remaining", m_logName.c_str(), id, m_pendingJobs.size());
