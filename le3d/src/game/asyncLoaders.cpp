@@ -31,6 +31,7 @@ void AsyncTexturesLoader::onDone()
 		auto const& texData = sRequest->resIn;
 		resources::loadTexture(texData.id.generic_string(), texData.type, std::move(sRequest->resOut));
 	}
+	return;
 }
 
 AsyncSkyboxLoader::AsyncSkyboxLoader(Request request) : TLoader<stdfs::path, bytearray>(std::move(request))
@@ -61,6 +62,7 @@ void AsyncSkyboxLoader::onDone()
 		bytes[idx++] = std::move(request->resOut);
 	}
 	m_skybox = resources::createSkybox(m_request.idPrefix.generic_string(), std::move(bytes));
+	return;
 }
 
 AsyncModelsLoader::AsyncModelsLoader(Request request) : TLoader<stdfs::path, Model::Data>(std::move(request))
@@ -127,5 +129,6 @@ void AsyncModelsLoader::onDone()
 		resources::loadModel(sRequest->resOut.id, sRequest->resOut);
 	}
 	m_loadRequests.clear();
+	return;
 }
 } // namespace le

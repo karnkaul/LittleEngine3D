@@ -17,8 +17,8 @@ protected:
 
 public:
 	Component();
-	Component(Component&&);
-	Component& operator=(Component&&);
+	Component(Component&&) noexcept;
+	Component& operator=(Component&&) noexcept;
 	virtual ~Component();
 
 public:

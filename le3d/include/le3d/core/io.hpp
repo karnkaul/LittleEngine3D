@@ -41,9 +41,9 @@ protected:
 	FStr m_getStr;
 
 public:
-	IOReader(stdfs::path prefix);
-	IOReader(IOReader&&);
-	IOReader& operator=(IOReader&&);
+	explicit IOReader(stdfs::path prefix) noexcept;
+	IOReader(IOReader&&) noexcept;
+	IOReader& operator=(IOReader&&) noexcept;
 	IOReader(IOReader const&);
 	IOReader& operator=(IOReader const&);
 	virtual ~IOReader();
@@ -64,7 +64,7 @@ public:
 class FileReader : public IOReader
 {
 public:
-	FileReader(stdfs::path prefix = "");
+	FileReader(stdfs::path prefix = "") noexcept;
 
 public:
 	bool isPresent(stdfs::path const& id) const override;

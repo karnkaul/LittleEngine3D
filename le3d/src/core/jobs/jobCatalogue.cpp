@@ -20,6 +20,7 @@ void JobCatalog::addJob(Task job, std::string name)
 		name = "JobCatalog_" + std::to_string(m_subJobs.size());
 	}
 	m_subJobs.emplace_back(std::move(name), std::move(job));
+	return;
 }
 
 void JobCatalog::startJobs(Task onComplete)
@@ -32,6 +33,7 @@ void JobCatalog::startJobs(Task onComplete)
 	{
 		m_pendingJobs.push_back(m_pManager->enqueue(std::move(job.second), std::move(job.first)));
 	}
+	return;
 }
 
 f32 JobCatalog::progress() const
@@ -73,5 +75,6 @@ void JobCatalog::update()
 		LOG_D("%s completed %d jobs in %.2fs", m_logName.c_str(), m_subJobs.size(), secs);
 #endif
 	}
+	return;
 }
 } // namespace le

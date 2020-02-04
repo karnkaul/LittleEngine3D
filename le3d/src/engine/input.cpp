@@ -68,6 +68,7 @@ OnClosed::Token input::registerClosed(OnClosed::Callback callback)
 void input::setCursorMode(CursorMode mode)
 {
 	inputImpl::setCursorMode(mode);
+	return;
 }
 
 CursorMode input::cursorMode()
@@ -83,6 +84,7 @@ glm::vec2 input::cursorPos()
 void input::setCursorPos(glm::vec2 const& pos)
 {
 	inputImpl::setCursorPos(pos);
+	return;
 }
 
 JoyState input::getJoyState(s32 id)

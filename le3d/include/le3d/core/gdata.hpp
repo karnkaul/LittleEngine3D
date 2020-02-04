@@ -12,13 +12,13 @@ protected:
 	std::unordered_map<std::string, std::string> m_fieldMap;
 
 public:
-	GData();
+	GData() noexcept;
 	// Pass serialised data to marhshall and load fields
-	GData(std::string serialised);
+	explicit GData(std::string serialised);
+	GData(GData&&) noexcept;
+	GData& operator=(GData&&) noexcept;
 	GData(GData const& rhs);
-	GData(GData&&);
 	GData& operator=(GData const&);
-	GData& operator=(GData&&);
 	virtual ~GData();
 
 	// Marhshalls and load fields from serialised data

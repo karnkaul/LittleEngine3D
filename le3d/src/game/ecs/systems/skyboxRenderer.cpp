@@ -23,5 +23,6 @@ void SkyboxRenderer::render(ECSDB const& db) const
 			renderSkybox(pSkybox->m_skybox, pSkybox->m_shader, pSkybox->m_tint);
 		}
 	}
+	return;
 }
 } // namespace le

@@ -78,6 +78,7 @@ template <typename MapContainer>
 void TMap<MapContainer>::unloadAll()
 {
 	m_map.clear();
+	return;
 }
 
 template <typename MapContainer>

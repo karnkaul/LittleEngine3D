@@ -24,9 +24,9 @@ private:
 	Flags m_flags;
 
 public:
-	System();
-	System(System&&);
-	System& operator=(System&&);
+	System() noexcept;
+	System(System&&) noexcept;
+	System& operator=(System&&) noexcept;
 	virtual ~System();
 
 public:

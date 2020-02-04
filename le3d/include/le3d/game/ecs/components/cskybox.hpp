@@ -14,8 +14,8 @@ public:
 
 public:
 	CSkybox();
-	CSkybox(CSkybox&&);
-	CSkybox& operator=(CSkybox&&);
+	CSkybox(CSkybox&&) noexcept;
+	CSkybox& operator=(CSkybox&&) noexcept;
 	~CSkybox() override;
 };
 } // namespace le

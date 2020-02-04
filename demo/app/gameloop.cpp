@@ -16,6 +16,8 @@
 #include "ubotypes.hpp"
 #include "gameloop.hpp"
 
+#include "le3d/engine/gfx/gfxThread.hpp"
+
 namespace letest
 {
 using namespace le;
@@ -56,10 +58,10 @@ void runTest()
 	resources::loadFonts(manifestJSON, *uReader);
 
 	auto& litTinted = resources::get<HShader>("lit/tinted");
-	auto& uiTextured = resources::get<HShader>("ui/textured");
+	[[maybe_unused]] auto& uiTextured = resources::get<HShader>("ui/textured");
 	auto& monolithic = resources::get<HShader>("monolithic");
 	litTinted.setV4(env::g_config.uniforms.tint, Colour::Yellow);
-	auto& font = resources::get<BitmapFont>("default");
+	[[maybe_unused]] auto& font = resources::get<BitmapFont>("default");
 
 #if defined(DEBUGGING)
 	CGizmo::s_gizmoShader = monolithic;
@@ -86,7 +88,7 @@ void runTest()
 		auto const& tinted = resources::get<HShader>("unlit/tinted");
 		tinted.setV4(env::g_config.uniforms.tint, diffuse);
 		tinted.setModelMats(mats);
-		gfx::draw(light);
+		gfx::draw(light, tinted);
 	};
 
 	bool bModelsSwapped = false;
@@ -277,6 +279,17 @@ void runTest()
 			{
 				context::setSwapInterval(context::swapInterval() == 0 ? 1 : 0);
 			}
+			else if (key == Key::M && mods & Mods::CONTROL)
+			{
+				if (gfx::isThreadRunning())
+				{
+					gfx::stopThread();
+				}
+				else
+				{
+					gfx::startThread();
+				}
+			}
 			break;
 		}
 		case Action::PRESS:
@@ -346,14 +359,14 @@ void runTest()
 	Time t = Time::elapsed();
 
 	glm::vec3 uiSpace(1920.0f, 1080.0f, 2.0f);
-	f32 uiAR = uiSpace.x / uiSpace.y;
+	[[maybe_unused]] f32 uiAR = uiSpace.x / uiSpace.y;
 
 	Rect2 view = Rect2::sizeCentre(context::windowSize() * 0.75f);
-	//gfx::setView(view);
+	// gfx::setView(view);
 	auto onWindowSizeChange = input::registerResize([&](s32, s32) {
 		view = Rect2::sizeCentre(context::windowSize() * 0.75f, view.centre());
 		pCamera->m_aspectRatio = context::windowAspect();
-		//gfx::setView(view);
+		// gfx::setView(view);
 	});
 
 	auto midRender = [&](ECSDB const&) {
@@ -361,11 +374,11 @@ void runTest()
 		sphereMat.model = glm::translate(sphereMat.model, {2.0f, -0.5f, 0.0f});
 		if (bWireframe)
 		{
-			context::setPolygonMode(context::PolygonMode::Line);
+			gfx::setPolygonMode(PolygonMode::Line);
 		}
 		renderMeshes(sphereMesh, {sphereMat}, monolithic);
-		// renderMeshes(instanceMesh, monolithic, instanceCount);
-		context::setPolygonMode(context::PolygonMode::Fill);
+		renderMeshes(instanceMesh, monolithic, instanceCount);
+		gfx::setPolygonMode(PolygonMode::Fill);
 	};
 	auto midRenderHandle = ecsdb.addRenderSlot(midRender, 10);
 	auto midTick = [eProp0, eProp1, eQuad](ECSDB& ecsdb, Time dt) {
@@ -387,13 +400,13 @@ void runTest()
 	};
 	auto midTickHandle = ecsdb.addTickSlot(midTick, 10);
 
-	context::ClearFlags clearFlags;
-	clearFlags.set({context::ClearFlag::ColorBuffer, context::ClearFlag::DepthBuffer}, true);
+	ClearFlags clearFlags;
+	clearFlags.set({ClearFlag::ColorBuffer, ClearFlag::DepthBuffer}, true);
 	while (context::isAlive())
 	{
 		dt = Time::elapsed() - t;
 		t = Time::elapsed();
-		context::clearFlags(clearFlags);
+		gfx::clearFlags(clearFlags, Colour::Black);
 
 		/*bool bDraggingView = held.find(Key::LEFT_CONTROL) != held.end() && held.find(Key::MOUSE_BUTTON_1) != held.end();
 		if (bDraggingView)
@@ -434,8 +447,6 @@ void runTest()
 			}
 		}
 
-		
-
 		ecsdb.tick(dt);
 
 		gfx::setUBO(hLightsUBO, lights);
@@ -453,23 +464,23 @@ void runTest()
 		// quadProp.render();
 
 		debug::Quad2D tl, tr, bl, br;
-		HTexture const& quadTex = resources::get<HTexture>("textures/awesomeface.png");
+		[[maybe_unused]] HTexture const& quadTex = resources::get<HTexture>("textures/awesomeface.png");
 		tl.size = tr.size = bl.size = br.size = {200.0f, 200.0f};
 		tr.pos = {uiSpace.x * 0.5f, uiSpace.y * 0.5f, 0.0f};
 		tl.pos = {-tr.pos.x, tr.pos.y, 0.0f};
 		bl.pos = {-tr.pos.x, -tr.pos.y, 0.0f};
 		br.pos = {tr.pos.x, -tr.pos.y, 0.0f};
-		debug::draw2DQuads({tl, tr, bl, br}, quadTex, monolithic, uiAR);
+		//debug::draw2DQuads({tl, tr, bl, br}, quadTex, monolithic, uiAR);
 
 		debug::Text2D text;
 		text.text = "Hello World!";
 		text.align = debug::Text2D::Align::Centre;
 		text.height = 100.0f;
 		text.pos = glm::vec3(0.0f, 300.0f, 0.0f);
-		debug::renderString(text, uiTextured, font, uiAR);
+		/*debug::renderString(text, uiTextured, font, uiAR);
 
 		debug::renderFPS(font, monolithic, uiAR);
-		debug::renderVersion(font, uiTextured, uiAR);
+		debug::renderVersion(font, uiTextured, uiAR);*/
 
 		context::swapBuffers();
 		context::pollEvents();
@@ -494,6 +505,7 @@ s32 gameloop::run(s32 argc, char const** argv)
 	context::Settings settings;
 	settings.window.title = "LE3D Test";
 	settings.ctxt.bVSYNC = false;
+	settings.ctxt.bThreaded = true;
 	// settings.window.type = context::WindowType::BorderlessWindow;
 	// settings.window.width = 3000;
 	settings.env.args = {argc, argv};

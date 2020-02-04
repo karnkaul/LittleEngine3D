@@ -42,16 +42,16 @@ inline std::thread::id g_contextThreadID;
 bool init(context::Settings const& settings);
 void checkContextThread();
 
+void releaseCurrentContext();
+void setCurrentContext();
+
 bool isAlive();
 void close();
 bool isClosing();
 bool exists();
-void clearFlags(context::ClearFlags flags, Colour colour);
 void pollEvents();
 void setSwapInterval(u8 interval);
 void swapBuffers();
-void setPolygonMode(context::PolygonFace face, context::PolygonMode mode);
-void toggle(context::GFXFlag flag, bool bEnable);
 void destroy();
 } // namespace contextImpl
 } // namespace le

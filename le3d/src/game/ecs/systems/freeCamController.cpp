@@ -125,5 +125,6 @@ void FreeCamController::tick(ECSDB& db, Time dt)
 
 		m_forEachCam(*pCam);
 	}
+	return;
 }
 } // namespace le

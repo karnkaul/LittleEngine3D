@@ -19,8 +19,11 @@ private:
 	u32 tw;
 
 public:
-	Version(u32 major = 0, u32 minor = 0, u32 patch = 0, u32 tweak = 0);
-	Version(std::string_view serialised);
+	Version(std::string_view serialised) noexcept;
+	explicit constexpr Version(u32 major = 0, u32 minor = 0, u32 patch = 0, u32 tweak = 0) noexcept
+		: mj(major), mn(minor), pa(patch), tw(tweak)
+	{
+	}
 
 public:
 	u32 major() const;

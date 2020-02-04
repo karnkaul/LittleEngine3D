@@ -22,7 +22,7 @@ void GizmoSystem::render(ECSDB const& db) const
 		auto pTransform = results.get<CTransform>();
 		if (pGizmo->m_pArrow && CGizmo::s_gizmoShader.glID > 0)
 		{
-			context::toggle(context::GFXFlag::DepthTest, false);
+			gfx::setFlag(GLFlag::DepthTest, false);
 			glm::mat4 mZ = pTransform->m_transform.model();
 			glm::vec3 scale = pTransform->m_transform.worldScl();
 			mZ = glm::scale(mZ, {1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z});
@@ -35,8 +35,9 @@ void GizmoSystem::render(ECSDB const& db) const
 			pGizmo->m_pArrow->render(CGizmo::s_gizmoShader, mats, Colour::Green);
 			mats.model = mZ;
 			pGizmo->m_pArrow->render(CGizmo::s_gizmoShader, mats, Colour::Blue);
-			context::toggle(context::GFXFlag::DepthTest, true);
+			gfx::setFlag(GLFlag::DepthTest, true);
 		}
 	}
+	return;
 }
 } // namespace le

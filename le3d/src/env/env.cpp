@@ -28,6 +28,7 @@ void SetConfigStrIfPresent(std::string const& id, GData const& data, std::string
 		member = data.get<std::string>(id);
 		LOG_D("[EngineConfig] Extracted [%s] = [%s]", id.data(), member.data());
 	}
+	return;
 }
 
 // void SetConfigS32IfPresent(std::string const& id, GData const& data, s32& member)
@@ -64,6 +65,7 @@ void env::init(Args const& args)
 			g_args.push_back(args.argv[i]);
 		}
 	}
+	return;
 }
 
 void env::setConfig(std::string json)
@@ -126,6 +128,7 @@ void env::setConfig(std::string json)
 		}
 		SetConfigStrIfPresent("shaderPrefix", data, g_config.shaderPrefix);
 	}
+	return;
 }
 
 std::string env::argv0()

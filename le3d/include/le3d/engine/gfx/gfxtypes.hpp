@@ -44,6 +44,46 @@ enum class TexFilter : u8
 	NearestMpNearest
 };
 
+enum class ClearFlag : u8
+{
+	ColorBuffer = 0,
+	DepthBuffer,
+	StencilBuffer,
+	_COUNT
+};
+using ClearFlags = TFlags<size_t(ClearFlag::_COUNT), ClearFlag>;
+
+enum class GLFlag : u8
+{
+	DepthTest = 0,
+	Blend,
+};
+
+enum class BlendFunc : u8
+{
+	Src_OneMinusSrc = 0
+};
+
+enum class StringProp : u8
+{
+	Renderer = 0,
+	Vendor,
+	Version
+};
+
+enum class PolygonFace : u8
+{
+	FrontAndBack,
+	Front,
+	Back
+};
+
+enum class PolygonMode : u8
+{
+	Fill = 0,
+	Line
+};
+
 namespace descriptors
 {
 struct VBO

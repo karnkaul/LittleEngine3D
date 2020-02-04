@@ -2,7 +2,7 @@
 
 namespace le
 {
-HJob::HJob(s64 jobID, std::future<std::any>&& future) : m_future(std::move(future)), m_jobID(jobID) {}
+HJob::HJob(s64 jobID, std::future<std::any>&& future) noexcept : m_future(std::move(future)), m_jobID(jobID) {}
 
 s64 HJob::ID() const
 {

@@ -32,7 +32,7 @@ protected:
 	std::uniform_real_distribution<f32> m_realDist;
 
 public:
-	RandomGen(s32 minS32, s32 maxS32, f32 minF32 = 0.0f, f32 maxF32 = 1.0f);
+	RandomGen(s32 minS32, s32 maxS32, f32 minF32 = 0.0f, f32 maxF32 = 1.0f) noexcept;
 	virtual ~RandomGen();
 
 public:

@@ -1,10 +1,11 @@
 #include <deque>
 #include <glm/gtc/type_ptr.hpp>
+#include "le3d/core/log.hpp"
 #include "le3d/engine/context.hpp"
 #include "le3d/engine/gfx/gfxtypes.hpp"
+#include "le3d/engine/gfx/gfxThread.hpp"
 #include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/engine/gfx/utils.hpp"
-#include "le3d/core/log.hpp"
 
 namespace le
 {
@@ -13,16 +14,101 @@ namespace
 Rect2 g_view;
 }
 
-s32 gfx::glCheckError(char const* szFile, s32 line)
+bool gfx::loadFunctionPointers(GLLoadProc loadFunc)
+{
+#if defined(LE3D_USE_GLAD)
+	if (!gladLoadGLLoader((GLADloadproc)loadFunc))
+	{
+		return false;
+	}
+#endif
+	return true;
+}
+
+void gfx::setFlag(GLFlag flag, bool bEnable)
+{
+	GLenum glFlag = 0;
+	switch (flag)
+	{
+	default:
+		break;
+	case GLFlag::DepthTest:
+		glFlag = GL_DEPTH_TEST;
+		break;
+	case GLFlag::Blend:
+		glFlag = GL_BLEND;
+		break;
+	}
+	if (glFlag > 0)
+	{
+		if (bEnable)
+		{
+			gfx::enqueue([glFlag]() { glEnable(glFlag); });
+		}
+		else
+		{
+			gfx::enqueue([glFlag]() { glDisable(glFlag); });
+		}
+	}
+	return;
+}
+
+void gfx::setBlendFunc(BlendFunc func)
+{
+	GLenum sFactor = 0, dFactor = 0;
+	switch (func)
+	{
+	default:
+		break;
+	case BlendFunc::Src_OneMinusSrc:
+		sFactor = GL_SRC_ALPHA;
+		dFactor = GL_ONE_MINUS_SRC_ALPHA;
+		break;
+	}
+	if (sFactor > 0 && dFactor > 0)
+	{
+		gfx::enqueue([sFactor, dFactor]() { glBlendFunc(sFactor, dFactor); });
+	}
+}
+
+void gfx::setPolygonMode(PolygonMode mode, PolygonFace face)
+{
+	GLenum glFace, glMode;
+	switch (face)
+	{
+	default:
+	case PolygonFace::FrontAndBack:
+		glFace = GL_FRONT_AND_BACK;
+		break;
+	case PolygonFace::Front:
+		glFace = GL_FRONT;
+		break;
+	case PolygonFace::Back:
+		glFace = GL_BACK;
+		break;
+	}
+	switch (mode)
+	{
+	default:
+	case PolygonMode::Fill:
+		glMode = GL_FILL;
+		break;
+	case PolygonMode::Line:
+		glMode = GL_LINE;
+		break;
+	}
+	gfx::enqueue([glFace, glMode]() { glPolygonMode(glFace, glMode); });
+	return;
+}
+
+void gfx::glCheckError(char const* szFile, s32 line)
 {
 	GLenum errorCode = 0;
 	errorCode = glGetError();
-
 	while ((errorCode = glGetError()) != GL_NO_ERROR)
 	{
 		std::string_view error = "Unknown error";
 		std::string_view description = "No description";
-
 		// Decode the error code
 		switch (errorCode)
 		{
@@ -32,28 +118,24 @@ s32 gfx::glCheckError(char const* szFile, s32 line)
 			description = "An unacceptable value has been specified for an enumerated argument.";
 			break;
 		}
-
 		case GL_INVALID_VALUE:
 		{
 			error = "GL_INVALID_VALUE";
 			description = "A numeric argument is out of range.";
 			break;
 		}
-
 		case GL_INVALID_OPERATION:
 		{
 			error = "GL_INVALID_OPERATION";
 			description = "The specified operation is not allowed in the current state.";
 			break;
 		}
-
 		case GL_OUT_OF_MEMORY:
 		{
 			error = "GL_OUT_OF_MEMORY";
 			description = "There is not enough memory left to execute the command.";
 			break;
 		}
-
 			/*case GL_STACK_OVERFLOW:
 			{
 				error = "GL_STACK_OVERFLOW";
@@ -77,7 +159,7 @@ s32 gfx::glCheckError(char const* szFile, s32 line)
 		}
 		LOG_E("[GLError] %s | %s | %s (%d)", error.data(), description.data(), szFile, line);
 	}
-	return (s32)errorCode;
+	return;
 }
 
 void gfx::setViewport(Rect2 const& view)
@@ -85,14 +167,16 @@ void gfx::setViewport(Rect2 const& view)
 	auto bl = view.bl + context::windowSize() * 0.5f;
 	auto size = view.size();
 	setViewport((s32)bl.x, (s32)bl.y, (s32)size.x, (s32)size.y);
+	return;
 }
 
 void gfx::setViewport(s32 x, s32 y, s32 dx, s32 dy)
 {
-	glViewport(x, y, dx, dy);
+	gfx::enqueue([x, y, dx, dy]() { glViewport(x, y, dx, dy); });
+	return;
 }
 
-//Rect2 gfx::cropView(glm::vec2 const& viewSize, f32 spaceAR)
+// Rect2 gfx::cropView(glm::vec2 const& viewSize, f32 spaceAR)
 //{
 //	f32 const vpAR = viewSize.x / viewSize.y;
 //	spaceAR = spaceAR <= 0.0f ? vpAR : spaceAR;
@@ -128,5 +212,32 @@ void gfx::setView(Rect2 const& view)
 {
 	g_view = view;
 	setViewport(g_view);
+	return;
+}
+
+std::string_view gfx::getString(StringProp prop)
+{
+	GLenum glName = 0;
+	switch (prop)
+	{
+	default:
+		break;
+	case StringProp::Renderer:
+		glName = GL_RENDERER;
+		break;
+	case StringProp::Vendor:
+		glName = GL_VENDOR;
+		break;
+	case StringProp::Version:
+		glName = GL_VERSION;
+		break;
+	}
+	std::string_view ret;
+	if (glName > 0)
+	{
+		auto f = gfx::enqueue([&]() { ret = (char const*)glGetString(glName); });
+		gfx::wait(f);
+	}
+	return ret;
 }
 } // namespace le

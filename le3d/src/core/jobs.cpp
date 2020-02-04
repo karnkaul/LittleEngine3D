@@ -42,6 +42,7 @@ void jobs::init(u32 workerCount)
 	uManager = std::make_unique<JobManager>(workerCount);
 	g_pJobManager = uManager.get();
 	LOG_D("[Jobs] Spawned [%u] JobWorkers ([%u] hardware threads)", workerCount, threads::maxHardwareThreads());
+	return;
 }
 
 void jobs::cleanup()
@@ -49,6 +50,7 @@ void jobs::cleanup()
 	LOGIF_D(uManager, "[Jobs] Cleaned up (destroyed [%u] JobWorkers)", uManager->workerCount());
 	uManager = nullptr;
 	g_pJobManager = nullptr;
+	return;
 }
 
 std::shared_ptr<HJob> jobs::enqueue(std::function<std::any()> task, std::string name /* = "" */, bool bSilent /* = false */)
@@ -129,6 +131,7 @@ void jobs::waitAll(std::vector<std::shared_ptr<HJob>> const& handles)
 			handle->wait();
 		}
 	}
+	return;
 }
 
 void jobs::update()
@@ -137,6 +140,7 @@ void jobs::update()
 	{
 		uManager->update();
 	}
+	return;
 }
 
 bool jobs::areWorkersIdle()

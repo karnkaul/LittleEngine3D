@@ -36,7 +36,7 @@ private:
 	{
 		Callback callback;
 		WToken wToken;
-		Wrapper(Callback callback, Token token);
+		explicit Wrapper(Callback callback, Token token);
 	};
 
 	std::vector<Wrapper> m_callbacks;
@@ -105,13 +105,14 @@ template <typename... Args>
 void Delegate<Args...>::clear()
 {
 	m_callbacks.clear();
+	return;
 }
 
 template <typename... Args>
 void Delegate<Args...>::cleanup()
 {
-	m_callbacks.erase(
-		std::remove_if(m_callbacks.begin(), m_callbacks.end(), [](Wrapper& wrapper) -> bool { return wrapper.wToken.expired(); }),
-		m_callbacks.end());
+	auto iter = std::remove_if(m_callbacks.begin(), m_callbacks.end(), [](Wrapper& wrapper) -> bool { return wrapper.wToken.expired(); });
+	m_callbacks.erase(iter, m_callbacks.end());
+	return;
 }
 } // namespace le

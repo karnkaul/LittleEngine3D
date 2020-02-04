@@ -1,11 +1,10 @@
 #include <iostream>
 #include <memory>
+#include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/engine/context.hpp"
-#include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/env/engineVersion.hpp"
 #include "le3d/env/env.hpp"
-#include "le3d/engine/gfx/utils.hpp"
 #include "contextImpl.hpp"
 #include "inputImpl.hpp"
 
@@ -54,6 +53,7 @@ bool context::isAlive()
 void context::close()
 {
 	contextImpl::close();
+	return;
 }
 
 bool context::isClosing()
@@ -61,34 +61,46 @@ bool context::isClosing()
 	return contextImpl::isClosing();
 }
 
-void context::clearFlags(ClearFlags flags, Colour colour /* = Colour::Black */)
-{
-	contextImpl::clearFlags(flags, colour);
-}
-
 void context::pollEvents()
 {
 	contextImpl::pollEvents();
+	return;
 }
 
 void context::setSwapInterval(u8 interval)
 {
 	contextImpl::setSwapInterval(interval);
+	return;
 }
 
 void context::swapBuffers()
 {
 	contextImpl::swapBuffers();
+	return;
 }
 
-void context::setPolygonMode(PolygonMode mode, PolygonFace face /* = PolygonFace::FrontAndBack */)
+bool context::setContextThread()
 {
-	contextImpl::setPolygonMode(face, mode);
+	if (contextImpl::g_contextThreadID != std::this_thread::get_id())
+	{
+		contextImpl::g_contextThreadID = std::this_thread::get_id();
+		contextImpl::setCurrentContext();
+		return true;
+	}
+	LOG_W("Context already owned by this thread!");
+	return false;
 }
 
-void context::toggle(GFXFlag flag, bool bEnable)
+bool context::releaseContextThread()
 {
-	contextImpl::toggle(flag, bEnable);
+	if (contextImpl::g_contextThreadID == std::this_thread::get_id())
+	{
+		contextImpl::g_contextThreadID = std::thread::id();
+		contextImpl::releaseCurrentContext();
+		return true;
+	}
+	ASSERT(false, "Context not owned by this thread!");
+	return false;
 }
 
 u8 context::swapInterval()

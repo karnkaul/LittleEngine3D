@@ -5,7 +5,7 @@
 #include "le3d/env/env.hpp"
 #include "le3d/env/threads.hpp"
 #include "le3d/engine/context.hpp"
-#include "le3d/engine/gfx/le3dgl.hpp"
+#include "le3d/engine/gfx/gfxThread.hpp"
 #include "le3d/engine/gfx/utils.hpp"
 #include "le3d/game/resources.hpp"
 #include "core/ioImpl.hpp"
@@ -17,6 +17,11 @@
 
 namespace le
 {
+namespace gfx
+{
+extern u64 g_renderSwapCount;
+}
+
 #if !defined(LE3D_USE_GLFW)
 
 bool contextImpl::init(context::Settings const&)
@@ -24,12 +29,18 @@ bool contextImpl::init(context::Settings const&)
 	ASSERT(false, "Unsupported platform!");
 	return false;
 }
-void contextImpl::checkContextThread() {}
+void contextImpl::checkContextThread()
+{
+	return;
+}
 bool contextImpl::isAlive()
 {
 	return false;
 }
-void contextImpl::close() {}
+void contextImpl::close()
+{
+	return;
+}
 bool contextImpl::isClosing()
 {
 	return false;
@@ -38,13 +49,34 @@ bool contextImpl::exists()
 {
 	return false;
 }
-void contextImpl::clearFlags(context::ClearFlags, Colour) {}
-void contextImpl::pollEvents() {}
-void contextImpl::setSwapInterval(u8) {}
-void contextImpl::swapBuffers() {}
-void contextImpl::setPolygonMode(context::PolygonFace, context::PolygonMode) {}
-void contextImpl::toggle(context::GFXFlag, bool) {}
-void contextImpl::destroy() {}
+void contextImpl::clearFlags(context::ClearFlags, Colour)
+{
+	return;
+}
+void contextImpl::pollEvents()
+{
+	return;
+}
+void contextImpl::setSwapInterval(u8)
+{
+	return;
+}
+void contextImpl::swapBuffers()
+{
+	return;
+}
+void contextImpl::setPolygonMode(context::PolygonFace, context::PolygonMode)
+{
+	return;
+}
+void contextImpl::toggle(context::GFXFlag, bool)
+{
+	return;
+}
+void contextImpl::destroy()
+{
+	return;
+}
 
 #else
 
@@ -62,6 +94,7 @@ void glframeBufferResizeCallback(GLFWwindow* pWindow, s32 width, s32 height)
 		gfx::setViewport(0, 0, width, height);
 		inputImpl::g_callbacks.onResize(width, height);
 	}
+	return;
 }
 
 void windowCloseCallback(GLFWwindow* pWindow)
@@ -71,11 +104,13 @@ void windowCloseCallback(GLFWwindow* pWindow)
 		LOG_I("[Context] Window closed, terminating session");
 		inputImpl::g_callbacks.onClosed();
 	}
+	return;
 }
 
 void onError(s32 code, char const* szDesc)
 {
 	LOG_E("GLFW Error [%d]: %s", code, szDesc);
+	return;
 }
 } // namespace
 
@@ -159,20 +194,13 @@ bool contextImpl::init(context::Settings const& settings)
 		return {};
 	}
 	glfwMakeContextCurrent(pWindow);
-#if defined(LE3D_USE_GLAD)
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	if (!gfx::loadFunctionPointers((gfx::GLLoadProc)glfwGetProcAddress))
 	{
 		LOG_E("FATAL: Failed to load OpenGL function pointers!");
 		glfwTerminate();
 		return {};
 	}
-#else
-	LOG_E("FATAL: No OpenGL loader exists!");
-	glfwTerminate();
-	return {};
-#endif
-	auto szVersion = (char const*)glGetString(GL_VERSION);
-	auto versionStr = utils::strings::bisect(szVersion, ' ');
+	auto versionStr = utils::strings::bisect(gfx::getString(StringProp::Version), ' ');
 	Version glVersion(versionStr.first);
 	if (glVersion < settings.ctxt.minVersion)
 	{
@@ -195,9 +223,9 @@ bool contextImpl::init(context::Settings const& settings)
 	glfwSetWindowPos(g_pWindow, cX, cY);
 	glfwShowWindow(g_pWindow);
 	g_contextThreadID = std::this_thread::get_id();
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	gfx::setFlag(GLFlag::DepthTest, true);
+	gfx::setFlag(GLFlag::Blend, true);
+	gfx::setBlendFunc(BlendFunc::Src_OneMinusSrc);
 	glframeBufferResizeCallback(g_pWindow, width, height);
 	glfwSetFramebufferSizeCallback(g_pWindow, &glframeBufferResizeCallback);
 	if (settings.env.jobWorkerCount > 0)
@@ -205,7 +233,13 @@ bool contextImpl::init(context::Settings const& settings)
 		jobs::init(settings.env.jobWorkerCount);
 	}
 	glfwSetWindowCloseCallback(g_pWindow, &windowCloseCallback);
-	LOG_I("== [%s] OpenGL context created using %s [%s]", glVersion.toString().data(), glGetString(GL_RENDERER), glGetString(GL_VENDOR));
+	auto renderer = gfx::getString(StringProp::Renderer);
+	auto vendor = gfx::getString(StringProp::Vendor);
+	LOG_I("== [%s] OpenGL context created using %s [%s]", glVersion.toString().data(), renderer.data(), vendor.data());
+	if (settings.ctxt.bThreaded)
+	{
+		gfx::startThread();
+	}
 	return true;
 }
 
@@ -217,6 +251,25 @@ void contextImpl::checkContextThread()
 	{
 		LOG_E("[Context] Invalid thread id attempting to access context!");
 	}
+	return;
+}
+
+void contextImpl::setCurrentContext()
+{
+	if (exists())
+	{
+		glfwMakeContextCurrent(g_pWindow);
+	}
+	return;
+}
+
+void contextImpl::releaseCurrentContext()
+{
+	if (exists())
+	{
+		glfwMakeContextCurrent(nullptr);
+	}
+	return;
 }
 
 bool contextImpl::isAlive()
@@ -230,6 +283,7 @@ void contextImpl::close()
 	{
 		glfwSetWindowShouldClose(g_pWindow, true);
 	}
+	return;
 }
 
 bool contextImpl::isClosing()
@@ -242,35 +296,13 @@ bool contextImpl::exists()
 	return g_pWindow != nullptr;
 }
 
-void contextImpl::clearFlags(context::ClearFlags flags, Colour colour)
-{
-	if (g_pWindow)
-	{
-		cxChk();
-		GLbitfield glFlags = 0;
-		if (flags.isSet(context::ClearFlag::ColorBuffer))
-		{
-			glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
-			glFlags |= GL_COLOR_BUFFER_BIT;
-		}
-		if (flags.isSet(context::ClearFlag::DepthBuffer))
-		{
-			glFlags |= GL_DEPTH_BUFFER_BIT;
-		}
-		if (flags.isSet(context::ClearFlag::StencilBuffer))
-		{
-			glFlags |= GL_STENCIL_BUFFER_BIT;
-		}
-		glClear(glFlags);
-	}
-}
-
 void contextImpl::pollEvents()
 {
 	if (g_pWindow)
 	{
 		glfwPollEvents();
 	}
+	return;
 }
 
 void contextImpl::setSwapInterval(u8 interval)
@@ -279,64 +311,22 @@ void contextImpl::setSwapInterval(u8 interval)
 #if defined(FORCE_NO_VSYNC)
 	g_context.swapInterval = 0;
 #endif
-	glfwSwapInterval(s32(g_context.swapInterval));
+	gfx::enqueue([]() { glfwSwapInterval(s32(g_context.swapInterval)); });
+	return;
 }
 
 void contextImpl::swapBuffers()
 {
 	if (g_pWindow)
 	{
-		glfwSwapBuffers(g_pWindow);
+		auto f = gfx::enqueue([]() {
+			glfwSwapBuffers(g_pWindow);
+			++gfx::g_renderSwapCount;
+		});
+		gfx::wait(f);
 		++g_context.swapCount;
 	}
-}
-
-void contextImpl::setPolygonMode(context::PolygonFace face, context::PolygonMode mode)
-{
-	GLenum glFace, glMode;
-	switch (face)
-	{
-	default:
-	case context::PolygonFace::FrontAndBack:
-		glFace = GL_FRONT_AND_BACK;
-		break;
-	case context::PolygonFace::Front:
-		glFace = GL_FRONT;
-		break;
-	case context::PolygonFace::Back:
-		glFace = GL_BACK;
-		break;
-	}
-	switch (mode)
-	{
-	default:
-	case context::PolygonMode::Fill:
-		glMode = GL_FILL;
-		break;
-	case context::PolygonMode::Line:
-		glMode = GL_LINE;
-		break;
-	}
-	glPolygonMode(glFace, glMode);
-}
-
-void contextImpl::toggle(context::GFXFlag flag, bool bEnable)
-{
-	switch (flag)
-	{
-	default:
-		return;
-	case context::GFXFlag::DepthTest:
-		if (bEnable)
-		{
-			glEnable(GL_DEPTH_TEST);
-		}
-		else
-		{
-			glDisable(GL_DEPTH_TEST);
-		}
-		break;
-	}
+	return;
 }
 
 void contextImpl::destroy()
@@ -344,9 +334,12 @@ void contextImpl::destroy()
 	if (g_pWindow)
 	{
 		LOG_D("[Context] Destroying context, terminating session...");
-		cxChk();
 		inputImpl::clear();
 		le::resources::unloadAll();
+		if (gfx::isThreadRunning())
+		{
+			gfx::stopThread();
+		}
 		glfwSetWindowShouldClose(g_pWindow, true);
 		while (!glfwWindowShouldClose(g_pWindow))
 		{
@@ -365,6 +358,7 @@ void contextImpl::destroy()
 			threads::joinAll();
 		}
 	}
+	return;
 }
 
 #endif

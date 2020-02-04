@@ -10,11 +10,13 @@ ecs::SpawnID Entity::spawnID() const
 void Entity::setEnabled(bool bEnabled)
 {
 	m_flags.set(Flag::Disabled, !bEnabled);
+	return;
 }
 
 void Entity::destroy()
 {
 	m_flags.set(Flag::Destroyed, true);
+	return;
 }
 
 bool Entity::isEnabled() const

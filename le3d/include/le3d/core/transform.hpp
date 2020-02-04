@@ -19,8 +19,8 @@ private:
 
 public:
 	Transform();
-	Transform(Transform&&);
-	Transform& operator=(Transform&&);
+	Transform(Transform&&) noexcept;
+	Transform& operator=(Transform&&) noexcept;
 	~Transform();
 
 public:

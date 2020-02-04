@@ -51,5 +51,6 @@ void FileLogger::dumpToFile()
 			file.write(logStr.data(), (std::streamsize)logStr.size());
 		}
 	}
+	return;
 }
 } // namespace le

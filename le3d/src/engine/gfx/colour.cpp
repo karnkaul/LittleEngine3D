@@ -14,7 +14,7 @@ Colour const Colour::Magenta(255, 0, 255);
 Colour const Colour::Cyan(0, 255, 255);
 Colour const Colour::Transparent(0, 0, 0, 0);
 
-Colour::Colour(UByte r, UByte g, UByte b, UByte a) : r(r), g(g), b(b), a(a) {}
+Colour::Colour(UByte r, UByte g, UByte b, UByte a) noexcept : r(r), g(g), b(b), a(a) {}
 
 Colour Colour::lerp(Colour min, Colour max, f32 alpha)
 {

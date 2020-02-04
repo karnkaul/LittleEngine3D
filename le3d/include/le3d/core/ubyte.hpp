@@ -10,8 +10,8 @@ struct UByte
 	u8 rawValue;
 
 	// Any literals passed in must be positive!
-	UByte(u8 value = 0);
-	explicit UByte(f32 nValue);
+	UByte(u8 value = 0) noexcept;
+	explicit UByte(f32 nValue) noexcept;
 
 	u8 toU8() const;
 	f32 toF32() const;

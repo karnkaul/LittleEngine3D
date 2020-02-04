@@ -131,6 +131,7 @@ void OBJParser::setName(Model::MeshData& outMesh, tinyobj::shape_t const& shape)
 	}
 	outMesh.id = id.str();
 	m_meshIDs.emplace(outMesh.id);
+	return;
 }
 
 void OBJParser::setVertices(Model::MeshData& outMesh, tinyobj::shape_t const& shape)
@@ -164,6 +165,7 @@ void OBJParser::setVertices(Model::MeshData& outMesh, tinyobj::shape_t const& sh
 			outMesh.vertices.indices.push_back(outMesh.vertices.addVertex({vx, vy, vz}, {nx, ny, nz}, glm::vec2(tx, ty)));
 		}
 	}
+	return;
 }
 
 void OBJParser::setMaterials(Model::MeshData& outMesh, tinyobj::shape_t const& shape)
@@ -223,6 +225,7 @@ void OBJParser::setMaterials(Model::MeshData& outMesh, tinyobj::shape_t const& s
 			}
 		}
 	}
+	return;
 }
 } // namespace
 
@@ -274,9 +277,9 @@ bool Model::Data::loadMeshes(u16 count)
 
 Model::LoadRequest::LoadRequest(std::stringstream& objBuf, std::stringstream& mtlBuf) : objBuf(objBuf), mtlBuf(mtlBuf) {}
 
-Model::Model() = default;
-Model::Model(Model&&) = default;
-Model& Model::operator=(Model&&) = default;
+Model::Model() noexcept = default;
+Model::Model(Model&&) noexcept = default;
+Model& Model::operator=(Model&&) noexcept = default;
 Model::Model(Model const&) = default;
 Model& Model::operator=(Model const&) = default;
 
@@ -294,6 +297,7 @@ Model::Data Model::loadOBJ(LoadRequest const& request)
 void Model::addFixture(Mesh const& mesh, std::optional<glm::mat4> model /* = std::nullopt */)
 {
 	m_fixtures.push_back(Fixture{mesh, model});
+	return;
 }
 
 void Model::setupModel(std::string name)
@@ -301,6 +305,7 @@ void Model::setupModel(std::string name)
 	m_id = std::move(name);
 	m_type = typeName(*this);
 	LOG_D("[%s] [%s] setup", m_id.data(), m_type.data());
+	return;
 }
 
 void Model::setupModel(Data const& data)
@@ -370,6 +375,7 @@ void Model::setupModel(Data const& data)
 	}
 	LOGIF_W(data.meshes.empty(), "[Model::Data] [%s] Model: No meshes present in passed data!", m_id.data());
 	LOG_D("[%s] %s setup", m_id.data(), m_type.data());
+	return;
 }
 
 void Model::render(HShader const& shader, ModelMats const& mats, Colour tint) const
@@ -423,7 +429,7 @@ void Model::render(HShader const& shader, ModelMats const& mats, Colour tint) co
 #endif
 		gfx::drawMesh(fixture.mesh, shader);
 #if defined(DEBUGGING)
-		m_renderFlags.flags.reset();
+		m_renderFlags.set(false);
 		if (bResetTint)
 		{
 			shader.setV4(env::g_config.uniforms.tint, Colour::White);
@@ -431,6 +437,7 @@ void Model::render(HShader const& shader, ModelMats const& mats, Colour tint) co
 #endif
 	}
 	gfx::unsetTextures(-1);
+	return;
 }
 
 u32 Model::meshCount() const
@@ -456,5 +463,6 @@ void Model::release()
 	LOGIF_D(!m_fixtures.empty(), "[%s] [%s] destroyed", m_id.data(), m_type.data());
 	m_fixtures.clear();
 	m_id.clear();
+	return;
 }
 } // namespace le

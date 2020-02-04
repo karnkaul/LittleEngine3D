@@ -63,7 +63,7 @@ private:
 #endif
 
 public:
-	TLoader(Request data);
+	explicit TLoader(Request data) noexcept;
 	virtual ~TLoader();
 
 public:
@@ -95,7 +95,7 @@ struct AsyncTexLoadData
 class AsyncTexturesLoader : public TLoader<AsyncTexLoadData, bytearray>
 {
 public:
-	AsyncTexturesLoader(Request request);
+	explicit AsyncTexturesLoader(Request request);
 
 protected:
 	void onDone() override;
@@ -109,7 +109,7 @@ public:
 	Skybox m_skybox;
 
 public:
-	AsyncSkyboxLoader(Request request);
+	explicit AsyncSkyboxLoader(Request request);
 
 protected:
 	void onDone() override;
@@ -138,7 +138,7 @@ protected:
 class AsyncModelsLoader : public TLoader<stdfs::path, Model::Data>
 {
 public:
-	AsyncModelsLoader(Request request);
+	explicit AsyncModelsLoader(Request request);
 
 protected:
 	LoadNextState onLoadNext(std::shared_ptr<RequestOut> const& sRequest, u16 count) override;
@@ -146,7 +146,7 @@ protected:
 };
 
 template <typename ResIn, typename ResOut>
-TLoader<ResIn, ResOut>::TLoader(Request request) : m_request(std::move(request))
+TLoader<ResIn, ResOut>::TLoader(Request request) noexcept : m_request(std::move(request))
 {
 	m_state = AsyncLoadState::RunningJobs;
 #if defined(DEBUGGING)
@@ -174,6 +174,7 @@ void TLoader<ResIn, ResOut>::waitAll()
 			}
 		}
 	}
+	return;
 }
 
 template <typename ResIn, typename ResOut>
@@ -313,6 +314,7 @@ void TLoader<ResIn, ResOut>::enqueueRequest(std::shared_ptr<RequestOut>& sReques
 {
 	sRequest->shJob = jobs::enqueue(task, (m_request.idPrefix / id).generic_string());
 	m_loadRequests.push_back(sRequest);
+	return;
 }
 
 template <typename ResIn, typename ResOut>

@@ -26,7 +26,7 @@ public:
 	UByte a;
 
 	// Warning: All inputs must be unsigned ints!
-	Colour(UByte r = 255, UByte g = 255, UByte b = 255, UByte a = 255);
+	explicit Colour(UByte r = 255, UByte g = 255, UByte b = 255, UByte a = 255) noexcept;
 
 	Colour& operator+=(Colour rhs);
 	Colour& operator-=(Colour rhs);

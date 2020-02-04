@@ -5,8 +5,8 @@
 namespace le
 {
 CSkybox::CSkybox() = default;
-CSkybox::CSkybox(CSkybox&&) = default;
-CSkybox& CSkybox::operator=(CSkybox&&) = default;
+CSkybox::CSkybox(CSkybox&&) noexcept = default;
+CSkybox& CSkybox::operator=(CSkybox&&) noexcept = default;
 CSkybox::~CSkybox()
 {
 	if (m_bAutoDestroySkybox)

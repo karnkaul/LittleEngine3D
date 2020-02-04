@@ -26,10 +26,10 @@ private:
 	s32 value;
 
 public:
-	constexpr Fixed() : value(0) {}
-	constexpr explicit Fixed(f32 value) : value(s32(value * SCALE_FACTOR)) {}
-	constexpr explicit Fixed(f64 value) : value(s32(value * SCALE_FACTOR)) {}
-	constexpr Fixed(s32 numerator, s32 denominator = 1)
+	constexpr Fixed() noexcept : value(0) {}
+	constexpr explicit Fixed(f32 value) noexcept : value(s32(value * SCALE_FACTOR)) {}
+	constexpr explicit Fixed(f64 value) noexcept : value(s32(value * SCALE_FACTOR)) {}
+	constexpr Fixed(s32 numerator, s32 denominator = 1) noexcept
 		: value(s32(static_cast<s64>(numerator) * static_cast<s64>(SCALE_FACTOR) / static_cast<s64>(denominator))){};
 
 	u32 toU32() const;

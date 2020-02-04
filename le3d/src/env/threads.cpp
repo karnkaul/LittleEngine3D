@@ -32,6 +32,7 @@ void threads::join(HThread& id)
 		}
 	}
 	id = HThread();
+	return;
 }
 
 void threads::joinAll()
@@ -45,6 +46,7 @@ void threads::joinAll()
 		}
 	}
 	g_threadMap.clear();
+	return;
 }
 
 u32 threads::maxHardwareThreads()

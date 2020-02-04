@@ -39,14 +39,14 @@ std::stringstream IOReader::FStr::operator()(stdfs::path const& id) const
 	return pReader->getStr(pReader->m_prefix / id);
 }
 
-IOReader::IOReader(stdfs::path prefix) : m_prefix(std::move(prefix)), m_medium("Undefined")
+IOReader::IOReader(stdfs::path prefix) noexcept : m_prefix(std::move(prefix)), m_medium("Undefined")
 {
 	m_getBytes.pReader = this;
 	m_getStr.pReader = this;
 }
 
-IOReader::IOReader(IOReader&&) = default;
-IOReader& IOReader::operator=(IOReader&&) = default;
+IOReader::IOReader(IOReader&&) noexcept = default;
+IOReader& IOReader::operator=(IOReader&&) noexcept = default;
 IOReader::IOReader(IOReader const&) = default;
 IOReader& IOReader::operator=(IOReader const&) = default;
 IOReader::~IOReader() = default;
@@ -81,7 +81,7 @@ bool IOReader::checkPresence(stdfs::path const& id) const
 	return true;
 }
 
-FileReader::FileReader(stdfs::path prefix) : IOReader(std::move(prefix))
+FileReader::FileReader(stdfs::path prefix) noexcept : IOReader(std::move(prefix))
 {
 	m_medium = "Filesystem (";
 	m_medium += std::move(m_prefix.generic_string());

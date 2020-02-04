@@ -92,12 +92,12 @@ public:
 	static Data loadOBJ(LoadRequest const& request);
 
 public:
-	Model();
-	~Model();
-	Model(Model&&);
-	Model& operator=(Model&&);
+	Model() noexcept;
+	Model(Model&&) noexcept;
+	Model& operator=(Model&&) noexcept;
 	Model(Model const&);
 	Model& operator=(Model const&);
+	virtual ~Model();
 
 public:
 	void setupModel(std::string name);

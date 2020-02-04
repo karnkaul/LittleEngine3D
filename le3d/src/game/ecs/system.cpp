@@ -2,13 +2,13 @@
 
 namespace le
 {
-System::System()
+System::System() noexcept
 {
-	m_flags.set({Flag::Ticking, Flag::Rendering}, true);
+	m_flags.set(true);
 }
 
-System::System(System&&) = default;
-System& System::operator=(System&&) = default;
+System::System(System&&) noexcept = default;
+System& System::operator=(System&&) noexcept = default;
 System::~System() = default;
 
 bool System::isTicking() const

@@ -20,7 +20,7 @@ void PropRenderer::render(ECSDB const& db) const
 		auto const& pTransform = results.get<CTransform>();
 		if (pProp->m_flags.isSet(CProp::Flag::Wireframe))
 		{
-			context::setPolygonMode(context::PolygonMode::Line);
+			gfx::setPolygonMode(PolygonMode::Line);
 		}
 		for (auto pModel : pProp->m_models)
 		{
@@ -39,8 +39,9 @@ void PropRenderer::render(ECSDB const& db) const
 		}
 		if (pProp->m_flags.isSet(CProp::Flag::Wireframe))
 		{
-			context::setPolygonMode(context::PolygonMode::Fill);
+			gfx::setPolygonMode(PolygonMode::Fill);
 		}
 	}
+	return;
 }
 } // namespace le

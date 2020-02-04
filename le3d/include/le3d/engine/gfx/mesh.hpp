@@ -32,8 +32,8 @@ public:
 
 public:
 	Mesh();
-	Mesh(Mesh&&);
-	Mesh& operator=(Mesh&&);
+	Mesh(Mesh&&) noexcept;
+	Mesh& operator=(Mesh&&) noexcept;
 	Mesh(Mesh const&);
 	Mesh& operator=(Mesh const&);
 	virtual ~Mesh();

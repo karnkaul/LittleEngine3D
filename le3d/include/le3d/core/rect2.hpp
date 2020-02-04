@@ -17,4 +17,4 @@ struct Rect2
 
 	static Rect2 sizeCentre(glm::vec2 const& size, glm::vec2 const& centre = glm::vec2(0.0f));
 };
-}
+} // namespace le

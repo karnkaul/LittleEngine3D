@@ -1,6 +1,5 @@
 #pragma once
 #include <algorithm>
-#include <execution>
 #include <type_traits>
 #include "le3d/game/ecs/ecsdb.hpp"
 #include "le3d/game/ecs/entity.hpp"
@@ -122,6 +121,7 @@ void ECSDB::addComponent(ecs::SpawnID entityID)
 	static_assert(std::is_base_of_v<Component, Comp1>, "Comp must derive from Component!");
 	addComponent<Comp1>(entityID);
 	addComponent<Comp2, Comps...>(entityID);
+	return;
 }
 
 template <typename Comp>
@@ -207,6 +207,7 @@ void ECSDB::destroySystem()
 {
 	destroySystem<Sys1>();
 	destroySystem<Sys2, Sys...>();
+	return;
 }
 
 template <typename Comp1, typename... Comps>
@@ -272,6 +273,7 @@ void ECSDB::setSigns(std::deque<ecs::Signature>& outSigns)
 {
 	static_assert(std::is_base_of_v<Component, Comp>, "Comp must derive from Component!");
 	outSigns.push_back(getSignature<Comp>());
+	return;
 }
 
 template <typename Comp1, typename Comp2, typename... Comps>
@@ -279,6 +281,7 @@ void ECSDB::setSigns(std::deque<ecs::Signature>& outSigns)
 {
 	setSigns<Comp1>(outSigns);
 	setSigns<Comp2, Comps...>(outSigns);
+	return;
 }
 
 template <typename T, typename Comp>
@@ -299,6 +302,7 @@ void ECSDB::fill(T* pThis, Query& outQuery)
 			}
 		}
 	}
+	return;
 }
 
 template <typename T, typename Comp1, typename Comp2, typename... Comps>
@@ -306,6 +310,7 @@ void ECSDB::fill(T* pThis, Query& outQuery)
 {
 	fill<T, Comp1>(pThis, outQuery);
 	fill<T, Comp2, Comps...>(pThis, outQuery);
+	return;
 }
 
 #define LE3D_ECS_USE_ANY_FOR_ALL 0

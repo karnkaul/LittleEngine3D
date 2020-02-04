@@ -14,9 +14,7 @@ u32 parse(std::vector<std::string> const& vec, size_t idx)
 }
 } // namespace
 
-Version::Version(u32 major, u32 minor, u32 patch, u32 tweak) : mj(major), mn(minor), pa(patch), tw(tweak) {}
-
-Version::Version(std::string_view serialised)
+Version::Version(std::string_view serialised) noexcept
 {
 	auto tokens = utils::strings::tokenise(serialised, '.', {});
 	mj = parse(tokens, 0);

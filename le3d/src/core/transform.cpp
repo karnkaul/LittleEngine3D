@@ -5,8 +5,8 @@
 namespace le
 {
 Transform::Transform() = default;
-Transform::Transform(Transform&&) = default;
-Transform& Transform::operator=(Transform&&) = default;
+Transform::Transform(Transform&&) noexcept = default;
+Transform& Transform::operator=(Transform&&) noexcept = default;
 Transform::~Transform()
 {
 	if (m_pParent)

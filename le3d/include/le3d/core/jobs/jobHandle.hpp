@@ -13,7 +13,7 @@ private:
 	s64 m_jobID = -1;
 
 public:
-	HJob(s64 jobID, std::future<std::any>&& future);
+	HJob(s64 jobID, std::future<std::any>&& future) noexcept;
 
 	s64 ID() const;
 

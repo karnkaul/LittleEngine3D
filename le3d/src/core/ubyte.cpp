@@ -2,9 +2,9 @@
 
 namespace le
 {
-UByte::UByte(u8 value) : rawValue(value) {}
+UByte::UByte(u8 value) noexcept : rawValue(value) {}
 
-UByte::UByte(f32 nValue)
+UByte::UByte(f32 nValue) noexcept
 {
 	rawValue = u8(nValue * 255.0f);
 }

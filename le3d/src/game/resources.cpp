@@ -87,6 +87,7 @@ void resources::unloadAll<HUBO>()
 		gfx::releaseUBO(kvp.second);
 	}
 	g_ubos.unloadAll();
+	return;
 }
 
 template <>
@@ -203,6 +204,7 @@ void resources::unloadAll<HShader>()
 		gfx::releaseShader(kvp.second);
 	}
 	g_shaders.unloadAll();
+	return;
 }
 
 template <>
@@ -247,6 +249,7 @@ void resources::addSamplers(GData const& samplerList)
 		auto magFilter = g_strToTexFilter[magFilterStr];
 		addSampler(id, {wrap, minFilter, magFilter, (u8)anisotropy});
 	}
+	return;
 }
 
 template <>
@@ -281,6 +284,7 @@ void resources::unloadAll<HSampler>()
 		gfx::releaseSampler(kvp.second);
 	}
 	g_samplers.unloadAll();
+	return;
 }
 
 template <>
@@ -351,6 +355,7 @@ void resources::unloadAll<HTexture>()
 	}
 	gfx::releaseTextures(toDel);
 	g_textures.unloadAll();
+	return;
 }
 
 template <>
@@ -398,6 +403,7 @@ void resources::loadFonts(GData const& fontList, IOReader const& reader)
 		data.deserialise(reader.getString(fontID));
 		loadFont(id, std::move(data));
 	}
+	return;
 }
 
 template <>
@@ -432,6 +438,7 @@ void resources::unloadAll<BitmapFont>()
 		gfx::releaseFont(kvp.second);
 	}
 	g_fonts.unloadAll();
+	return;
 }
 
 template <>
@@ -472,6 +479,7 @@ template <>
 void resources::unloadAll<Model>()
 {
 	g_models.unloadAll();
+	return;
 }
 
 template <>
@@ -498,6 +506,7 @@ void resources::destroySkybox(Skybox& skybox)
 	gfx::releaseCubemap(skybox.hCube);
 	gfx::releaseMesh(skybox.mesh);
 	skybox = Skybox();
+	return;
 }
 
 void resources::unloadAll()
@@ -511,5 +520,6 @@ void resources::unloadAll()
 	unloadAll<HSampler>();
 	unloadAll<HUBO>();
 	unloadAll<HShader>();
+	return;
 }
 } // namespace le

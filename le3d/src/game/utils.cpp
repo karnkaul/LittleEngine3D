@@ -6,6 +6,7 @@
 #include "le3d/env/env.hpp"
 #include "le3d/engine/context.hpp"
 #include "le3d/engine/gfx/draw.hpp"
+#include "le3d/engine/gfx/gfxThread.hpp"
 #include "le3d/engine/gfx/le3dgl.hpp"
 #include "le3d/engine/gfx/vram.hpp"
 #include "le3d/engine/gfx/primitives.hpp"
@@ -33,24 +34,27 @@ void renderSkybox(Skybox const& skybox, HShader const& shader, Colour tint)
 	{
 		return;
 	}
-	glChk(glDepthMask(GL_FALSE));
-	shader.use();
 	shader.setV4(env::g_config.uniforms.tint, tint);
-	glChk(glActiveTexture(GL_TEXTURE0));
-	glChk(glBindSampler(0, 0));
-	glChk(glBindVertexArray(skybox.mesh.m_hVerts.hVAO));
-	glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.hCube.glID));
-	if (skybox.mesh.m_hVerts.hEBO > 0)
-	{
-		glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox.mesh.m_hVerts.hEBO));
-		glChk(glDrawElements(GL_TRIANGLES, skybox.mesh.m_hVerts.iCount, GL_UNSIGNED_INT, 0));
-	}
-	else
-	{
-		glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)skybox.mesh.m_hVerts.vCount));
-	}
-	glChk(glBindVertexArray(0));
-	glChk(glDepthMask(GL_TRUE));
+	gfx::enqueue([skybox = skybox, shader = shader]() {
+		glChk(glUseProgram(shader.glID));
+		glChk(glDepthMask(GL_FALSE));
+		glChk(glActiveTexture(GL_TEXTURE0));
+		glChk(glBindSampler(0, 0));
+		glChk(glBindVertexArray(skybox.mesh.m_hVerts.hVAO));
+		glChk(glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.hCube.glID));
+		if (skybox.mesh.m_hVerts.hEBO > 0)
+		{
+			glChk(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox.mesh.m_hVerts.hEBO));
+			glChk(glDrawElements(GL_TRIANGLES, skybox.mesh.m_hVerts.iCount, GL_UNSIGNED_INT, 0));
+		}
+		else
+		{
+			glChk(glDrawArrays(GL_TRIANGLES, 0, (GLsizei)skybox.mesh.m_hVerts.vCount));
+		}
+		glChk(glBindVertexArray(0));
+		glChk(glDepthMask(GL_TRUE));
+	});
+	return;
 }
 
 void renderMeshes(Mesh const& mesh, std::vector<ModelMats> const& mats, HShader const& shader, Colour tint)
@@ -64,6 +68,7 @@ void renderMeshes(Mesh const& mesh, std::vector<ModelMats> const& mats, HShader 
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
 	gfx::unsetTextures((s32)mesh.m_material.textures.size());
+	return;
 }
 
 void renderMeshes(Mesh const& mesh, HShader const& shader, u32 count, Colour tint)
@@ -77,6 +82,7 @@ void renderMeshes(Mesh const& mesh, HShader const& shader, u32 count, Colour tin
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 	}
 	gfx::unsetTextures((s32)mesh.m_material.textures.size());
+	return;
 }
 
 CProp* spawnProp(ECSDB& ecdb, std::string name, HShader const& shader, bool bDebugGizmo)
@@ -120,6 +126,7 @@ void debug::DArrow::setupDArrow(const glm::quat& orientation)
 	m_cone.mesh.m_material.flags = m_cube.mesh.m_material.flags = m_sphere.mesh.m_material.flags = {};
 	setTip(m_tip, true);
 	setupModel("dArrow");
+	return;
 }
 
 void debug::DArrow::setTip(Tip tip, bool bForce)
@@ -146,6 +153,7 @@ void debug::DArrow::setTip(Tip tip, bool bForce)
 			break;
 		}
 	}
+	return;
 }
 
 Mesh& debug::Cube()
@@ -295,19 +303,22 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 			static auto const sf = sizeof(f32);
 			if (quad.oTexCoords)
 			{
-				glm::vec4 const& uv = *quad.oTexCoords;
-				f32 const data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
-				glChk(glBindVertexArray(dQuad.m_hVerts.hVAO));
-				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.hVBO.glID));
-				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+				gfx::enqueue([uv = *quad.oTexCoords, dQuad]() {
+					f32 const data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
+					glChk(glBindVertexArray(dQuad.m_hVerts.hVAO));
+					glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.hVBO.glID));
+					glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+				});
 			}
 			gfx::drawMesh(dQuad, shader);
 			if (quad.oTexCoords)
 			{
-				f32 const data[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
-				glChk(glBindVertexArray(dQuad.m_hVerts.hVAO));
-				glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.hVBO.glID));
-				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+				gfx::enqueue([dQuad]() {
+					f32 const data[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
+					glChk(glBindVertexArray(dQuad.m_hVerts.hVAO));
+					glChk(glBindBuffer(GL_ARRAY_BUFFER, dQuad.m_hVerts.hVBO.glID));
+					glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+				});
 			}
 		}
 	}
@@ -317,7 +328,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 		shader.setModelMats(mats);
 		shader.setV4(env::g_config.uniforms.tint, Colour::White);
 		HVerts hVerts = gfx::genVerts(verts, DrawType::Static, &shader);
-		gfx::draw(hVerts);
+		gfx::draw(hVerts, shader);
 		gfx::releaseVerts(hVerts);
 	}
 	else if (bResetTint)
@@ -327,6 +338,7 @@ void debug::draw2DQuads(std::vector<Quad2D> quads, HTexture const& texture, HSha
 	shader.setBool(env::g_config.uniforms.transform.isUI, false);
 	gfx::unsetTextures(0);
 	gfx::setViewport(view);
+	return;
 }
 
 void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont const& hFont, f32 const uiAR, bool bOneDrawCall)
@@ -367,8 +379,10 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 	bResetTint |= gfx::setTextures(shader, {hFont.sheet}, true);
 	if (!bOneDrawCall)
 	{
-		glBindVertexArray(hFont.quad.m_hVerts.hVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, hFont.quad.m_hVerts.hVBO.glID);
+		gfx::enqueue([hFont_ = hFont]() {
+			glBindVertexArray(hFont_.quad.m_hVerts.hVAO);
+			glBindBuffer(GL_ARRAY_BUFFER, hFont_.quad.m_hVerts.hVBO.glID);
+		});
 	}
 	auto view = gfx::view();
 	gfx::setViewport(gfx::cropView(view, uiAR));
@@ -415,9 +429,11 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 				world = glm::translate(world, p);
 				mats.model = glm::scale(world, glm::vec3(text.height, text.height, 1.0f));
 				shader.setModelMats(mats);
-				f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
-				auto sf = sizeof(f32);
-				glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+				gfx::enqueue([uv]() {
+					f32 data[] = {uv.s, uv.t, uv.p, uv.t, uv.p, uv.q, uv.s, uv.q};
+					auto sf = sizeof(f32);
+					glBufferSubData(GL_ARRAY_BUFFER, (GLsizeiptr)(sf * (4 * 3 + 4 * 3)), (GLsizeiptr)(sizeof(data)), data);
+				});
 				gfx::drawMesh(hFont.quad, shader);
 			}
 		}
@@ -428,13 +444,15 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 		ModelMats mats;
 		shader.setModelMats(mats);
 		HVerts hVerts = gfx::genVerts(verts, DrawType::Static, &shader);
-		gfx::draw(hVerts);
+		gfx::draw(hVerts, shader);
 		gfx::releaseVerts(hVerts);
 	}
 	else
 	{
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		gfx::enqueue([]() {
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		});
 	}
 	shader.setBool(env::g_config.uniforms.transform.isUI, false);
 	if (bResetTint)
@@ -443,6 +461,7 @@ void debug::renderString(Text2D const& text, HShader const& shader, BitmapFont c
 	}
 	gfx::unsetTextures(0);
 	gfx::setViewport(view);
+	return;
 }
 
 void debug::renderFPS(BitmapFont const& font, HShader const& shader, f32 const uiAR)
@@ -463,11 +482,13 @@ void debug::renderFPS(BitmapFont const& font, HShader const& shader, f32 const u
 	g_fpsStyle.text = "FPS ";
 	g_fpsStyle.text += std::to_string(fps == 0 ? frames : fps);
 	renderString(g_fpsStyle, shader, font, uiAR);
+	return;
 }
 
 void debug::renderVersion(BitmapFont const& font, HShader const& shader, f32 const uiAR)
 {
 	renderString(g_versionStyle, shader, font, uiAR);
+	return;
 }
 
 void debug::unloadAll()
@@ -478,5 +499,6 @@ void debug::unloadAll()
 		gfx::releaseMesh(kvp.second);
 	}
 	g_debugMeshes.clear();
+	return;
 }
 } // namespace le

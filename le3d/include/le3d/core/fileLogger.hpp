@@ -14,7 +14,7 @@ private:
 	std::atomic<bool> m_bLog;
 
 public:
-	FileLogger(std::filesystem::path path);
+	explicit FileLogger(std::filesystem::path path);
 	~FileLogger();
 
 private:

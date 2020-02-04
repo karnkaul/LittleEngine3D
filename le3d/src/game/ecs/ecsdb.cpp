@@ -26,11 +26,13 @@ void SlotSystem::tick(ECSDB& db, Time dt)
 	m_onRender.cleanup();
 	m_onTick.cleanup();
 	m_onTick(db, dt);
+	return;
 }
 
 void SlotSystem::render(ECSDB const& db) const
 {
 	m_onRender(db);
+	return;
 }
 
 using SortedSystems = std::map<ecs::Timing, std::deque<System*>>;
@@ -139,6 +141,7 @@ void ECSDB::setAll(System::Flag flag, bool bValue)
 	{
 		uSlot->setFlag(flag, bValue);
 	}
+	return;
 }
 
 ECSDB::OnTick::Token ECSDB::addTickSlot(OnTick::Callback callback, ecs::Timing timing)
@@ -174,6 +177,7 @@ void ECSDB::tick(Time dt)
 			}
 		}
 	}
+	return;
 }
 
 void ECSDB::render() const
@@ -190,6 +194,7 @@ void ECSDB::render() const
 			}
 		}
 	}
+	return;
 }
 
 void ECSDB::cleanDestroyed()
@@ -208,6 +213,7 @@ void ECSDB::cleanDestroyed()
 		}
 		++iter;
 	}
+	return;
 }
 
 Component* ECSDB::attach(ecs::Signature sign, std::unique_ptr<Component>&& uComp, Entity& entity)
@@ -236,6 +242,7 @@ void ECSDB::detach(Component& component, ecs::SpawnID id)
 	auto const sign = component.m_signature;
 	m_components[sign].erase(id);
 	LOG_I("[%s] detached from [%s] and destroyed", tName.data(), m_entityNames[id].data());
+	return;
 }
 
 void ECSDB::detach(System& system)
@@ -244,6 +251,7 @@ void ECSDB::detach(System& system)
 	auto const sign = system.m_signature;
 	m_systems.erase(sign);
 	LOG_I("[%s] (System) destroyed", tName.data());
+	return;
 }
 
 ECSDB::EntityMap::iterator ECSDB::destroyEntity(EntityMap::iterator iter, ecs::SpawnID id)

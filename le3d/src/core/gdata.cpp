@@ -28,11 +28,11 @@ GData::GData(std::string serialised)
 	}
 }
 
-GData::GData() = default;
+GData::GData() noexcept = default;
+GData::GData(GData&&) noexcept = default;
+GData& GData::operator=(GData&&) noexcept = default;
 GData::GData(GData const& rhs) = default;
-GData::GData(GData&&) = default;
 GData& GData::operator=(GData const&) = default;
-GData& GData::operator=(GData&&) = default;
 GData::~GData() = default;
 
 bool GData::marshall(std::string serialised)
@@ -131,7 +131,7 @@ std::vector<GData> GData::getGDatas(std::string const& key) const
 	for (auto& rawString : rawStrings)
 	{
 		utils::strings::trim(rawString, {'"', ' '});
-		ret.push_back(std::move(rawString));
+		ret.push_back(GData(std::move(rawString)));
 	}
 	return ret;
 }

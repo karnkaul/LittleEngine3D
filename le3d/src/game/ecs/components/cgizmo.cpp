@@ -11,5 +11,6 @@ HShader CGizmo::s_gizmoShader;
 void CGizmo::onCreate()
 {
 	m_pArrow = &debug::Arrow();
+	return;
 }
 } // namespace le

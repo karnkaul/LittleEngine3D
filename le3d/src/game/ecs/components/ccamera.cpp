@@ -97,5 +97,6 @@ void CFreeCam::onCreate()
 	m_tZoom = input::registerScroll([this](f64 /*dx*/, f64 dy) { m_dSpeed += (f32)dy; });
 	m_tFocus = input::registerFocus([this](bool /*bFocus*/) { m_flags.set(Flag::InitPos, false); });
 	m_flags.set(Flag::Enabled, true);
+	return;
 }
 } // namespace le

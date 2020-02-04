@@ -23,11 +23,13 @@ namespace utils::strings
 void toLower(std::string& outString)
 {
 	std::transform(outString.begin(), outString.end(), outString.begin(), ::tolower);
+	return;
 }
 
 void toUpper(std::string& outString)
 {
 	std::transform(outString.begin(), outString.end(), outString.begin(), ::toupper);
+	return;
 }
 
 bool toBool(std::string input, bool bDefaultValue)
@@ -120,6 +122,7 @@ void removeChars(std::string& outInput, std::initializer_list<char> toRemove)
 	auto isToRemove = [&toRemove](char c) -> bool { return std::find(toRemove.begin(), toRemove.end(), c) != toRemove.end(); };
 	auto iter = std::remove_if(outInput.begin(), outInput.end(), isToRemove);
 	outInput.erase(iter, outInput.end());
+	return;
 }
 
 void trim(std::string& outInput, std::initializer_list<char> toRemove)
@@ -134,12 +137,14 @@ void trim(std::string& outInput, std::initializer_list<char> toRemove)
 	for (; endIdx > startIdx && isIgnored(endIdx - 1); --endIdx)
 		;
 	outInput = outInput.substr(startIdx, endIdx - startIdx);
+	return;
 }
 
 void removeWhitespace(std::string& outInput)
 {
 	substituteChars(outInput, {std::pair<char, char>('\t', ' '), std::pair<char, char>('\n', ' '), std::pair<char, char>('\r', ' ')});
 	removeChars(outInput, {' '});
+	return;
 }
 
 std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initializer_list<std::pair<char, char>> escape)
@@ -206,6 +211,7 @@ void substituteChars(std::string& outInput, std::initializer_list<std::pair<char
 		}
 		++iter;
 	}
+	return;
 }
 
 bool isCharEnclosedIn(std::string_view str, size_t idx, std::pair<char, char> wrapper)
