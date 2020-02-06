@@ -1,9 +1,11 @@
 #pragma once
+#include <future>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/colour.hpp"
+#include "le3d/core/std_types.hpp"
 #include "le3d/core/rect2.hpp"
-#include "le3d/engine/gfx/gfxtypes.hpp"
+#include "le3d/engine/gfx/gfx_enums.hpp"
 
 namespace le
 {
@@ -22,9 +24,10 @@ constexpr glm::quat g_qIdentity = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
 namespace gfx
 {
-using GLLoadProc = void*(*)(char const* szName);
+using GLLoadProc = void* (*)(char const* szName);
 
 bool loadFunctionPointers(GLLoadProc loadFunc);
+void clearFlags(ClearFlags flags, Colour colour);
 void setFlag(GLFlag flag, bool bEnable);
 void setBlendFunc(BlendFunc func);
 void setPolygonMode(PolygonMode mode, PolygonFace face = PolygonFace::FrontAndBack);

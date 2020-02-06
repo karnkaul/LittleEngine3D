@@ -3,10 +3,10 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/engine/context.hpp"
-#include "le3d/env/engineVersion.hpp"
+#include "le3d/env/engine_version.hpp"
 #include "le3d/env/env.hpp"
-#include "contextImpl.hpp"
-#include "inputImpl.hpp"
+#include "context_impl.hpp"
+#include "input_impl.hpp"
 
 namespace le
 {
@@ -73,17 +73,21 @@ void context::setSwapInterval(u8 interval)
 	return;
 }
 
-void context::swapBuffers()
+void context::swapAndPresent()
 {
-	contextImpl::swapBuffers();
+	contextImpl::present();
 	return;
+}
+
+context::OnSwap::Token context::registerOnSwap(OnSwap::Callback callback)
+{
+	return contextImpl::g_onSwap.subscribe(callback);
 }
 
 bool context::setContextThread()
 {
 	if (contextImpl::g_contextThreadID != std::this_thread::get_id())
 	{
-		contextImpl::g_contextThreadID = std::this_thread::get_id();
 		contextImpl::setCurrentContext();
 		return true;
 	}
@@ -95,7 +99,6 @@ bool context::releaseContextThread()
 {
 	if (contextImpl::g_contextThreadID == std::this_thread::get_id())
 	{
-		contextImpl::g_contextThreadID = std::thread::id();
 		contextImpl::releaseCurrentContext();
 		return true;
 	}
@@ -108,9 +111,14 @@ u8 context::swapInterval()
 	return contextImpl::g_context.swapInterval;
 }
 
-u64 context::swapCount()
+u64 context::framesTicked()
 {
 	return contextImpl::g_context.swapCount;
+}
+
+u64 context::framesRendered()
+{
+	return contextImpl::g_context.framesRendered;
 }
 
 f32 context::windowAspect()

@@ -1,8 +1,8 @@
 #pragma once
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 #include "le3d/core/time.hpp"
-#include "le3d/core/tZero.hpp"
-#include "le3d/game/ecs/ecsCommon.hpp"
+#include "le3d/core/zero.hpp"
+#include "le3d/game/ecs/ecs_common.hpp"
 
 namespace le
 {

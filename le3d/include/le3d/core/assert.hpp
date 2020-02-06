@@ -4,18 +4,18 @@
  * Variable     : ASSERTS
  * Description  : Used to log time taken to load meshes, textures, etc from model data
  */
-#if defined(DEBUGGING)
-#if !defined(ASSERTS)
-#define ASSERTS
+#if defined(LE3D_DEBUG)
+#if !defined(LE3D_ASSERTS)
+#define LE3D_ASSERTS
 #endif
 #endif
 
-#if defined(ASSERTS)
+#if defined(LE3D_ASSERTS)
 #define ASSERT(predicate, errorMessage) le::assertMsg(!!(predicate), #errorMessage, __FILE__, __LINE__)
-#define ASSERT_VAR(predicate, szStr) le::assertMsg(!!(predicate), szStr, __FILE__, __LINE__)
+#define ASSERT_STR(predicate, szStr) le::assertMsg(!!(predicate), szStr, __FILE__, __LINE__)
 #else
 #define ASSERT(disabled, _disabled)
-#define ASSERT_VAR(disabled, _disabled)
+#define ASSERT_STR(disabled, _disabled)
 #endif
 
 namespace le

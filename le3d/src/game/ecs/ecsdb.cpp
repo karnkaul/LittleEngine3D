@@ -4,7 +4,7 @@
 #include "le3d/env/env.hpp"
 #include "le3d/game/ecs/component.hpp"
 #include "le3d/game/ecs/ecsdb.hpp"
-#include "le3d/game/ecs/ecsImpl.hpp"
+#include "le3d/game/ecs/ecs_impl.hpp"
 
 namespace le
 {
@@ -72,7 +72,7 @@ ECSDB::~ECSDB()
 {
 	if (!m_entities.empty())
 	{
-		LOG_I("[%s] %u Entities and their Components destroyed", typeName(*this).data(), m_entities.size());
+		LOG_I("[%s] %u Entities and %u Components destroyed", typeName(*this).data(), m_entities.size(), m_components.size());
 	}
 	LOG_D("[%s] Destroyed", typeName(*this).data());
 }

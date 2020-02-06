@@ -4,7 +4,7 @@
 #include "le3d/core/io.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
-#include "ioImpl.hpp"
+#include "io_impl.hpp"
 
 namespace le
 {
@@ -79,6 +79,16 @@ bool IOReader::checkPresence(stdfs::path const& id) const
 		return false;
 	}
 	return true;
+}
+
+bool IOReader::checkPresence(std::initializer_list<stdfs::path> ids) const
+{
+	bool bRet = true;
+	for (auto const& id : ids)
+	{
+		bRet &= checkPresence(id);
+	}
+	return bRet;
 }
 
 FileReader::FileReader(stdfs::path prefix) noexcept : IOReader(std::move(prefix))

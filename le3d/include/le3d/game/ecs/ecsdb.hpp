@@ -4,9 +4,9 @@
 #include <string>
 #include <unordered_map>
 #include "le3d/core/delegate.hpp"
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 #include "le3d/core/time.hpp"
-#include "ecsCommon.hpp"
+#include "ecs_common.hpp"
 #include "entity.hpp"
 #include "system.hpp"
 

@@ -2,7 +2,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 
 #if (defined(_WIN32) || defined(_WIN64))
 #define LE3D_OS_WINX
@@ -60,6 +60,7 @@ struct EngineConfig
 				std::string ambient = "material.albedo.ambient";
 				std::string diffuse = "material.albedo.diffuse";
 				std::string specular = "material.albedo.specular";
+				std::string shininess = "material.albedo.shininess";
 			};
 
 			Albedo albedo;
@@ -70,15 +71,19 @@ struct EngineConfig
 
 			// float
 			std::string hasSpecular = "material.hasSpecular";
-			std::string shininess = "material.shininess";
 
 			// sampler2D
 			std::string diffuseTexPrefix = "material.diffuse";
 			std::string specularTexPrefix = "material.specular";
+
+			// vec4
+			std::string tint = "tint";
+
+			// samplerCube
+			std::string skybox = "skybox";
 		};
 		Transform transform;
 		Material material;
-		std::string tint = "tint";
 		std::string modelMatrix = "model";
 		std::string normalMatrix = "normals";
 	};

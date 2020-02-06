@@ -1,7 +1,7 @@
 #pragma once
 #include <functional>
-#include "le3d/core/stdtypes.hpp"
-#include "le3d/core/tZero.hpp"
+#include "le3d/core/std_types.hpp"
+#include "le3d/core/zero.hpp"
 
 namespace le
 {

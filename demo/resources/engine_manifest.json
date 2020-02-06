@@ -1,0 +1,32 @@
+{
+	"shaders":
+	[
+		{
+			"id": "shaders/unlit/skybox",
+			"vertCodeID": "shaders/skybox.vsh",
+			"fragCodeID": "shaders/unlit/skyboxed.fsh",
+			"uboIDs": [
+				"ubos/matrices"
+			],
+			"flags": [
+				"Skybox"
+			]
+		},
+		{
+			"id": "shaders/monolithic",
+			"vertCodeID": "shaders/monolithic.vsh",
+			"fragCodeID": "shaders/monolithic.fsh",
+			"uboIDs": [
+				"ubos/matrices",
+				"ubos/lights"
+			]
+		}
+	],
+	"fonts":
+	[
+		{
+			"id": "fonts/default",
+			"fontID": "fonts/default.json"
+		}
+	]
+}

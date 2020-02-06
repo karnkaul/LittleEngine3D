@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 
 #if __linux__
 #undef major
@@ -30,7 +30,7 @@ public:
 	u32 minor() const;
 	u32 patch() const;
 	u32 tweak() const;
-	std::string toString() const;
+	std::string toString(bool bFull) const;
 
 	bool upgrade(Version const& rhs);
 

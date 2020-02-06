@@ -2,7 +2,7 @@
 #include <list>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 
 namespace le
 {
@@ -19,8 +19,8 @@ private:
 
 public:
 	Transform();
-	Transform(Transform&&) noexcept;
-	Transform& operator=(Transform&&) noexcept;
+	Transform(Transform&&);
+	Transform& operator=(Transform&&);
 	~Transform();
 
 public:

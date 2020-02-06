@@ -1,9 +1,8 @@
 #pragma once
 #include <deque>
 #include <optional>
-#include "le3d/engine/gfx/colour.hpp"
+#include "le3d/core/colour.hpp"
 #include "le3d/engine/gfx/model.hpp"
-#include "le3d/engine/gfx/gfxtypes.hpp"
 #include "le3d/game/ecs/component.hpp"
 
 namespace le
@@ -11,20 +10,33 @@ namespace le
 class CProp : public Component
 {
 public:
-	enum class Flag
+	enum class Flag : u8
 	{
 		Enabled = 0,
 		Wireframe,
 		Translucent,
-		_COUNT,
+		COUNT_,
 	};
 
-	using Flags = TFlags<size_t(Flag::_COUNT), Flag>;
+	struct Fixture
+	{
+		gfx::Model const* pModel = nullptr;
+		gfx::Mesh const* pMesh = nullptr;
+		std::optional<glm::mat4> oWorld;
+
+		Fixture() = default;
+		Fixture(gfx::Model const* pModel, std::optional<glm::mat4> oWorld = std::nullopt) : pModel(pModel), oWorld(oWorld) {}
+		Fixture(gfx::Mesh const* pMesh, std::optional<glm::mat4> oWorld = std::nullopt) : pMesh(pMesh), oWorld(oWorld) {}
+	};
+
+	using Flags = TFlags<Flag>;
 
 public:
-	HShader m_shader;
-	std::deque<Model const*> m_models;
-	std::optional<Colour> m_oTint;
+	gfx::Shader* m_pShader = nullptr;
+	std::deque<Fixture> m_fixtures;
 	Flags m_flags;
+
+public:
+	void onCreate() override;
 };
 } // namespace le

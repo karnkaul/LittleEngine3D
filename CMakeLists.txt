@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "")
-set(LE3D_VERSION "0.0.3.0" CACHE STRING "LittlEngine3D version" FORCE)
+set(LE3D_VERSION "0.0.4.0" CACHE STRING "LittlEngine3D version" FORCE)
 set(LE3D_LIB_TYPE STATIC CACHE STRING "LittleEngine3D Library type")
 project(LittleEngine3D VERSION ${LE3D_VERSION})
 

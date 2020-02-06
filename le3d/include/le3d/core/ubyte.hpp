@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 
 namespace le
 {
@@ -12,6 +12,7 @@ struct UByte
 	// Any literals passed in must be positive!
 	UByte(u8 value = 0) noexcept;
 	explicit UByte(f32 nValue) noexcept;
+	explicit UByte(std::string_view hex);
 
 	u8 toU8() const;
 	f32 toF32() const;
