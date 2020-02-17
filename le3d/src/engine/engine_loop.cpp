@@ -2,12 +2,14 @@
 #include "le3d/core/log.hpp"
 #include "le3d/core/io.hpp"
 #include "le3d/core/profiler.hpp"
+#include "le3d/core/utils.hpp"
 #include "le3d/engine/context.hpp"
 #include "le3d/engine/engine_loop.hpp"
 #include "le3d/engine/input.hpp"
 #include "le3d/env/engine_version.hpp"
-#include "le3d/game/utils.hpp"
+#include "le3d/game/camera.hpp"
 #include "le3d/game/ecs.hpp"
+#include "le3d/game/utils.hpp"
 
 #include "le3d/engine/gfx/gfx_objects.hpp"
 #include "le3d/engine/gfx/gfx_store.hpp"
@@ -30,11 +32,11 @@ void tickDebugTexts(Time dt)
 {
 	static s32 frameCount = 0;
 	static s32 fps = 0;
-	static Time elapsed = Time::Zero;
+	static Time elapsed;
 	++frameCount;
 	if (elapsed >= Time::secs(1.0f))
 	{
-		elapsed = Time::Zero;
+		elapsed = {};
 		fps = frameCount;
 		frameCount = 0;
 		if (g_pFpsText)
@@ -86,6 +88,9 @@ void runTest()
 	manifestRequest.manifest = manifest;
 	manifestLoader::load(manifestRequest);
 
+	std::string testStr = uReader->getString("engine_manifest.json");
+	auto vec = utils::strings::tokenise(testStr, ',', {});
+
 	static s32 const s_reloadCount = 0;
 	for (s32 i = 1; i <= s_reloadCount; ++i)
 	{
@@ -98,7 +103,7 @@ void runTest()
 	debugTextDesc.data.pos = {-uiSpace.x * 0.5f + 100.0f, uiSpace.y * 0.5f - 100.0f, 1.0f};
 	debugTextDesc.data.scale = 0.2f;
 	debugTextDesc.data.halign = gfx::Font::Text::HAlign::Left;
-	debugTextDesc.data.colour = Colour(200, 200, 200);
+	debugTextDesc.data.colour = Colour(0xeeeeeeff);
 	debugTextDesc.id = "fps";
 	g_pFpsText = pGfxStore->load(std::move(debugTextDesc));
 	debugTextDesc.data.pos.y = -debugTextDesc.data.pos.y;
@@ -125,7 +130,7 @@ void runTest()
 		pUbo0->copyData(tempMats);
 	}
 	manifestRequest.manifest.id = "demo_manifest.json";
-	manifestRequest.clearColour = Colour(10, 0, 15);
+	manifestRequest.clearColour = Colour(0x0a000bff);
 	manifestRequest.doFrame = [&](manifestLoader::Args args) {
 		{
 			std::string dots(size_t(args.progress * 20), '.');
@@ -155,7 +160,7 @@ void runTest()
 
 	bool bTicking = true;
 	bool bTickNext = false;
-	Colour clearColour = Colour::Black;
+	Colour clearColour = colours::Black;
 	auto pSh0 = pMonolithicShader;
 	auto pSh1 = pGfxStore->get<gfx::Shader>("shaders/lit/textured");
 	auto pShader = pSh0;
@@ -164,10 +169,11 @@ void runTest()
 	vao0Transform.setPosition({2.0f, 0.0f, 0.0f});
 	auto pVao0 = pGfxStore->get<gfx::VertexArray>("primitives/cube");
 
-	auto eFreecam = ecsdb.spawnEntity("freeCam");
-	auto pFreecam = ecsdb.addComponent<CFreeCam>(eFreecam);
-	ecsdb.addSystem<FreeCamController, PropRenderer, debug::GizmoSystem>();
+	FreeCam camera;
+	auto pFreecam = &camera;
 	pFreecam->m_position = {0.0f, 0.0f, 3.0f};
+
+	ecsdb.addSystem<PropRenderer, debug::GizmoSystem>();
 
 	gfx::Albedo lightsAlbedo;
 	lightsAlbedo.ambient = glm::vec3(0.2f);
@@ -238,7 +244,7 @@ void runTest()
 	meshDesc.material.flags.set(gfx::Material::Flag::Lit, true);
 	meshDesc.material.flags.set(gfx::Material::Flag::Textured, false);
 	auto pCubeMesh = pGfxStore->load(meshDesc);
-	pCubeMesh->m_material.tint = Colour::Yellow;
+	pCubeMesh->m_material.tint = colours::Yellow;
 	meshDesc.id = "meshes/sphere";
 	meshDesc.geometry = gfx::createCubedSphere(1.0f, 8);
 	meshDesc.material.flags.set(gfx::Material::Flag::Lit, true);
@@ -357,7 +363,7 @@ void runTest()
 	auto const viewCrop = 1.0f;
 	glm::vec2 viewCentre = {0.0f, 0.0f};
 	auto onWindowSizeChange = input::registerResize([&](s32, s32) {
-		auto view = Rect2::sizeCentre(context::windowSize() * viewCrop, viewCentre);
+		auto view = Rect2(context::windowSize() * viewCrop, viewCentre);
 		gfx::setView(view);
 	});
 
@@ -404,7 +410,6 @@ void runTest()
 			{
 				bTicking = !bTicking;
 				ecsdb.setAll(System::Flag::Ticking, bTicking);
-				ecsdb.getSystem<FreeCamController>()->setFlag(System::Flag::Ticking, true);
 			}
 			if (key == Key::V && mods & Mods::CONTROL)
 			{
@@ -412,7 +417,7 @@ void runTest()
 			}
 			if (key == Key::C && mods & Mods::CONTROL)
 			{
-				clearColour = clearColour == Colour::Black ? Colour::Blue : Colour::Black;
+				clearColour = clearColour == colours::Black ? colours::Blue : colours::Black;
 			}
 			if (bTicking && key == Key::S && mods & Mods::CONTROL)
 			{
@@ -503,6 +508,7 @@ void runTest()
 
 			LOGIF_D(!bTicking, "Frame: Tick: %u, Swap: %u, Render: %u", tickFrame, context::framesTicked(), context::framesRendered());
 		}
+		pFreecam->tick(dt);
 		ecsdb.tick(dt);
 		tickDebugTexts(dt);
 

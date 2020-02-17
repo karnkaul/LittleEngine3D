@@ -19,26 +19,8 @@ namespace
 stdfs::path g_exeLocation;
 stdfs::path g_exePath;
 stdfs::path g_workingDir;
+std::string g_exePathStr;
 std::vector<std::string_view> g_args;
-
-void SetConfigStrIfPresent(std::string const& id, GData const& data, std::string& member)
-{
-	if (data.contains(id))
-	{
-		member = data.getString(id);
-		LOG_D("[EngineConfig] Extracted [%s] = [%s]", id.data(), member.data());
-	}
-	return;
-}
-
-// void SetConfigS32IfPresent(std::string const& id, GData const& data, s32& member)
-//{
-//	if (data.contains(id))
-//	{
-//		member = data.getS32(id);
-//		LOG_D("[EngineConfig] Extracted [%s] = [%d]", id.data(), member);
-//	}
-//}
 } // namespace
 
 void env::init(Args const& args)
@@ -68,70 +50,7 @@ void env::init(Args const& args)
 	return;
 }
 
-void env::setConfig(std::string json)
-{
-	GData data(json);
-	if (data.fieldCount() > 0)
-	{
-		if (data.contains("uniforms"))
-		{
-			GData uniforms = data.getGData("uniforms");
-			SetConfigStrIfPresent("modelMatrix", uniforms, g_config.uniforms.modelMatrix);
-			SetConfigStrIfPresent("normalMatrix", uniforms, g_config.uniforms.normalMatrix);
-			if (uniforms.contains("transform"))
-			{
-				GData transform = uniforms.getGData("uniforms");
-				SetConfigStrIfPresent("isUI", transform, g_config.uniforms.transform.isUI);
-			}
-			if (uniforms.contains("material"))
-			{
-				GData material = uniforms.getGData("material");
-				SetConfigStrIfPresent("isTextured", material, g_config.uniforms.material.isTextured);
-				SetConfigStrIfPresent("isLit", material, g_config.uniforms.material.isLit);
-				SetConfigStrIfPresent("isOpaque", material, g_config.uniforms.material.isOpaque);
-				SetConfigStrIfPresent("hasSpecular", material, g_config.uniforms.material.hasSpecular);
-				SetConfigStrIfPresent("diffuseTexPrefix", material, g_config.uniforms.material.diffuseTexPrefix);
-				SetConfigStrIfPresent("specularTexPrefix", material, g_config.uniforms.material.specularTexPrefix);
-				SetConfigStrIfPresent("tint", uniforms, g_config.uniforms.material.tint);
-				if (material.contains("albedo"))
-				{
-					GData albedo = material.getGData("albedo");
-					SetConfigStrIfPresent("ambient", albedo, g_config.uniforms.material.albedo.ambient);
-					SetConfigStrIfPresent("diffuse", albedo, g_config.uniforms.material.albedo.diffuse);
-					SetConfigStrIfPresent("specular", albedo, g_config.uniforms.material.albedo.specular);
-					SetConfigStrIfPresent("shininess", albedo, g_config.uniforms.material.albedo.shininess);
-				}
-			}
-		}
-		if (data.contains("jsonIDs"))
-		{
-			GData jsonIDs = data.getGData("jsonIDs");
-			if (jsonIDs.contains("resources"))
-			{
-				GData resources = jsonIDs.getGData("resources");
-				SetConfigStrIfPresent("samplers", resources, g_config.jsonIDs.resources.samplers);
-				SetConfigStrIfPresent("samplerID", resources, g_config.jsonIDs.resources.samplerID);
-				SetConfigStrIfPresent("samplerWrap", resources, g_config.jsonIDs.resources.samplerWrap);
-				SetConfigStrIfPresent("minFilter", resources, g_config.jsonIDs.resources.minFilter);
-				SetConfigStrIfPresent("magFilter", resources, g_config.jsonIDs.resources.magFilter);
-
-				SetConfigStrIfPresent("shaders", resources, g_config.jsonIDs.resources.shaders);
-				SetConfigStrIfPresent("shaderID", resources, g_config.jsonIDs.resources.shaderID);
-				SetConfigStrIfPresent("vertCodeID", resources, g_config.jsonIDs.resources.vertCodeID);
-				SetConfigStrIfPresent("fragCodeID", resources, g_config.jsonIDs.resources.fragCodeID);
-
-				SetConfigStrIfPresent("fonts", resources, g_config.jsonIDs.resources.fonts);
-				SetConfigStrIfPresent("fontID", resources, g_config.jsonIDs.resources.fontID);
-				SetConfigStrIfPresent("fontJSONid", resources, g_config.jsonIDs.resources.fontJSONid);
-				SetConfigStrIfPresent("fontTextureID", resources, g_config.jsonIDs.resources.fontTextureID);
-			}
-		}
-		SetConfigStrIfPresent("shaderPrefix", data, g_config.shaderPrefix);
-	}
-	return;
-}
-
-std::string env::argv0()
+std::string_view env::argv0()
 {
 	return g_exeLocation.generic_string();
 }

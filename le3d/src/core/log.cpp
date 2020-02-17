@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <ctime>
 #include <cstdarg>
@@ -7,7 +8,6 @@
 #include <iostream>
 #include <mutex>
 #include <sstream>
-#include <unordered_map>
 #include "le3d/defines.hpp"
 #include "le3d/core/std_types.hpp"
 #include "le3d/core/log.hpp"
@@ -22,8 +22,7 @@ namespace
 {
 std::mutex g_logMutex;
 std::deque<std::string> g_logCache;
-std::unordered_map<LogLevel, char const*> g_prefixes = {
-	{LogLevel::Debug, "[D] "}, {LogLevel::Info, "[I] "}, {LogLevel::Warning, "[W] "}, {LogLevel::Error, "[E] "}};
+std::array<char const*, (size_t)LogLevel::COUNT_> g_prefixes = {"[D] ", "[I] ", "[W] ", "[E] "};
 
 std::tm* TM(std::time_t const& time)
 {
@@ -41,7 +40,7 @@ void logInternal(char const* szText, [[maybe_unused]] char const* szFile, [[mayb
 	static std::array<char, 1024> cacheStr;
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	std::stringstream logText;
-	logText << g_prefixes.at(level);
+	logText << g_prefixes.at((size_t)level);
 	std::vsnprintf(cacheStr.data(), cacheStr.size(), szText, args);
 	logText << cacheStr.data();
 	std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -49,7 +48,15 @@ void logInternal(char const* szText, [[maybe_unused]] char const* szFile, [[mayb
 	std::snprintf(cacheStr.data(), cacheStr.size(), " [%02d:%02d:%02d]", pTM->tm_hour, pTM->tm_min, pTM->tm_sec);
 	logText << cacheStr.data();
 #if defined(LE3D_LOG_SOURCE_LOCATION)
-	logText << "[" << std::filesystem::path(szFile).generic_string() << "|" << line << "]";
+	static std::string const s_parentStr = "../";
+	auto fileStr = std::filesystem::path(szFile).generic_string();
+	auto search = fileStr.find(s_parentStr);
+	while (search < std::string::npos)
+	{
+		fileStr.erase(search, search + s_parentStr.length());
+		search = fileStr.find(s_parentStr);
+	}
+	logText << "[" << fileStr << "|" << line << "]";
 #endif
 	logText << env::g_EOL;
 	auto logStr = logText.str();

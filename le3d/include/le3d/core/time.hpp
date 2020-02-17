@@ -13,7 +13,6 @@ private:
 	stdch::microseconds usecs;
 
 public:
-	static Time const Zero;
 	static std::string toString(Time time);
 	static Time musecs(s64 microSeconds);
 	static Time msecs(s32 milliSeconds);
@@ -23,9 +22,9 @@ public:
 	static Time clamp(Time val, Time min, Time max);
 	static void reset();
 
-	constexpr Time() : usecs(0) {}
-	explicit constexpr Time(s64 usecs) : usecs(usecs) {}
-	explicit constexpr Time(stdch::microseconds usecs) : usecs(usecs) {}
+	constexpr Time() noexcept : usecs(0) {}
+	explicit constexpr Time(s64 usecs) noexcept : usecs(usecs) {}
+	explicit constexpr Time(stdch::microseconds usecs) noexcept : usecs(usecs) {}
 
 	Time& scale(f32 magnitude);
 	Time scaled(f32 magnitude) const;

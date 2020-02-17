@@ -13,10 +13,10 @@ namespace strings
 void toLower(std::string& outString);
 void toUpper(std::string& outString);
 
-bool toBool(std::string input, bool defaultValue = false);
-s32 toS32(std::string input, s32 defaultValue = -1);
-f32 toF32(std::string input, f32 defaultValue = -1.0f);
-f64 toF64(std::string input, f64 defaultValue = -1.0);
+bool toBool(std::string_view input, bool defaultValue = false);
+s32 toS32(std::string_view input, s32 defaultValue = -1);
+f32 toF32(std::string_view input, f32 defaultValue = -1.0f);
+f64 toF64(std::string_view input, f64 defaultValue = -1.0);
 
 std::string toText(bytearray rawBuffer);
 
@@ -30,6 +30,8 @@ void trim(std::string& outInput, std::initializer_list<char> toRemove);
 void removeWhitespace(std::string& outInput);
 // Tokenises a string via a delimiter, skipping over any delimiters within escape characters
 std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initializer_list<std::pair<char, char>> escape);
+std::vector<std::string_view> tokeniseInPlace(char* szOutBuf, char delimiter, std::initializer_list<std::pair<char, char>> escape);
+
 // Substitutes an input set of chars with a given replacement
 void substituteChars(std::string& outInput, std::initializer_list<std::pair<char, char>> replacements);
 // Returns true if str[idx - 1] = wrapper.first && str[idx + 1] == wrapper.second

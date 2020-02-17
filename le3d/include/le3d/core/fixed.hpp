@@ -10,17 +10,6 @@ struct Fixed final
 {
 public:
 	static constexpr u32 SCALE_FACTOR = 10000;
-	static Fixed const Zero;
-	static Fixed const One;
-	static Fixed const Two;
-	static Fixed const Three;
-	static Fixed const Ten;
-	static Fixed const OneHalf;
-	static Fixed const OneThird;
-	static Fixed const OneTenth;
-	static Fixed const Pi;
-	static Fixed const DegToRad;
-	static Fixed const RadToDeg;
 
 private:
 	s32 value;
@@ -29,8 +18,7 @@ public:
 	constexpr Fixed() noexcept : value(0) {}
 	constexpr explicit Fixed(f32 value) noexcept : value(s32(value * SCALE_FACTOR)) {}
 	constexpr explicit Fixed(f64 value) noexcept : value(s32(value * SCALE_FACTOR)) {}
-	constexpr Fixed(s32 numerator, s32 denominator = 1) noexcept
-		: value(s32(static_cast<s64>(numerator) * static_cast<s64>(SCALE_FACTOR) / static_cast<s64>(denominator))){};
+	constexpr Fixed(s32 numerator, s32 denominator = 1) noexcept : value(s32(s64(numerator) * s64(SCALE_FACTOR) / s64(denominator))){};
 
 	u32 toU32() const;
 	s32 toS32() const;

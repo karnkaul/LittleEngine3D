@@ -2,6 +2,13 @@
 
 namespace le
 {
+Rect2::Rect2(glm::vec2 const& size, glm::vec2 const& centre)
+{
+	glm::vec2 half = size * 0.5f;
+	bl = centre - half;
+	tr = centre + half;
+}
+
 glm::vec2 Rect2::size() const
 {
 	return {tr.x - bl.x, tr.y - bl.y};
@@ -26,13 +33,5 @@ f32 Rect2::aspect() const
 {
 	auto const s = size();
 	return s.x / s.y;
-}
-
-Rect2 Rect2::sizeCentre(glm::vec2 const& size, glm::vec2 const& centre)
-{
-	Rect2 ret;
-	ret.bl = centre - size * 0.5f;
-	ret.tr = centre + size * 0.5f;
-	return ret;
 }
 } // namespace le

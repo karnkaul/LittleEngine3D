@@ -68,9 +68,9 @@ struct HContext final
 };
 
 std::unique_ptr<HContext> create(Settings const& settings);
-bool isAlive();
+[[nodiscard]] bool isAlive();
 void close();
-bool isClosing();
+[[nodiscard]] bool isClosing();
 void pollEvents();
 void setSwapInterval(u8 interval);
 void swapAndPresent();

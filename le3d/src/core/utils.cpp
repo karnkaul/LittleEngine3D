@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <stack>
 #include "le3d/core/utils.hpp"
 
@@ -32,16 +33,15 @@ void toUpper(std::string& outString)
 	return;
 }
 
-bool toBool(std::string input, bool bDefaultValue)
+bool toBool(std::string_view input, bool bDefaultValue)
 {
 	if (!input.empty())
 	{
-		toLower(input);
-		if (input == "true" || input == "1")
+		if (input == "true" || input == "True" || input == "1")
 		{
 			return true;
 		}
-		if (input == "false" || input == "0")
+		if (input == "false" || input == "False" || input == "0")
 		{
 			return false;
 		}
@@ -49,14 +49,14 @@ bool toBool(std::string input, bool bDefaultValue)
 	return bDefaultValue;
 }
 
-s32 toS32(std::string input, s32 defaultValue)
+s32 toS32(std::string_view input, s32 defaultValue)
 {
 	s32 ret = defaultValue;
 	if (!input.empty())
 	{
 		try
 		{
-			ret = std::stoi(input);
+			ret = std::atoi(input.data());
 		}
 		catch (std::invalid_argument const&)
 		{
@@ -66,14 +66,14 @@ s32 toS32(std::string input, s32 defaultValue)
 	return ret;
 }
 
-f32 toF32(std::string input, f32 defaultValue)
+f32 toF32(std::string_view input, f32 defaultValue)
 {
 	f32 ret = defaultValue;
 	if (!input.empty())
 	{
 		try
 		{
-			ret = std::stof(input);
+			ret = (f32)std::atof(input.data());
 		}
 		catch (std::invalid_argument const&)
 		{
@@ -83,14 +83,14 @@ f32 toF32(std::string input, f32 defaultValue)
 	return ret;
 }
 
-f64 toF64(std::string input, f64 defaultValue)
+f64 toF64(std::string_view input, f64 defaultValue)
 {
 	f64 ret = defaultValue;
 	if (!input.empty())
 	{
 		try
 		{
-			ret = std::stod(input);
+			ret = std::atof(input.data());
 		}
 		catch (std::invalid_argument const&)
 		{
@@ -205,6 +205,73 @@ std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initi
 	if (start != end)
 	{
 		v.emplace_back(start, end);
+	}
+	return v;
+}
+
+std::vector<std::string_view> tokeniseInPlace(char* szOutBuf, char delimiter, std::initializer_list<std::pair<char, char>> escape)
+{
+	if (!szOutBuf || *szOutBuf == '\0')
+	{
+		return {};
+	}
+
+	char const* const end = szOutBuf + std::strlen(szOutBuf);
+	char const* start = szOutBuf + std::strlen(szOutBuf);
+	std::stack<std::pair<char, char>> escapeStack;
+	std::vector<std::string_view> v;
+	bool bEscaping = false;
+	bool bSkipThis = false;
+	for (char* it = szOutBuf; it != end; ++it)
+	{
+		if (bSkipThis)
+		{
+			bSkipThis = false;
+			continue;
+		}
+		bSkipThis = bEscaping && *it == '\\';
+		if (bSkipThis)
+		{
+			continue;
+		}
+		if (*it != delimiter || bEscaping)
+		{
+			if (start == end)
+			{
+				start = it;
+			}
+			for (auto e : escape)
+			{
+				if (bEscaping && *it == e.second)
+				{
+					if (e.first == escapeStack.top().first)
+					{
+						escapeStack.pop();
+						bEscaping = !escapeStack.empty();
+						break;
+					}
+				}
+				if (*it == e.first)
+				{
+					bEscaping = true;
+					escapeStack.push(e);
+					break;
+				}
+			}
+			bSkipThis = false;
+			continue;
+		}
+		if (start != end)
+		{
+			*it = '\0';
+			v.push_back(std::string_view(start));
+			start = end;
+		}
+		bSkipThis = false;
+	}
+	if (start != end)
+	{
+		v.push_back(std::string_view(start));
 	}
 	return v;
 }

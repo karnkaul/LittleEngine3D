@@ -33,38 +33,49 @@ namespace
 std::mutex g_stbiMutex;
 using Lock = std::lock_guard<std::mutex>;
 
-std::unordered_map<std::string, TexType> g_strToTexType = {
+template <typename Enum, typename Arr>
+Enum strToEnum(Arr arr, std::string_view value)
+{
+	for (size_t idx = 0; idx < arr.size(); ++idx)
+	{
+		if (arr.at(idx) == value)
+		{
+			return (Enum)idx;
+		}
+	}
+	return (Enum)0;
+}
 
-	{"diffuse", TexType::Diffuse}, {"specular", TexType::Specular}
+using TexTypeArr = std::array<std::string_view, (size_t)TexType::COUNT_>;
+TexTypeArr g_texTypes = {"diffuse", "specular"};
+TexType texType(std::string_view type)
+{
+	return strToEnum<TexType, TexTypeArr>(g_texTypes, type);
+}
 
-};
+using TexWrapArr = std::array<std::string_view, (size_t)TexWrap::COUNT_>;
+TexWrapArr g_texWraps = {"repeat", "clampedge", "clampborder"};
+TexWrap texWrap(std::string_view type)
+{
+	return strToEnum<TexWrap, TexWrapArr>(g_texWraps, type);
+}
 
-std::unordered_map<std::string, TexWrap> g_strToTexWrap = {
-
-	{"repeat", TexWrap::Repeat}, {"clampedge", TexWrap::ClampEdge}, {"clampborder", TexWrap::ClampBorder}
-
-};
-
-std::unordered_map<std::string, TexFilter> g_strToTexFilter = {
-
-	{"linear", TexFilter::Linear},
-	{"nearest", TexFilter::Nearest},
-	{"linearmplinear", TexFilter::LinearMpLinear},
-	{"linearmpnearest", TexFilter::LinearMpNearest},
-	{"nearestmplinear", TexFilter::NearestMpLinear},
-	{"nearestmpnearest", TexFilter::NearestMpNearest}
-
-};
+using TexFilterArr = std::array<std::string_view, (size_t)TexFilter::COUNT_>;
+TexFilterArr g_texFilters = {"linear", "nearest", "linearmplinear", "linearmpnearest", "nearestmplinear", "nearestmpnearest"};
+TexFilter texFilter(std::string_view type)
+{
+	return strToEnum<TexFilter, TexFilterArr>(g_texFilters, type);
+}
 
 GFXID g_activeShader;
-std::unordered_map<s32, std::pair<GFXID, GFXID>> g_activeTextureSampler;
+std::array<std::pair<GFXID, GFXID>, 128> g_activeTextureSampler;
 
 void setTexture(s32 unit, GFXID const& samplerID, GFXID const& textureID)
 {
-	auto const& pair = g_activeTextureSampler[unit];
+	auto const& pair = g_activeTextureSampler.at((size_t)unit);
 	if (pair.first != samplerID || pair.second != textureID)
 	{
-		g_activeTextureSampler[unit] = {samplerID, textureID};
+		g_activeTextureSampler.at((size_t)unit) = {samplerID, textureID};
 		gfx::enqueue([unit, sID = samplerID, tID = textureID]() {
 			glChk(glActiveTexture(GL_TEXTURE0 + (GLuint)unit));
 			glChk(glBindSampler((GLuint)unit, sID));
@@ -114,7 +125,7 @@ glm::vec2 getTextTLOffset(Font::Text::HAlign h, Font::Text::VAlign v)
 	}
 	return textTLoffset;
 }
-} // namespace
+} // namespace le::gfx
 
 u32 Geometry::byteCount() const
 {
@@ -697,6 +708,7 @@ void Shader::setMaterial(Material const& material) const
 		if (bIsTextured)
 		{
 			setBool(u.material.isOpaque, material.flags.isSet(Material::Flag::Opaque));
+			setBool(u.material.isFont, material.flags.isSet(Material::Flag::Font));
 			setF32(u.material.hasSpecular, material.flags.isSet(Material::Flag::Specular) ? 1.0f : 0.0f);
 		}
 	}
@@ -743,7 +755,7 @@ void Shader::bind(std::initializer_list<Texture const*> textures) const
 			if (!pTexture->isReady() && pTexture->m_descriptor.type == TexType::Diffuse && pBlank)
 			{
 				pTexture = pBlank;
-				setV4("tint", Colour::Magenta);
+				setV4("tint", colours::Magenta);
 			}
 			if (pTexture->isReady())
 			{
@@ -783,7 +795,7 @@ void Shader::bind(std::vector<Texture const*> const& textures) const
 			if (!pTexture->isReady() && pTexture->m_descriptor.type == TexType::Diffuse && pBlank)
 			{
 				pTexture = pBlank;
-				setV4("tint", Colour::Magenta);
+				setV4("tint", colours::Magenta);
 			}
 			if (pTexture->isReady())
 			{
@@ -1061,17 +1073,16 @@ void Sampler::Descriptor::deserialise(JSONObj const& json)
 	if (json.contains("id"))
 	{
 		id = json.getString("id");
-		auto const& r = env::g_config.jsonIDs.resources;
-		auto wrapStr = json.getString(r.samplerWrap, "repeat");
-		auto minFilterStr = json.getString(r.minFilter, "linearmplinear");
-		auto magFilterStr = json.getString(r.magFilter, "linear");
-		anisotropy = (u8)json.getS32(r.anisotropy, 4);
+		auto wrapStr = json.getString("wrap", "repeat");
+		auto minFilterStr = json.getString("minFilter", "linearmplinear");
+		auto magFilterStr = json.getString("magFilter", "linear");
+		anisotropy = (u8)json.getS32("anisotropy", 4);
 		utils::strings::toLower(wrapStr);
 		utils::strings::toLower(minFilterStr);
 		utils::strings::toLower(magFilterStr);
-		wrap = g_strToTexWrap[wrapStr];
-		minFilter = g_strToTexFilter[minFilterStr];
-		magFilter = g_strToTexFilter[magFilterStr];
+		wrap = texWrap(wrapStr);
+		minFilter = texFilter(minFilterStr);
+		magFilter = texFilter(magFilterStr);
 	}
 }
 
@@ -1169,7 +1180,7 @@ void Texture::Descriptor::deserialise(JSONObj const& json)
 		samplerID = json.getString("samplerID");
 		auto typeStr = json.getString("type", "diffuse");
 		utils::strings::toLower(typeStr);
-		type = g_strToTexType[typeStr];
+		type = texType(typeStr);
 	}
 }
 
@@ -1300,6 +1311,10 @@ bool Font::Descriptor::deserialise(JSONObj const& json)
 				}
 			}
 		}
+		if (json.contains("material"))
+		{
+			material.deserialise(json.getGData("material"));
+		}
 		return true;
 	}
 	return false;
@@ -1338,8 +1353,8 @@ bool Font::setup(Descriptor descriptor, bytearray image)
 	s32 maxXAdv = 0;
 	for (auto const& glyph : descriptor.glyphs)
 	{
-		ASSERT(m_glyphs.find(glyph.ch) == m_glyphs.end(), "Duplicate glyph!");
-		m_glyphs[glyph.ch] = glyph;
+		ASSERT(glyph.ch != '\0' && m_glyphs[(size_t)glyph.ch].ch == '\0', "Invalid/duplicate glyph!");
+		m_glyphs.at((size_t)glyph.ch) = glyph;
 		maxCell.x = std::max(maxCell.x, glyph.cell.x);
 		maxCell.y = std::max(maxCell.y, glyph.cell.y);
 		maxXAdv = std::max(maxXAdv, glyph.xAdv);
@@ -1353,6 +1368,9 @@ bool Font::setup(Descriptor descriptor, bytearray image)
 		m_blankGlyph.cell = maxCell;
 		m_blankGlyph.xAdv = maxXAdv;
 	}
+	m_material = descriptor.material;
+	m_material.flags.set({Material::Flag::Textured, Material::Flag::Font}, true);
+	m_material.flags.set(Material::Flag::Opaque, false);
 	gfx::enqueue([this]() { m_glID = ++s_nextID.handle; });
 	init(std::move(descriptor.id));
 	return true;
@@ -1367,12 +1385,8 @@ Geometry Font::generate(Text const& text) const
 	glm::ivec2 maxCell = glm::vec2(0);
 	for (auto c : text.text)
 	{
-		auto const search = m_glyphs.find((u8)c);
-		if (search != m_glyphs.end())
-		{
-			maxCell.x = std::max(maxCell.x, search->second.cell.x);
-			maxCell.y = std::max(maxCell.y, search->second.cell.y);
-		}
+		maxCell.x = std::max(maxCell.x, m_glyphs.at((size_t)c).cell.x);
+		maxCell.y = std::max(maxCell.y, m_glyphs.at((size_t)c).cell.y);
 	}
 	u32 lineCount = 1;
 	for (size_t idx = 0; idx < text.text.size(); ++idx)
@@ -1403,12 +1417,7 @@ Geometry Font::generate(Text const& text) const
 			}
 			else
 			{
-				auto search = m_glyphs.find((u8)ch);
-				if (search != m_glyphs.end())
-				{
-					auto const& glyph = search->second;
-					lineWidth += glyph.xAdv;
-				}
+				lineWidth += m_glyphs.at((size_t)ch).xAdv;
 			}
 		}
 		lineWidth *= text.scale;
@@ -1432,8 +1441,8 @@ Geometry Font::generate(Text const& text) const
 			updateTextTL();
 			continue;
 		}
-		auto search = m_glyphs.find((u8)c);
-		auto const& glyph = search == m_glyphs.end() ? m_blankGlyph : search->second;
+		auto const& search = m_glyphs.at((size_t)c);
+		auto const& glyph = search.ch == '\0' ? m_blankGlyph : search;
 		auto const offset = glm::vec3(xPos - glyph.offset.x * text.scale, glyph.offset.y * text.scale, 0.0f);
 		auto const tl = glm::vec3(textTL.x, textTL.y, text.pos.z) + offset;
 		auto const s = (f32)glyph.st.x / texSize.x;
@@ -1449,11 +1458,6 @@ Geometry Font::generate(Text const& text) const
 		xPos += (glyph.xAdv * text.scale);
 	}
 	return verts;
-}
-
-Texture const& Font::sheet() const
-{
-	return m_sheet;
 }
 
 Cubemap::Cubemap() = default;
@@ -1578,7 +1582,7 @@ void Skybox::setShader(Shader const& shader)
 	return;
 }
 
-void Skybox::render(Colour tint /* = Colour::White */)
+void Skybox::render(Colour tint /* = colours::White */)
 {
 	if (!allReady())
 	{

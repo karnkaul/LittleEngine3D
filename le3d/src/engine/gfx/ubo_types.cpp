@@ -9,7 +9,7 @@ glm::vec4 padVec4(glm::vec3 const& value, f32 pad = 1.0f)
 {
 	return glm::vec4(value, pad);
 }
-}
+} // namespace
 
 stdfs::path const Matrices::s_name = "ubos/matrices";
 

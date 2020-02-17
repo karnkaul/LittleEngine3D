@@ -52,12 +52,13 @@
 
 namespace le
 {
-enum class LogLevel
+enum class LogLevel : u8
 {
 	Debug = 0,
 	Info,
 	Warning,
-	Error
+	Error,
+	COUNT_
 };
 
 void log(LogLevel level, char const* szText, char const* szFile, u64 line, ...);

@@ -5,68 +5,39 @@
 
 namespace le
 {
-Colour const Colour::Black(0, 0, 0);
-Colour const Colour::White;
-Colour const Colour::Red(255, 0, 0);
-Colour const Colour::Green(0, 255, 0);
-Colour const Colour::Blue(0, 0, 255);
-Colour const Colour::Yellow(255, 255, 0);
-Colour const Colour::Magenta(255, 0, 255);
-Colour const Colour::Cyan(0, 255, 255);
-Colour const Colour::Transparent(0, 0, 0, 0);
-
-Colour::Colour(UByte r, UByte g, UByte b, UByte a) noexcept : r(r), g(g), b(b), a(a) {}
-
-Colour::Colour(std::string_view hex)
-{
-	ASSERT(!hex.empty(), "Empty hex stting!");
-	if (hex.at(0) == '#')
-	{
-		hex = hex.substr(1);
-	}
-	ASSERT(hex.length() >= 3, "Invalid inout!");
-	if (hex.length() >= 6)
-	{
-		r = UByte(hex.substr(0, 2));
-		g = UByte(hex.substr(2, 2));
-		b = UByte(hex.substr(4, 2));
-		a = hex.length() >= 8 ? UByte(hex.substr(6, 2)) : 255;
-	}
-	else if (hex.length() >= 3)
-	{
-		std::string tmp;
-		tmp += hex.at(0);
-		tmp += hex.at(0);
-		r = UByte(tmp);
-		tmp.clear();
-		tmp += hex.at(1);
-		tmp += hex.at(1);
-		g = UByte(tmp);
-		tmp.clear();
-		tmp += hex.at(2);
-		tmp += hex.at(2);
-		b = UByte(tmp);
-		if (hex.length() >= 4)
-		{
-			tmp.clear();
-			tmp += hex.at(3);
-			tmp += hex.at(3);
-			a = UByte(tmp);
-		}
-		else
-		{
-			a = 255;
-		}
-	}
-}
-
 Colour::Colour(glm::vec3 const& colour) noexcept : Colour(glm::vec4(colour, 1.0f)) {}
 
 Colour::Colour(glm::vec4 const& colour) noexcept : r(colour.r), g(colour.g), b(colour.b), a(colour.a) {}
 
+Colour::Colour(std::string_view hex)
+{
+	ASSERT(!hex.empty(), "Empty hex string!");
+	if (hex.at(0) == '#')
+	{
+		hex = hex.substr(1);
+	}
+	std::string hexStr(hex);
+	while (hexStr.length() < 3)
+	{
+		hexStr += "0";
+	}
+	while (hexStr.length() < 8)
+	{
+		hexStr += "f";
+	}
+	u32 mask = (u32)stoul(hexStr, nullptr, 16);
+	a = mask & 0xff;
+	mask >>= 8;
+	b = mask & 0xff;
+	mask >>= 8;
+	g = mask & 0xff;
+	mask >>= 8;
+	r = mask & 0xff;
+}
+
 Colour Colour::lerp(Colour min, Colour max, f32 alpha)
 {
-	if (alpha > 0.004f)
+	if (alpha > 1.0f / 0xff)
 	{
 		auto lerpChannel = [&](UByte& out_l, UByte const& r) {
 			if (out_l != r)

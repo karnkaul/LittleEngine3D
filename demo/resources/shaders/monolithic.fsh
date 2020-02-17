@@ -29,6 +29,7 @@ struct Material
 	int isTextured;
 	int isLit;
 	int isOpaque;
+	int isFont;
 };
 
 struct PtLight
@@ -180,6 +181,10 @@ void main()
 			if (material.isOpaque == 1)
 			{
 				result.a = 1.0;
+			}
+			else if (material.isFont == 1 && result.r == 0.0 && result.g == 0.0 && result.b == 0.0)
+			{
+				discard;
 			}
 			if (result.a < 0.1)
 			{

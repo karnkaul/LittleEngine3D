@@ -6,18 +6,6 @@
 
 namespace le
 {
-Fixed const Fixed::Zero = Fixed(0, 1);
-Fixed const Fixed::One = Fixed(1, 1);
-Fixed const Fixed::Two = Fixed(2, 1);
-Fixed const Fixed::Three = Fixed(3, 1);
-Fixed const Fixed::Ten = Fixed(10, 1);
-Fixed const Fixed::OneHalf = Fixed(1, 2);
-Fixed const Fixed::Pi = Fixed(3.14159265359);
-Fixed const Fixed::OneThird = Fixed(1, 3);
-Fixed const Fixed::OneTenth = Fixed(1, 10);
-Fixed const Fixed::DegToRad = Pi / 180;
-Fixed const Fixed::RadToDeg = 180 / Pi;
-
 u32 Fixed::toU32() const
 {
 	f64 val = toF64();

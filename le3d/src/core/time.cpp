@@ -9,8 +9,6 @@ namespace
 static auto s_localEpoch = stdch::high_resolution_clock::now();
 } // namespace
 
-Time const Time::Zero = Time(0);
-
 std::string Time::toString(Time time)
 {
 	std::stringstream ret;

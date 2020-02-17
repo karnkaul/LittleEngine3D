@@ -236,14 +236,14 @@ Rect2 gfx::cropView(Rect2 const& view, f32 spaceAspect)
 	}
 	f32 const width = viewAspect > spaceAspect ? viewSize.x * spaceAspect / viewAspect : viewSize.x;
 	f32 const height = viewAspect < spaceAspect ? viewSize.y * viewAspect / spaceAspect : viewSize.y;
-	return Rect2::sizeCentre({width, height}, view.centre());
+	return Rect2({width, height}, view.centre());
 }
 
 Rect2 const& gfx::view()
 {
 	if (glm::length2(g_view.size()) == 0.0f)
 	{
-		g_view = Rect2::sizeCentre(context::windowSize());
+		g_view = Rect2(context::windowSize());
 	}
 	return g_view;
 }

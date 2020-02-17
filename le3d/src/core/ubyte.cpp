@@ -2,13 +2,6 @@
 
 namespace le
 {
-UByte::UByte(u8 value) noexcept : rawValue(value) {}
-
-UByte::UByte(f32 nValue) noexcept
-{
-	rawValue = u8(nValue * 255.0f);
-}
-
 UByte::UByte(std::string_view hex)
 {
 	std::string str;
@@ -27,7 +20,7 @@ u8 UByte::toU8() const
 
 f32 UByte::toF32() const
 {
-	return rawValue / 255.0f;
+	return rawValue / (f32)0xff;
 }
 
 std::string UByte::toString() const

@@ -1,5 +1,6 @@
 #include <thread>
-#include <unordered_map>
+#include <utility>
+#include <vector>
 #include "le3d/core/assert.hpp"
 #include "le3d/env/threads.hpp"
 #include "env/threads_impl.hpp"
@@ -9,21 +10,21 @@ namespace le
 namespace
 {
 s32 g_nextID = 0;
-std::unordered_map<s32, std::thread> g_threadMap;
+std::vector<std::pair<s32, std::thread>> g_threads;
 } // namespace
 
 using namespace threadsImpl;
 
 HThread threads::newThread(std::function<void()> task)
 {
-	g_threadMap.emplace(++g_nextID, std::thread(task));
+	g_threads.emplace_back(++g_nextID, std::thread(task));
 	return HThread(g_nextID);
 }
 
 void threads::join(HThread& id)
 {
-	auto search = g_threadMap.find(id);
-	if (search != g_threadMap.end())
+	auto search = std::find_if(g_threads.begin(), g_threads.end(), [id](auto const& t) -> bool { return t.first == id; });
+	if (search != g_threads.end())
 	{
 		auto& thread = search->second;
 		if (thread.joinable())
@@ -37,7 +38,7 @@ void threads::join(HThread& id)
 
 void threads::joinAll()
 {
-	for (auto& kvp : g_threadMap)
+	for (auto& kvp : g_threads)
 	{
 		auto& thread = kvp.second;
 		if (thread.joinable())
@@ -45,7 +46,7 @@ void threads::joinAll()
 			thread.join();
 		}
 	}
-	g_threadMap.clear();
+	g_threads.clear();
 	return;
 }
 
@@ -56,6 +57,6 @@ u32 threads::maxHardwareThreads()
 
 u32 threads::running()
 {
-	return (u32)g_threadMap.size();
+	return (u32)g_threads.size();
 }
 } // namespace le

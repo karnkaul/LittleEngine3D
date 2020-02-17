@@ -5,11 +5,10 @@
 #include <glm/gtx/quaternion.hpp>
 #include "le3d/core/flags.hpp"
 #include "le3d/engine/input_types.hpp"
-#include "le3d/game/ecs/component.hpp"
 
 namespace le
 {
-class CCamera : public Component
+class Camera
 {
 public:
 	glm::vec3 m_position = glm::vec3(0.0f);
@@ -18,13 +17,22 @@ public:
 	f32 m_aspectRatio = 0.0f;
 
 public:
+	Camera();
+	Camera(Camera&&);
+	Camera& operator=(Camera&&);
+	virtual ~Camera();
+
+public:
+	virtual void tick(Time dt);
+
+public:
 	glm::mat4 view() const;
 	glm::mat4 perspectiveProj(f32 near = 0.1f, f32 far = 100.0f) const;
 	glm::mat4 orthographicProj(f32 zoom = 1.0f, f32 near = 0.1f, f32 far = 100.0f) const;
 	glm::mat4 uiProj(glm::vec3 const& uiSpace) const;
 };
 
-class CFreeCam : public CCamera
+class FreeCam : public Camera
 {
 public:
 	enum class Flag : u8
@@ -71,7 +79,13 @@ private:
 	OnMouse::Token m_tZoom;
 	OnFocus::Token m_tFocus;
 
-protected:
-	void onCreate() override;
+public:
+	FreeCam();
+	FreeCam(FreeCam&&);
+	FreeCam& operator=(FreeCam&&);
+	~FreeCam() override;
+
+public:
+	void tick(Time dt) override;
 };
 } // namespace le

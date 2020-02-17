@@ -53,7 +53,7 @@ public:
 	// Skips dead callbacks; returns live count
 	uint32_t operator()(Args... t) const;
 	// Returns true if any previously distributed Token is still alive
-	bool isAlive();
+	[[nodiscard]] bool isAlive();
 	void clear();
 	// Remove expired weak_ptrs
 	void cleanup();

@@ -375,7 +375,7 @@ void Model::render(Shader const& shader) const
 		if (m_bDEBUG && pBlank)
 		{
 			shader.bind({pBlank});
-			shader.setV4(m.tint, Colour::Magenta);
+			shader.setV4(m.tint, colours::Magenta);
 		}
 		else
 		{
@@ -385,7 +385,7 @@ void Model::render(Shader const& shader) const
 				if (pMesh->m_textures.empty())
 				{
 					shader.bind({pBlank});
-					shader.setV4(m.tint, Colour::Magenta);
+					shader.setV4(m.tint, colours::Magenta);
 				}
 				else
 				{
@@ -402,7 +402,7 @@ void Model::render(Shader const& shader) const
 		}
 #endif
 		pMesh->draw(shader);
-		shader.setV4(m.tint, Colour::White);
+		shader.setV4(m.tint, colours::White);
 	}
 	shader.unbind({TexType::Diffuse, TexType::Specular});
 	return;

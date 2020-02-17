@@ -3,5 +3,5 @@
 
 namespace le::engineLoop
 {
-s32 run(s32 argc, char const** argv);
+[[nodiscard]] s32 run(s32 argc, char const** argv);
 }

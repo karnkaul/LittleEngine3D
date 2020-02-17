@@ -8,7 +8,7 @@ namespace
 std::initializer_list<std::pair<char, char>> gDataEscapes = {{'{', '}'}, {'[', ']'}, {'"', '"'}};
 
 template <typename T>
-T Get(std::unordered_map<std::string, std::string> const& table, std::string const& key, T (*Adaptor)(std::string, T),
+T get(std::unordered_map<std::string, std::string> const& table, std::string const& key, T (*Adaptor)(std::string_view, T),
 	  T const& defaultValue)
 {
 	auto search = table.find(key);
@@ -101,17 +101,17 @@ std::string GData::getString(std::string const& key, std::string defaultValue) c
 
 bool GData::getBool(std::string const& key, bool defaultValue) const
 {
-	return Get<bool>(m_fieldMap, key, &utils::strings::toBool, defaultValue);
+	return get<bool>(m_fieldMap, key, &utils::strings::toBool, defaultValue);
 }
 
 s32 GData::getS32(std::string const& key, s32 defaultValue) const
 {
-	return Get<s32>(m_fieldMap, key, &utils::strings::toS32, defaultValue);
+	return get<s32>(m_fieldMap, key, &utils::strings::toS32, defaultValue);
 }
 
 f64 GData::getF64(std::string const& key, f64 defaultValue) const
 {
-	return Get<f64>(m_fieldMap, key, &utils::strings::toF64, defaultValue);
+	return get<f64>(m_fieldMap, key, &utils::strings::toF64, defaultValue);
 }
 
 GData GData::getGData(std::string const& key) const

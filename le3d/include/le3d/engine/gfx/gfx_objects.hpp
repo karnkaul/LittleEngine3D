@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -87,6 +88,7 @@ struct Material final
 		Textured,
 		Opaque,
 		Specular,
+		Font,
 		COUNT_
 	};
 	using Flags = TFlags<Flag>;
@@ -94,7 +96,7 @@ struct Material final
 	Albedo albedo;
 	stdfs::path id;
 	Flags flags;
-	Colour tint = Colour::White;
+	Colour tint = colours::White;
 
 	void deserialise(JSONObj const& serialised);
 };
@@ -355,6 +357,7 @@ public:
 	};
 	struct Descriptor final
 	{
+		Material material;
 		stdfs::path id;
 		stdfs::path sheetID;
 		std::string samplerID;
@@ -385,14 +388,15 @@ public:
 		f32 nYPad = 0.2f;
 		HAlign halign = HAlign::Centre;
 		VAlign valign = VAlign::Middle;
-		Colour colour = Colour::White;
+		Colour colour = colours::White;
 	};
 
 private:
 	static GFXID s_nextID;
 
 private:
-	std::unordered_map<u8, Glyph> m_glyphs;
+	std::array<Glyph, std::numeric_limits<u8>::max()> m_glyphs;
+	Material m_material;
 	Glyph m_blankGlyph;
 	Texture m_sheet;
 
@@ -407,7 +411,9 @@ public:
 	bool setup(Descriptor descriptor, bytearray image);
 
 	Geometry generate(Text const& text) const;
-	Texture const& sheet() const;
+
+private:
+	friend class Text2D;
 };
 
 class Cubemap final : public GFXObject
@@ -456,7 +462,7 @@ public:
 	void setCubemap(Cubemap const& cubemap);
 	void setShader(Shader const& shader);
 
-	void render(Colour tint = Colour::White);
+	void render(Colour tint = colours::White);
 
 	VertexArray const* vertices() const;
 

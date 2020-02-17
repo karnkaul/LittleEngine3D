@@ -41,6 +41,6 @@ public:
 	VertexArray const& vertices() const;
 
 public:
-	void render(f32 viewAspect);
+	void render(f32 viewAspect) const;
 };
 } // namespace le::gfx

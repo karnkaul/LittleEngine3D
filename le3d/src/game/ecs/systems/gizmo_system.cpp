@@ -57,12 +57,12 @@ void GizmoSystem::render(ECSDB const& db) const
 				pTipVA = pGizmo->m_pCone;
 				break;
 			}
-			renderVA(mX * pGizmo->m_cylinderMat, pGizmo->m_pCylinder, Colour::Red);
-			renderVA(mX * tipMat, pTipVA, Colour::Red);
-			renderVA(mY * pGizmo->m_cylinderMat, pGizmo->m_pCylinder, Colour::Green);
-			renderVA(mY * tipMat, pTipVA, Colour::Green);
-			renderVA(mZ * pGizmo->m_cylinderMat, pGizmo->m_pCylinder, Colour::Blue);
-			renderVA(mZ * tipMat, pTipVA, Colour::Blue);
+			renderVA(mX * pGizmo->m_cylinderMat, pGizmo->m_pCylinder, colours::Red);
+			renderVA(mX * tipMat, pTipVA, colours::Red);
+			renderVA(mY * pGizmo->m_cylinderMat, pGizmo->m_pCylinder, colours::Green);
+			renderVA(mY * tipMat, pTipVA, colours::Green);
+			renderVA(mZ * pGizmo->m_cylinderMat, pGizmo->m_pCylinder, colours::Blue);
+			renderVA(mZ * tipMat, pTipVA, colours::Blue);
 			gfx::setFlag(GLFlag::DepthTest, true);
 		}
 	}

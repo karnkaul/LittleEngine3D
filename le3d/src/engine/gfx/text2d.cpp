@@ -84,7 +84,7 @@ VertexArray const& Text2D::vertices() const
 	return m_verts;
 }
 
-void Text2D::render(f32 viewAspect)
+void Text2D::render(f32 viewAspect) const
 {
 	if (isReady() && m_pFont && m_pFont->isReady() && m_pShader && m_pShader->isReady() && m_verts.isReady())
 	{
@@ -94,14 +94,12 @@ void Text2D::render(f32 viewAspect)
 		std::string matID;
 		matID.reserve(64);
 		matID += u.material.diffuseTexPrefix;
-		m_pShader->bind({&m_pFont->sheet()});
+		m_pFont->m_material.tint = m_data.colour;
+		m_pShader->setMaterial(m_pFont->m_material);
+		m_pShader->bind({&m_pFont->m_sheet});
 		m_pShader->setS32(matID, 0);
 		m_pShader->setBool(u.transform.isUI, true);
 		m_pShader->setBool(u.transform.isInstanced, false);
-		m_pShader->setBool(u.material.isLit, false);
-		m_pShader->setBool(u.material.isTextured, true);
-		m_pShader->setBool(u.material.isOpaque, false);
-		m_pShader->setV4(u.material.tint, m_data.colour);
 		m_pShader->setModelMats({});
 		m_verts.draw(*m_pShader);
 		gfx::setViewport(view);

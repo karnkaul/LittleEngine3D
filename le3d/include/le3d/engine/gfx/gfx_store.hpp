@@ -3,7 +3,7 @@
 #include <string>
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
-#include "le3d/core/map_store2.hpp"
+#include "le3d/core/map_store.hpp"
 #include "gfx_objects.hpp"
 #include "model.hpp"
 #include "text2d.hpp"
@@ -20,7 +20,7 @@ public:
 	Material m_litTexturedMaterial;
 
 private:
-	TMapStore2<std::unordered_map<std::string, std::unique_ptr<GFXObject>>> m_objects;
+	TMapStore<std::unordered_map<std::string, std::unique_ptr<GFXObject>>> m_objects;
 
 public:
 	GFXStore();
@@ -40,8 +40,8 @@ public:
 	Model* load(Model::Descriptor descriptor);
 	Text2D* load(Text2D::Descriptor descriptor);
 
-	bool isLoaded(std::string const& id) const;
-	bool isReady(std::string const& id) const;
+	[[nodiscard]] bool isLoaded(std::string const& id) const;
+	[[nodiscard]] bool isReady(std::string const& id) const;
 
 	template <typename Type, typename... Args>
 	Type* create(std::string const& id, Args... args);

@@ -8,15 +8,16 @@ namespace le
 {
 namespace
 {
-u32 parse(std::vector<std::string> const& vec, size_t idx)
+u32 parse(std::vector<std::string_view> const& vec, size_t idx)
 {
 	return (vec.size() > idx) ? u32(utils::strings::toS32(vec[idx], 0)) : 0;
 }
 } // namespace
 
-Version::Version(std::string_view serialised) noexcept
+Version::Version(std::string_view serialised)
 {
-	auto tokens = utils::strings::tokenise(serialised, '.', {});
+	std::string buf(serialised);
+	auto tokens = utils::strings::tokeniseInPlace(buf.data(), '.', {});
 	mj = parse(tokens, 0);
 	mn = parse(tokens, 1);
 	pa = parse(tokens, 2);

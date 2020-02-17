@@ -24,24 +24,24 @@ public:
 	// Marhshalls and load fields from serialised data
 	bool marshall(std::string serialised);
 	// Returns original raw data, without whitespaces and enclosing braces
-	std::string unmarshall() const;
+	[[nodiscard]] std::string unmarshall() const;
 	// Clears raw data and fields
 	void clear();
 
-	std::string getString(std::string const& key, std::string defaultValue = "") const;
-	bool getBool(std::string const& key, bool defaultValue) const;
-	s32 getS32(std::string const& key, s32 defaultValue) const;
-	f64 getF64(std::string const& key, f64 defaultValue) const;
-	std::vector<std::string> getVecString(std::string const& key) const;
+	[[nodiscard]] std::string getString(std::string const& key, std::string defaultValue = "") const;
+	[[nodiscard]] bool getBool(std::string const& key, bool defaultValue) const;
+	[[nodiscard]] s32 getS32(std::string const& key, s32 defaultValue) const;
+	[[nodiscard]] f64 getF64(std::string const& key, f64 defaultValue) const;
+	[[nodiscard]] std::vector<std::string> getVecString(std::string const& key) const;
 
-	GData getGData(std::string const& key) const;
-	std::vector<GData> getGDatas(std::string const& key) const;
+	[[nodiscard]] GData getGData(std::string const& key) const;
+	[[nodiscard]] std::vector<GData> getGDatas(std::string const& key) const;
 
-	std::unordered_map<std::string, std::string> const& allFields() const;
+	[[nodiscard]] std::unordered_map<std::string, std::string> const& allFields() const;
 	bool addField(std::string key, GData& gData);
 	bool setString(std::string key, std::string value);
 
-	u32 fieldCount() const;
-	bool contains(std::string const& id) const;
+	[[nodiscard]] u32 fieldCount() const;
+	[[nodiscard]] bool contains(std::string const& id) const;
 };
 } // namespace le

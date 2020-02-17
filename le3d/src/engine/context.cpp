@@ -91,7 +91,6 @@ bool context::setContextThread()
 		contextImpl::setCurrentContext();
 		return true;
 	}
-	LOG_W("Context already owned by this thread!");
 	return false;
 }
 
@@ -102,7 +101,6 @@ bool context::releaseContextThread()
 		contextImpl::releaseCurrentContext();
 		return true;
 	}
-	ASSERT(false, "Context not owned by this thread!");
 	return false;
 }
 

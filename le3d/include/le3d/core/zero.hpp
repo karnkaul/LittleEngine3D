@@ -8,7 +8,7 @@ struct TZero final
 {
 	T handle;
 
-	TZero(T = Zero);
+	constexpr TZero(T handle = Zero) noexcept : handle(handle) {}
 	TZero(TZero&&) noexcept;
 	TZero& operator=(TZero&&) noexcept;
 	TZero(TZero const&);
@@ -17,11 +17,6 @@ struct TZero final
 
 	operator T() const;
 };
-
-template <typename T, T Zero>
-TZero<T, Zero>::TZero(T h) : handle(h)
-{
-}
 
 template <typename T, T Zero>
 TZero<T, Zero>::TZero(TZero&& rhs) noexcept

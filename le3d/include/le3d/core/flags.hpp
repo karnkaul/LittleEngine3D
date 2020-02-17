@@ -10,7 +10,7 @@ struct TFlags
 {
 	std::bitset<size_t(Enum::COUNT_)> bits;
 
-	TFlags();
+	constexpr TFlags() noexcept = default;
 	explicit TFlags(std::string serialised);
 	explicit TFlags(char const* szSerialised);
 
@@ -20,9 +20,6 @@ struct TFlags
 	void set(std::vector<Enum> const& flagList, bool bValue);
 	void set(bool bValue);
 };
-
-template <typename Enum>
-TFlags<Enum>::TFlags() = default;
 
 template <typename Enum>
 TFlags<Enum>::TFlags(std::string serialised) : bits(std::move(serialised))

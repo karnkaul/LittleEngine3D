@@ -49,78 +49,54 @@ struct EngineConfig
 		struct Transform
 		{
 			// int
-			std::string isUI = "transform.isUI";
-			std::string isInstanced = "transform.isInstanced";
+			std::string_view isUI = "transform.isUI";
+			std::string_view isInstanced = "transform.isInstanced";
 		};
 		struct Material
 		{
 			struct Albedo
 			{
 				// vec3
-				std::string ambient = "material.albedo.ambient";
-				std::string diffuse = "material.albedo.diffuse";
-				std::string specular = "material.albedo.specular";
-				std::string shininess = "material.albedo.shininess";
+				std::string_view ambient = "material.albedo.ambient";
+				std::string_view diffuse = "material.albedo.diffuse";
+				std::string_view specular = "material.albedo.specular";
+				std::string_view shininess = "material.albedo.shininess";
 			};
 
 			Albedo albedo;
 			// int
-			std::string isTextured = "material.isTextured";
-			std::string isLit = "material.isLit";
-			std::string isOpaque = "material.isOpaque";
+			std::string_view isTextured = "material.isTextured";
+			std::string_view isLit = "material.isLit";
+			std::string_view isOpaque = "material.isOpaque";
+			std::string_view isFont = "material.isFont";
 
 			// float
-			std::string hasSpecular = "material.hasSpecular";
+			std::string_view hasSpecular = "material.hasSpecular";
 
 			// sampler2D
-			std::string diffuseTexPrefix = "material.diffuse";
-			std::string specularTexPrefix = "material.specular";
+			std::string_view diffuseTexPrefix = "material.diffuse";
+			std::string_view specularTexPrefix = "material.specular";
 
 			// vec4
-			std::string tint = "tint";
+			std::string_view tint = "tint";
 
 			// samplerCube
-			std::string skybox = "skybox";
+			std::string_view skybox = "skybox";
 		};
 		Transform transform;
 		Material material;
-		std::string modelMatrix = "model";
-		std::string normalMatrix = "normals";
-	};
-
-	struct JSONIDs
-	{
-		struct Resources
-		{
-			std::string samplers = "samplers";
-			std::string samplerID = "id";
-			std::string samplerWrap = "wrap";
-			std::string minFilter = "minFilter";
-			std::string magFilter = "magFilter";
-			std::string anisotropy = "anisotropy";
-
-			std::string shaders = "shaders";
-			std::string shaderID = "id";
-			std::string vertCodeID = "vertCodeID";
-			std::string fragCodeID = "fragCodeID";
-
-			std::string fonts = "fonts";
-			std::string fontID = "id";
-			std::string fontJSONid = "fontID";
-			std::string fontTextureID = "textureID";
-		};
-		Resources resources;
+		std::string_view modelMatrix = "model";
+		std::string_view normalMatrix = "normals";
 	};
 
 	Uniforms uniforms;
-	JSONIDs jsonIDs;
-	std::string shaderPrefix = "#version 330 core";
+	std::string_view shaderPrefix = "#version 330 core";
 };
 
 namespace env
 {
 inline EngineConfig g_config;
-inline std::string g_EOL = "\n";
+inline std::string_view g_EOL = "\n";
 
 enum class Dir
 {
@@ -135,8 +111,7 @@ struct Args
 };
 
 void init(Args const& args);
-void setConfig(std::string json);
-std::string argv0();
+std::string_view argv0();
 std::filesystem::path dirPath(Dir dir);
 std::vector<std::string_view> const& args();
 bool isDefined(std::string_view arg);
