@@ -8,7 +8,8 @@
 #include <mutex>
 #include <sstream>
 #include <unordered_map>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/defines.hpp"
+#include "le3d/core/std_types.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
 #if _MSC_VER
@@ -40,15 +41,15 @@ void logInternal(char const* szText, [[maybe_unused]] char const* szFile, [[mayb
 	static std::array<char, 1024> cacheStr;
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	std::stringstream logText;
-	logText << g_prefixes[level];
+	logText << g_prefixes.at(level);
 	std::vsnprintf(cacheStr.data(), cacheStr.size(), szText, args);
 	logText << cacheStr.data();
 	std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	auto pTM = TM(now);
 	std::snprintf(cacheStr.data(), cacheStr.size(), " [%02d:%02d:%02d]", pTM->tm_hour, pTM->tm_min, pTM->tm_sec);
 	logText << cacheStr.data();
-#if defined(LOG_SOURCE_LOCATION)
-	logText << "[" << stdfs::path(szFile).generic_string() << "|" << line << "]";
+#if defined(LE3D_LOG_SOURCE_LOCATION)
+	logText << "[" << std::filesystem::path(szFile).generic_string() << "|" << line << "]";
 #endif
 	logText << env::g_EOL;
 	auto logStr = logText.str();

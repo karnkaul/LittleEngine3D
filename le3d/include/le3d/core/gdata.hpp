@@ -1,7 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <vector>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 
 namespace le
 {
@@ -12,11 +12,11 @@ protected:
 	std::unordered_map<std::string, std::string> m_fieldMap;
 
 public:
-	GData() noexcept;
+	GData();
 	// Pass serialised data to marhshall and load fields
 	explicit GData(std::string serialised);
-	GData(GData&&) noexcept;
-	GData& operator=(GData&&) noexcept;
+	GData(GData&&);
+	GData& operator=(GData&&);
 	GData(GData const& rhs);
 	GData& operator=(GData const&);
 	virtual ~GData();
@@ -28,19 +28,11 @@ public:
 	// Clears raw data and fields
 	void clear();
 
-	template <typename Type>
-	Type get(std::string const& key, Type defaultValue = Type()) const;
-
-	template <>
-	std::string get(std::string const& key, std::string defaultValue) const;
-	template <>
-	bool get(std::string const& key, bool defaultValue) const;
-	template <>
-	s32 get(std::string const& key, s32 defaultValue) const;
-	template <>
-	f64 get(std::string const& key, f64 defaultValue) const;
-	template <>
-	std::vector<std::string> get(std::string const& key, std::vector<std::string> defaultValue) const;
+	std::string getString(std::string const& key, std::string defaultValue = "") const;
+	bool getBool(std::string const& key, bool defaultValue) const;
+	s32 getS32(std::string const& key, s32 defaultValue) const;
+	f64 getF64(std::string const& key, f64 defaultValue) const;
+	std::vector<std::string> getVecString(std::string const& key) const;
 
 	GData getGData(std::string const& key) const;
 	std::vector<GData> getGDatas(std::string const& key) const;
@@ -52,10 +44,4 @@ public:
 	u32 fieldCount() const;
 	bool contains(std::string const& id) const;
 };
-
-template <typename Type>
-Type GData::get(std::string const&, Type) const
-{
-	static_assert(alwaysFalse<Type>, "Invalid type!");
-}
 } // namespace le

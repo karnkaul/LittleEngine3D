@@ -1,22 +1,22 @@
 #pragma once
 #include <deque>
 #include <unordered_map>
-#include "le3d/core/stdtypes.hpp"
-#include "le3d/core/tFlags.hpp"
-#include "ecsCommon.hpp"
+#include "le3d/core/std_types.hpp"
+#include "le3d/core/flags.hpp"
+#include "ecs_common.hpp"
 
 namespace le
 {
 class Entity final
 {
 public:
-	enum class Flag
+	enum class Flag : u8
 	{
 		Disabled = 0,
 		Destroyed,
-		_COUNT
+		COUNT_
 	};
-	using Flags = TFlags<size_t(Flag::_COUNT), Flag>;
+	using Flags = TFlags<Flag>;
 
 private:
 	std::unordered_map<ecs::Signature, class Component*> m_components;
@@ -29,7 +29,7 @@ private:
 	ecs::SpawnID m_id;
 
 public:
-#if defined(DEBUGGING)
+#if defined(LE3D_DEBUG)
 	bool m_bDebugThis = false;
 #endif
 

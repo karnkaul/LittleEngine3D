@@ -45,9 +45,9 @@ void main()
 		model_ = model;
 		normals_ = mat3(normals);
 	}
-	fragPos = vec3(model_ * vec4(aPos, 1.0f));
-	texCoord = aTexCoord;
 	vec4 pos = vec4(aPos, 1.0);
+	fragPos = vec3(model_ * pos);
+	texCoord = aTexCoord;
 	if (transform.isUI == 1)
 	{
 		gl_Position = uiProj * model_ * pos;
@@ -56,7 +56,7 @@ void main()
 	{
 		gl_Position = viewProj * model_ * pos;
 		normal = mat3(normals_) * aNormal;
-		fragPos = vec3(model_ * vec4(aPos, 1.0f));
+		fragPos = vec3(model_ * vec4(aPos, 1.0));
 		viewPos = vec3(viewPosition);
 	}
 }

@@ -1,5 +1,5 @@
 #include "jobWorker.hpp"
-#include "jobManager.hpp"
+#include "job_manager.hpp"
 #include "le3d/core/utils.hpp"
 #include "le3d/core/log.hpp"
 

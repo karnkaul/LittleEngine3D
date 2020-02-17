@@ -9,6 +9,17 @@ UByte::UByte(f32 nValue) noexcept
 	rawValue = u8(nValue * 255.0f);
 }
 
+UByte::UByte(std::string_view hex)
+{
+	std::string str;
+	str += hex;
+	while (str.length() < 2)
+	{
+		str += "f";
+	}
+	rawValue = (u8)stoul(str, nullptr, 16);
+}
+
 u8 UByte::toU8() const
 {
 	return rawValue;

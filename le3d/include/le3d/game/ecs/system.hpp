@@ -1,20 +1,20 @@
 #pragma once
-#include "le3d/core/tFlags.hpp"
+#include "le3d/core/flags.hpp"
 #include "le3d/core/time.hpp"
-#include "le3d/game/ecs/ecsCommon.hpp"
+#include "le3d/game/ecs/ecs_common.hpp"
 
 namespace le
 {
 class System
 {
 public:
-	enum class Flag
+	enum class Flag : u8
 	{
 		Ticking = 0,
 		Rendering,
-		_COUNT
+		COUNT_
 	};
-	using Flags = TFlags<(size_t)Flag::_COUNT, Flag>;
+	using Flags = TFlags<Flag>;
 
 public:
 	ecs::Timing m_defaultTiming = 0.0f;

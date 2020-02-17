@@ -43,15 +43,15 @@ u32 Version::tweak() const
 	return tw;
 }
 
-std::string Version::toString() const
+std::string Version::toString(bool bFull) const
 {
 	std::stringstream ret;
 	ret << mj << "." << mn;
-	if (pa > 0)
+	if (pa > 0 || bFull)
 	{
 		ret << "." << pa;
 	}
-	if (tw > 0)
+	if (tw > 0 || bFull)
 	{
 		ret << "." << tw;
 	}

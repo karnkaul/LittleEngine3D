@@ -6,7 +6,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.*pp"
 )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
-configure_file_src_to_bin(src/buildVersion.hpp.in generated/buildVersion.hpp)
+configure_file_src_to_bin(src/build_version.hpp.in generated/build_version.hpp)
 
 # Target
 add_library(${PROJECT_NAME} ${LE3D_LIB_TYPE} ${SOURCES})

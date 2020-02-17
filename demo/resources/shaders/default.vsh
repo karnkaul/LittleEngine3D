@@ -16,6 +16,7 @@ layout (std140) uniform Matrices
 	mat4 view;
 	mat4 projection;
 	mat4 viewProj;
+	mat4 uiProj;
 	vec4 viewPosition;
 };
 
@@ -26,7 +27,7 @@ void main()
 {
 	gl_Position = viewProj * model * vec4(aPos, 1.0);
 	normal = mat3(normals) * aNormal;
-	fragPos = vec3(model * vec4(aPos, 1.0f));
+	fragPos = vec3(model * vec4(aPos, 1.0));
 	viewPos = vec3(viewPosition);
 	texCoord = aTexCoord;
 }

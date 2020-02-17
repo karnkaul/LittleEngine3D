@@ -1,7 +1,7 @@
 {
-	"id": "plant",
+	"id": "models/plant",
 	"obj": "plant.obj",
 	"mtl": "plant.mtl",
 	"scale": 0.05,
-	"sampler": "plant"
+	"sampler": "samplers/plant"
 }

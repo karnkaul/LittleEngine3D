@@ -2,17 +2,32 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "le3d/core/log.hpp"
 #include "le3d/engine/context.hpp"
-#include "le3d/engine/gfx/gfxtypes.hpp"
-#include "le3d/engine/gfx/gfxThread.hpp"
-#include "le3d/engine/gfx/le3dgl.hpp"
+#include "le3d/engine/gfx/gfx_objects.hpp"
+#include "le3d/engine/gfx/gfx_thread.hpp"
 #include "le3d/engine/gfx/utils.hpp"
+#include "engine/gfx/le3dgl.hpp"
 
 namespace le
 {
 namespace
 {
 Rect2 g_view;
+
+GLenum cast(StringProp prop)
+{
+	switch (prop)
+	{
+	default:
+		return 0;
+	case StringProp::Renderer:
+		return GL_RENDERER;
+	case StringProp::Vendor:
+		return GL_VENDOR;
+	case StringProp::Version:
+		return GL_VERSION;
+	}
 }
+} // namespace
 
 bool gfx::loadFunctionPointers(GLLoadProc loadFunc)
 {
@@ -23,6 +38,31 @@ bool gfx::loadFunctionPointers(GLLoadProc loadFunc)
 	}
 #endif
 	return true;
+}
+
+void gfx::clearFlags(ClearFlags flags, Colour colour)
+{
+	if (context::isAlive())
+	{
+		enqueue([flags, colour]() {
+			GLbitfield glFlags = 0;
+			if (flags.isSet(ClearFlag::ColorBuffer))
+			{
+				glChk(glClearColor(colour.r.toF32(), colour.g.toF32(), colour.b.toF32(), colour.a.toF32()));
+				glFlags |= GL_COLOR_BUFFER_BIT;
+			}
+			if (flags.isSet(ClearFlag::DepthBuffer))
+			{
+				glFlags |= GL_DEPTH_BUFFER_BIT;
+			}
+			if (flags.isSet(ClearFlag::StencilBuffer))
+			{
+				glFlags |= GL_STENCIL_BUFFER_BIT;
+			}
+			glChk(glClear(glFlags));
+		});
+	}
+	return;
 }
 
 void gfx::setFlag(GLFlag flag, bool bEnable)
@@ -43,11 +83,11 @@ void gfx::setFlag(GLFlag flag, bool bEnable)
 	{
 		if (bEnable)
 		{
-			gfx::enqueue([glFlag]() { glEnable(glFlag); });
+			gfx::enqueue([glFlag]() { glChk(glEnable(glFlag)); });
 		}
 		else
 		{
-			gfx::enqueue([glFlag]() { glDisable(glFlag); });
+			gfx::enqueue([glFlag]() { glChk(glDisable(glFlag)); });
 		}
 	}
 	return;
@@ -67,7 +107,7 @@ void gfx::setBlendFunc(BlendFunc func)
 	}
 	if (sFactor > 0 && dFactor > 0)
 	{
-		gfx::enqueue([sFactor, dFactor]() { glBlendFunc(sFactor, dFactor); });
+		gfx::enqueue([sFactor, dFactor]() { glChk(glBlendFunc(sFactor, dFactor)); });
 	}
 }
 
@@ -97,7 +137,7 @@ void gfx::setPolygonMode(PolygonMode mode, PolygonFace face)
 		glMode = GL_LINE;
 		break;
 	}
-	gfx::enqueue([glFace, glMode]() { glPolygonMode(glFace, glMode); });
+	gfx::enqueue([glFace, glMode]() { glChk(glPolygonMode(glFace, glMode)); });
 	return;
 }
 
@@ -217,26 +257,11 @@ void gfx::setView(Rect2 const& view)
 
 std::string_view gfx::getString(StringProp prop)
 {
-	GLenum glName = 0;
-	switch (prop)
-	{
-	default:
-		break;
-	case StringProp::Renderer:
-		glName = GL_RENDERER;
-		break;
-	case StringProp::Vendor:
-		glName = GL_VENDOR;
-		break;
-	case StringProp::Version:
-		glName = GL_VERSION;
-		break;
-	}
+	GLenum glName = cast(prop);
 	std::string_view ret;
 	if (glName > 0)
 	{
-		auto f = gfx::enqueue([&]() { ret = (char const*)glGetString(glName); });
-		gfx::wait(f);
+		ret = (char const*)glGetString(glName);
 	}
 	return ret;
 }

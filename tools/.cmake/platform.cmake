@@ -89,8 +89,6 @@ function(set_target_compile_options TARGET_NAME)
 				/O2
 				/Oi
 				/Ot
-				/GL
-				/Gy
 			>
 			/MP
 		)

@@ -2,18 +2,21 @@
 #include <filesystem>
 #include <memory>
 #include <glm/glm.hpp>
-#include "le3d/core/tFlags.hpp"
+#include "le3d/core/colour.hpp"
+#include "le3d/core/delegate.hpp"
+#include "le3d/core/flags.hpp"
 #include "le3d/core/rect2.hpp"
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 #include "le3d/core/version.hpp"
-#include "le3d/engine/gfx/colour.hpp"
-#include "le3d/engine/gfx/gfxtypes.hpp"
+#include "le3d/engine/gfx/gfx_enums.hpp"
 #include "le3d/env/env.hpp"
 
 namespace le
 {
 namespace context
 {
+using OnSwap = Delegate<>;
+
 enum class WindowType : u8
 {
 	DecoratedWindow = 0,
@@ -46,6 +49,7 @@ struct Settings
 	struct ContextOpts
 	{
 		Version minVersion = Version(3, 3);
+		GFXMode gfxMode = GFXMode::BufferedThreaded;
 		bool bThreaded = false;
 		bool bVSYNC = true;
 	};
@@ -69,13 +73,16 @@ void close();
 bool isClosing();
 void pollEvents();
 void setSwapInterval(u8 interval);
-void swapBuffers();
+void swapAndPresent();
+
+OnSwap::Token registerOnSwap(OnSwap::Callback callback);
 
 bool setContextThread();
 bool releaseContextThread();
 
 u8 swapInterval();
-u64 swapCount();
+u64 framesTicked();
+u64 framesRendered();
 f32 windowAspect();
 glm::vec2 windowSize();
 glm::vec2 project(glm::vec2 nPos, glm::vec2 space);

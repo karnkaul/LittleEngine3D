@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "le3d/core/stdtypes.hpp"
-#include "inputTypes.hpp"
+#include "le3d/core/std_types.hpp"
+#include "input_types.hpp"
 
 namespace le
 {

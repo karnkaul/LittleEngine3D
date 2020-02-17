@@ -155,8 +155,19 @@ std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initi
 	std::stack<std::pair<char, char>> escapeStack;
 	std::vector<std::string> v;
 	bool bEscaping = false;
+	bool bSkipThis = false;
 	for (auto it = s.cbegin(); it != end; ++it)
 	{
+		if (bSkipThis)
+		{
+			bSkipThis = false;
+			continue;
+		}
+		bSkipThis = bEscaping && *it == '\\';
+		if (bSkipThis)
+		{
+			continue;
+		}
 		if (*it != delimiter || bEscaping)
 		{
 			if (start == end)
@@ -181,6 +192,7 @@ std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initi
 					break;
 				}
 			}
+			bSkipThis = false;
 			continue;
 		}
 		if (start != end)
@@ -188,6 +200,7 @@ std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initi
 			v.emplace_back(start, it);
 			start = end;
 		}
+		bSkipThis = false;
 	}
 	if (start != end)
 	{

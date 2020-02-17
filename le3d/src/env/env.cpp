@@ -8,7 +8,7 @@
 #include "le3d/core/log.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/env/env.hpp"
-#include "env/threadsImpl.hpp"
+#include "env/threads_impl.hpp"
 
 namespace le
 {
@@ -25,7 +25,7 @@ void SetConfigStrIfPresent(std::string const& id, GData const& data, std::string
 {
 	if (data.contains(id))
 	{
-		member = data.get<std::string>(id);
+		member = data.getString(id);
 		LOG_D("[EngineConfig] Extracted [%s] = [%s]", id.data(), member.data());
 	}
 	return;
@@ -78,7 +78,6 @@ void env::setConfig(std::string json)
 			GData uniforms = data.getGData("uniforms");
 			SetConfigStrIfPresent("modelMatrix", uniforms, g_config.uniforms.modelMatrix);
 			SetConfigStrIfPresent("normalMatrix", uniforms, g_config.uniforms.normalMatrix);
-			SetConfigStrIfPresent("tint", uniforms, g_config.uniforms.tint);
 			if (uniforms.contains("transform"))
 			{
 				GData transform = uniforms.getGData("uniforms");
@@ -91,15 +90,16 @@ void env::setConfig(std::string json)
 				SetConfigStrIfPresent("isLit", material, g_config.uniforms.material.isLit);
 				SetConfigStrIfPresent("isOpaque", material, g_config.uniforms.material.isOpaque);
 				SetConfigStrIfPresent("hasSpecular", material, g_config.uniforms.material.hasSpecular);
-				SetConfigStrIfPresent("shininess", material, g_config.uniforms.material.shininess);
 				SetConfigStrIfPresent("diffuseTexPrefix", material, g_config.uniforms.material.diffuseTexPrefix);
 				SetConfigStrIfPresent("specularTexPrefix", material, g_config.uniforms.material.specularTexPrefix);
+				SetConfigStrIfPresent("tint", uniforms, g_config.uniforms.material.tint);
 				if (material.contains("albedo"))
 				{
 					GData albedo = material.getGData("albedo");
 					SetConfigStrIfPresent("ambient", albedo, g_config.uniforms.material.albedo.ambient);
 					SetConfigStrIfPresent("diffuse", albedo, g_config.uniforms.material.albedo.diffuse);
 					SetConfigStrIfPresent("specular", albedo, g_config.uniforms.material.albedo.specular);
+					SetConfigStrIfPresent("shininess", albedo, g_config.uniforms.material.albedo.shininess);
 				}
 			}
 		}

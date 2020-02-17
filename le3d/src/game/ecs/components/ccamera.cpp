@@ -12,7 +12,7 @@ namespace le
 bool s_bTEST = false;
 glm::mat4 CCamera::view() const
 {
-#if defined(DEBUGGING)
+#if defined(LE3D_DEBUG)
 	if (s_bTEST)
 	{
 		glm::vec3 const nFront = glm::normalize(glm::rotate(m_orientation, g_nFront));
@@ -49,23 +49,24 @@ glm::mat4 CCamera::uiProj(glm::vec3 const& uiSpace) const
 
 void CFreeCam::onCreate()
 {
+	m_state.speed = m_config.defaultSpeed;
 	m_tMove = input::registerInput([this](Key key, Action action, Mods /*mods*/) {
-		if (m_flags.isSet(Flag::Enabled))
+		if (m_state.flags.isSet(Flag::Enabled))
 		{
 			switch (action)
 			{
 			case Action::PRESS:
 			{
-				m_heldKeys.emplace(key);
+				m_state.heldKeys.emplace(key);
 				break;
 			}
 			case Action::RELEASE:
 			{
-				if (!m_flags.isSet(Flag::FixedSpeed) && key == Key::MOUSE_BUTTON_3)
+				if (!m_state.flags.isSet(Flag::FixedSpeed) && key == Key::MOUSE_BUTTON_3)
 				{
-					m_speed = m_defaultSpeed;
+					m_state.speed = m_config.defaultSpeed;
 				}
-				m_heldKeys.erase(key);
+				m_state.heldKeys.erase(key);
 				break;
 			}
 			default:
@@ -74,29 +75,29 @@ void CFreeCam::onCreate()
 			if (key == Key::MOUSE_BUTTON_2)
 			{
 				bool bLook = action == Action::PRESS;
-				if (m_flags.isSet(Flag::Looking) ^ bLook)
+				if (m_state.flags.isSet(Flag::Looking) ^ bLook)
 				{
-					m_flags.set(Flag::InitPos, false);
+					m_state.flags.set(Flag::Tracking, false);
 				}
-				m_flags.set(Flag::Looking, bLook);
+				m_state.flags.set(Flag::Looking, bLook);
 				input::setCursorMode(bLook ? CursorMode::Disabled : CursorMode::Default);
 			}
 		}
 	});
 	m_tLook = input::registerMouse([this](f64 x, f64 y) {
-		if (m_flags.isSet(Flag::Enabled) && m_flags.isSet(Flag::Looking))
+		if (m_state.flags.isSet(Flag::Enabled) && m_state.flags.isSet(Flag::Looking))
 		{
-			m_nextCursorPos = {(f32)x, (f32)y};
-			if (!m_flags.isSet(Flag::InitPos))
+			m_state.cursorPos.second = {(f32)x, (f32)y};
+			if (!m_state.flags.isSet(Flag::Tracking))
 			{
-				m_cursorPos = {(f32)x, (f32)y};
-				m_flags.set(Flag::InitPos, true);
+				m_state.cursorPos.first = {(f32)x, (f32)y};
+				m_state.flags.set(Flag::Tracking, true);
 			}
 		}
 	});
-	m_tZoom = input::registerScroll([this](f64 /*dx*/, f64 dy) { m_dSpeed += (f32)dy; });
-	m_tFocus = input::registerFocus([this](bool /*bFocus*/) { m_flags.set(Flag::InitPos, false); });
-	m_flags.set(Flag::Enabled, true);
+	m_tZoom = input::registerScroll([this](f64 /*dx*/, f64 dy) { m_state.dSpeed += (f32)dy; });
+	m_tFocus = input::registerFocus([this](bool /*bFocus*/) { m_state.flags.set(Flag::Tracking, false); });
+	m_state.flags.set(Flag::Enabled, true);
 	return;
 }
 } // namespace le

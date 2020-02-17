@@ -40,10 +40,10 @@ function(add_target_compile_definitions TARGET_NAME)
 		_UNICODE
 		$<$<NOT:$<CONFIG:Debug>>:
 			NDEBUG
-			SHIPPING
+			LE3D_RELEASE
 		>
 		$<$<CONFIG:Debug>:
-			DEBUGGING
+			LE3D_DEBUG
 		>
 		${LE3D_PREPROCESSOR_FLAGS}
 	)

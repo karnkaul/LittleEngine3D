@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include "le3d/core/log.hpp"
 #include "le3d/engine/input.hpp"
-#include "inputImpl.hpp"
+#include "input_impl.hpp"
 
 namespace le
 {
@@ -27,42 +27,42 @@ std::string_view input::toString(s32 key)
 
 OnText::Token input::registerText(OnText::Callback callback)
 {
-	return g_callbacks.onText.subscribe(callback);
+	return inputImpl::callbacks().onText.subscribe(callback);
 }
 
 OnInput::Token input::registerInput(OnInput::Callback callback)
 {
-	return g_callbacks.onInput.subscribe(callback);
+	return inputImpl::callbacks().onInput.subscribe(callback);
 }
 
 OnMouse::Token input::registerMouse(OnMouse::Callback callback)
 {
-	return g_callbacks.onMouse.subscribe(callback);
+	return inputImpl::callbacks().onMouse.subscribe(callback);
 }
 
 OnMouse::Token input::registerScroll(OnMouse::Callback callback)
 {
-	return g_callbacks.onScroll.subscribe(callback);
+	return inputImpl::callbacks().onScroll.subscribe(callback);
 }
 
 OnFiledrop::Token input::registerFiledrop(OnFiledrop::Callback callback)
 {
-	return g_callbacks.onFiledrop.subscribe(callback);
+	return inputImpl::callbacks().onFiledrop.subscribe(callback);
 }
 
 OnFocus::Token input::registerFocus(OnFocus::Callback callback)
 {
-	return g_callbacks.onFocus.subscribe(callback);
+	return inputImpl::callbacks().onFocus.subscribe(callback);
 }
 
 OnResize::Token input::registerResize(OnResize::Callback callback)
 {
-	return g_callbacks.onResize.subscribe(callback);
+	return inputImpl::callbacks().onResize.subscribe(callback);
 }
 
 OnClosed::Token input::registerClosed(OnClosed::Callback callback)
 {
-	return g_callbacks.onClosed.subscribe(callback);
+	return inputImpl::callbacks().onClosed.subscribe(callback);
 }
 
 void input::setCursorMode(CursorMode mode)

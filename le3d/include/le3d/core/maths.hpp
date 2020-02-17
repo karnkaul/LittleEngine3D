@@ -1,7 +1,7 @@
 #pragma once
 #include <limits>
 #include <random>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 #include "time.hpp"
 
 namespace le::maths
