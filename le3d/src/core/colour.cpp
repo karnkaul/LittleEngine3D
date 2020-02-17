@@ -5,17 +5,6 @@
 
 namespace le
 {
-namespace
-{
-u8 read(std::string_view hex, size_t idx0, size_t idx1)
-{
-	std::string str;
-	str += hex.at(idx0);
-	str += hex.at(idx1);
-	return (u8)stoul(str, nullptr, 16);
-}
-} // namespace
-
 Colour const Colour::Black(0, 0, 0);
 Colour const Colour::White;
 Colour const Colour::Red(255, 0, 0);
