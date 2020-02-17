@@ -1,1 +1,3 @@
-stb_image.*
+*
+!CMakeLists.txt
+!stb_image.zip

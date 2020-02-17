@@ -1,4 +1,5 @@
 #include <string>
+#include <sstream>
 #include <vector>
 #include "le3d/core/version.hpp"
 #include "le3d/core/utils.hpp"
@@ -13,11 +14,7 @@ u32 parse(std::vector<std::string> const& vec, size_t idx)
 }
 } // namespace
 
-Version::Version() = default;
-
-Version::Version(u32 major, u32 minor, u32 patch, u32 tweak) : mj(major), mn(minor), pa(patch), tw(tweak) {}
-
-Version::Version(std::string_view serialised)
+Version::Version(std::string_view serialised) noexcept
 {
 	auto tokens = utils::strings::tokenise(serialised, '.', {});
 	mj = parse(tokens, 0);
@@ -46,19 +43,19 @@ u32 Version::tweak() const
 	return tw;
 }
 
-std::string Version::toString() const
+std::string Version::toString(bool bFull) const
 {
-	static constexpr size_t MAX = 3 + 1 + 3 + 1 + 3 + 1 + 3;
-	std::string ret;
-	ret.reserve(MAX);
-	ret += std::to_string(mj);
-	ret += ".";
-	ret += std::to_string(mn);
-	ret += ".";
-	ret += std::to_string(pa);
-	ret += ".";
-	ret += std::to_string(tw);
-	return ret;
+	std::stringstream ret;
+	ret << mj << "." << mn;
+	if (pa > 0 || bFull)
+	{
+		ret << "." << pa;
+	}
+	if (tw > 0 || bFull)
+	{
+		ret << "." << tw;
+	}
+	return ret.str();
 }
 
 bool Version::upgrade(Version const& rhs)

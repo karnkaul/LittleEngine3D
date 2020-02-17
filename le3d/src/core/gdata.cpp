@@ -29,6 +29,10 @@ GData::GData(std::string serialised)
 }
 
 GData::GData() = default;
+GData::GData(GData&&) = default;
+GData& GData::operator=(GData&&) = default;
+GData::GData(GData const& rhs) = default;
+GData& GData::operator=(GData const&) = default;
 GData::~GData() = default;
 
 bool GData::marshall(std::string serialised)
@@ -45,9 +49,13 @@ bool GData::marshall(std::string serialised)
 			std::pair<std::string, std::string> kvp = utils::strings::bisect(token, ':');
 			if (!kvp.second.empty() && !kvp.first.empty())
 			{
-				std::initializer_list<char> trim = {' ', '"'};
-				utils::strings::trim(kvp.first, trim);
-				utils::strings::trim(kvp.second, trim);
+				utils::strings::trim(kvp.first, {' '});
+				utils::strings::trim(kvp.first, {'"'});
+				if (kvp.first != " ")
+				{
+					utils::strings::trim(kvp.first, {' '});
+				}
+				utils::strings::trim(kvp.second, {' ', '"'});
 				m_fieldMap.emplace(std::move(kvp.first), std::move(kvp.second));
 			}
 		}
@@ -91,18 +99,6 @@ std::string GData::getString(std::string const& key, std::string defaultValue) c
 	return defaultValue;
 }
 
-std::string GData::getString(std::string const& key, char spaceDelimiter, std::string defaultValue) const
-{
-	std::string ret = std::move(defaultValue);
-	auto search = m_fieldMap.find(key);
-	if (search != m_fieldMap.end())
-	{
-		ret = search->second;
-		utils::strings::substituteChars(ret, {std::pair<char, char>(spaceDelimiter, ' ')});
-	}
-	return ret;
-}
-
 bool GData::getBool(std::string const& key, bool defaultValue) const
 {
 	return Get<bool>(m_fieldMap, key, &utils::strings::toBool, defaultValue);
@@ -131,16 +127,16 @@ GData GData::getGData(std::string const& key) const
 std::vector<GData> GData::getGDatas(std::string const& key) const
 {
 	std::vector<GData> ret;
-	std::vector<std::string> rawStrings = getStrs(key);
+	std::vector<std::string> rawStrings = getVecString(key);
 	for (auto& rawString : rawStrings)
 	{
 		utils::strings::trim(rawString, {'"', ' '});
-		ret.emplace_back(std::move(rawString));
+		ret.push_back(GData(std::move(rawString)));
 	}
 	return ret;
 }
 
-std::vector<std::string> GData::getStrs(std::string const& key) const
+std::vector<std::string> GData::getVecString(std::string const& key) const
 {
 	auto search = m_fieldMap.find(key);
 	if (search != m_fieldMap.end())
@@ -162,7 +158,7 @@ std::vector<std::string> GData::getStrs(std::string const& key) const
 			}
 		}
 	}
-	return std::vector<std::string>();
+	return {};
 }
 
 std::unordered_map<std::string, std::string> const& GData::allFields() const

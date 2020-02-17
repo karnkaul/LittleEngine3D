@@ -1,112 +1,75 @@
 #pragma once
-#include <functional>
-#include <optional>
-#include <sstream>
-#include <vector>
-#include <unordered_map>
-#include "colour.hpp"
-#include "gfxtypes.hpp"
-#include "mesh.hpp"
-#include "utils.hpp"
+#include <filesystem>
+#include <memory>
+#include "le3d/core/io.hpp"
+#include "gfx_objects.hpp"
 
-namespace le
+namespace le::gfx
 {
-enum class DrawFlag
-{
-	Blank,
-	BlankMagenta,
-	_COUNT
-};
-
-class Model
+class Model : public GFXObject
 {
 public:
 	struct TexData
 	{
 		std::string id;
-		std::string filename;
+		stdfs::path filename;
 		bytearray bytes;
-		HTexture hTex;
-		HSampler hSampler;
+		std::string samplerID;
 		TexType type;
 	};
 	struct MeshData
 	{
-		Mesh mesh;
-		Albedo albedo;
-		Vertices vertices;
-		Material::Flags flags;
+		Material material;
+		Geometry geometry;
 		std::string id;
 		std::vector<size_t> texIndices;
 		f32 shininess = 32.0f;
 	};
-	struct Data
+	struct Descriptor
 	{
-		std::string id;
+		stdfs::path id;
 		std::vector<TexData> textures;
 		std::vector<MeshData> meshes;
-
-		// Returns true if all textures loaded
-		bool loadTextures(u16 count);
-		// Returns true if all meshes loaded
-		bool loadMeshes(u16 count);
+		std::vector<Mesh const*> meshRefs;
 	};
-
 	struct LoadRequest
 	{
-		std::stringstream& objBuf;
-		std::stringstream& mtlBuf;
-		std::string meshPrefix;
-		HSampler modelSampler;
-		// Callback parameter: string_view filename
-		std::function<bytearray(std::string_view)> getTexBytes;
-		f32 scale = 1.0f;
-
-		LoadRequest(std::stringstream& objBuf, std::stringstream& mtlBuf);
+		stdfs::path jsonID;
+		IOReader const* pReader = nullptr;
 	};
 
-	struct Fixture
-	{
-		Mesh mesh;
-		std::optional<glm::mat4> oWorld;
-	};
-
-	using Flags = TFlags<size_t(DrawFlag::_COUNT)>;
-
-#if defined(DEBUGGING)
+#if defined(LE3D_DEBUG)
 public:
-	Flags m_renderFlags;
-	bool m_bDEBUG = false;
+	mutable bool m_bDEBUG = false;
 #endif
 
 public:
 	std::string m_id;
 	std::string m_type;
-	Colour m_tint = Colour::White;
-	std::vector<Fixture> m_fixtures;
+	std::vector<Mesh const*> m_meshes;
 
 private:
-	std::vector<Mesh> m_loadedMeshes;
-	std::unordered_map<std::string, HTexture> m_loadedTextures;
+	std::vector<std::unique_ptr<Mesh>> m_loadedMeshes;
+	std::unordered_map<std::string, std::unique_ptr<Texture>> m_loadedTextures;
+
+private:
+	static GFXID s_nextID;
 
 public:
-	static Data loadOBJ(LoadRequest const& request);
+	static Descriptor loadOBJ(LoadRequest request);
 
 public:
 	Model();
-	~Model();
+	explicit Model(Descriptor);
 	Model(Model&&);
 	Model& operator=(Model&&);
-	Model(Model const&);
-	Model& operator=(Model const&);
+	~Model() override;
 
 public:
-	void setupModel(std::string name);
-	void setupModel(Data const& data);
-	void addFixture(Mesh const& mesh, std::optional<glm::mat4> model = std::nullopt);
-	void render(HShader const& shader, ModelMats const& mats);
+	bool setup(Descriptor descriptor);
+	void addMesh(Mesh const& mesh);
+	void render(Shader const& shader) const;
 
 	u32 meshCount() const;
-	void release();
 };
-} // namespace le
+} // namespace le::gfx

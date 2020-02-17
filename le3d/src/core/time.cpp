@@ -11,7 +11,7 @@ static auto s_localEpoch = stdch::high_resolution_clock::now();
 
 Time const Time::Zero = Time(0);
 
-std::string Time::toStr(Time time)
+std::string Time::toString(Time time)
 {
 	std::stringstream ret;
 	ret << "[";

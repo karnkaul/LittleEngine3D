@@ -1,16 +1,16 @@
 #pragma once
 #include <functional>
-#include <list>
+#include <deque>
 #include <string>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 
 /**
- * Variable     : DEBUG_LOG
+ * Variable     : LE3D_DEBUG_LOG
  * Description  : Used to enable LOG_D and LOGIF_D macros (LogLevel::Debug)
  */
-#if defined(DEBUGGING)
-#if !defined(DEBUG_LOG)
-#define DEBUG_LOG
+#if defined(LE3D_DEBUG)
+#if !defined(LE3D_DEBUG_LOG)
+#define LE3D_DEBUG_LOG
 #endif
 #endif
 
@@ -38,7 +38,7 @@
 	{                                                                        \
 		le::log(le::LogLevel::Info, msg, __FILE__, __LINE__, ##__VA_ARGS__); \
 	}
-#if defined(DEBUG_LOG)
+#if defined(LE3D_DEBUG_LOG)
 #define LOG_D(msg, ...) log(le::LogLevel::Debug, msg, __FILE__, __LINE__, ##__VA_ARGS__)
 #define LOGIF_D(cond, msg, ...)                                               \
 	if (cond)                                                                 \
@@ -62,6 +62,6 @@ enum class LogLevel
 
 void log(LogLevel level, char const* szText, char const* szFile, u64 line, ...);
 
-inline u32 g_logCacheSize = 128;
-std::list<std::string> logCache();
+inline u32 g_logCacheSize = 512;
+std::deque<std::string> logCache();
 } // namespace le

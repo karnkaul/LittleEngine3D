@@ -4,7 +4,7 @@
 #include "le3d/core/assert.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/threads.hpp"
-#include "jobs/jobManager.hpp"
+#include "jobs/job_manager.hpp"
 
 namespace le
 {
@@ -15,7 +15,7 @@ std::unique_ptr<JobManager> uManager;
 std::shared_ptr<HJob> doNow(std::packaged_task<std::any()> task, std::optional<std::string> oName)
 {
 	std::string name = oName ? *oName : "unnamed";
-	LOG_E("[Jobs] Not initialised! Running [%s] Task on this thread!", name.data());
+	LOG_E("[%s] Not initialised! Running [%s] Task on this thread!", typeName<JobManager>().data(), name.data());
 	std::shared_ptr<HJob> ret = std::make_shared<HJob>(-1, task.get_future());
 	task();
 	if (oName)
@@ -35,20 +35,23 @@ void jobs::init(u32 workerCount)
 {
 	if (uManager)
 	{
-		LOG_W("[Jobs] Already initialised ([%u] workers)!", uManager->workerCount());
+		LOG_W("[%s] Already initialised ([%u] workers)!", typeName<JobManager>().data(), uManager->workerCount());
 		return;
 	}
 	workerCount = std::min(workerCount, threads::maxHardwareThreads());
 	uManager = std::make_unique<JobManager>(workerCount);
 	g_pJobManager = uManager.get();
-	LOG_D("[Jobs] Spawned [%u] JobWorkers ([%u] hardware threads)", workerCount, threads::maxHardwareThreads());
+	LOG_D("[%s] Spawned [%u] JobWorkers ([%u] hardware threads)", typeName<JobManager>().data(), workerCount,
+		  threads::maxHardwareThreads());
+	return;
 }
 
 void jobs::cleanup()
 {
-	LOGIF_D(uManager, "[Jobs] Cleaned up (destroyed [%u] JobWorkers)", uManager->workerCount());
+	LOGIF_D(uManager, "[%s] Cleaned up (destroyed [%u] JobWorkers)", typeName<JobManager>().data(), uManager->workerCount());
 	uManager = nullptr;
 	g_pJobManager = nullptr;
+	return;
 }
 
 std::shared_ptr<HJob> jobs::enqueue(std::function<std::any()> task, std::string name /* = "" */, bool bSilent /* = false */)
@@ -88,7 +91,7 @@ JobCatalog* jobs::createCatalogue(std::string name)
 	}
 	else
 	{
-		LOG_E("[Jobs] Not initialised! Cannot requisition new JobCatalog!");
+		LOG_E("[%s] Not initialised! Cannot requisition new JobCatalog!", typeName<JobManager>().data());
 		return nullptr;
 	}
 }
@@ -129,6 +132,7 @@ void jobs::waitAll(std::vector<std::shared_ptr<HJob>> const& handles)
 			handle->wait();
 		}
 	}
+	return;
 }
 
 void jobs::update()
@@ -137,10 +141,23 @@ void jobs::update()
 	{
 		uManager->update();
 	}
+	return;
 }
 
 bool jobs::areWorkersIdle()
 {
 	return uManager ? uManager->areWorkersIdle() : true;
+}
+
+void jobs::waitForIdle()
+{
+	if (!areWorkersIdle())
+	{
+		LOG_I("[%s] Waiting for workers...", typeName<JobManager>().data());
+	}
+	while (!areWorkersIdle())
+	{
+		std::this_thread::yield();
+	}
 }
 } // namespace le

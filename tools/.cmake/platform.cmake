@@ -10,6 +10,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	if(NOT CMAKE_VS_PLATFORM_NAME STREQUAL "x64")
 		message(FATAL_ERROR "Only x64 builds are supported!")
 	endif()
+	set(LE3D_LIB_TYPE STATIC CACHE STRING "" FORCE)
 	set(PLATFORM "Win64" CACHE INTERNAL "" FORCE)
 	if(CMAKE_GENERATOR MATCHES "^(Visual Studio)")
 		set(W_MSBUILD 1)
@@ -88,8 +89,6 @@ function(set_target_compile_options TARGET_NAME)
 				/O2
 				/Oi
 				/Ot
-				/GL
-				/Gy
 			>
 			/MP
 		)

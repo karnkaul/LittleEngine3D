@@ -1,28 +1,26 @@
-/// Note: When viewing the source on GitHub' s web interface, add "?ts=4" to the URL to have it use the correct tab spacing (4).
 #include <functional>
 #include "le3d/core/assert.hpp"
 #include "le3d/engine/gfx/primitives.hpp"
-#include "le3d/engine/gfx/vram.hpp"
 #include "le3d/engine/gfx/utils.hpp"
 
 namespace le
 {
-Mesh gfx::createQuad(f32 width, f32 height, std::string name, Material::Flags materialFlags)
+gfx::Geometry gfx::createQuad(f32 width, f32 height)
 {
 	f32 const w = width * 0.5f;
 	f32 const h = height * 0.5f;
-	Vertices verts;
+	Geometry verts;
 	verts.points = {{-w, -h, 0.0f}, {w, -h, 0.0f}, {w, h, 0.0f}, {-w, h, 0.0f}};
 	verts.normals = {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}};
 	verts.texCoords = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 	verts.indices = {0, 1, 2, 2, 3, 0};
-	return newMesh(std::move(name), verts, DrawType::Dynamic, materialFlags);
+	return verts;
 }
 
-Mesh gfx::createCube(f32 side, std::string name, Material::Flags materialFlags)
+gfx::Geometry gfx::createCube(f32 side)
 {
 	f32 const s = side * 0.5f;
-	Vertices verts;
+	Geometry verts;
 	verts.points = {
 		{-s, -s, s},  {s, -s, s},  {s, s, s},	 {-s, s, s}, // front
 
@@ -64,10 +62,10 @@ Mesh gfx::createCube(f32 side, std::string name, Material::Flags materialFlags)
 	};
 	verts.indices = {0,	 1,	 2,	 2,	 3,	 0,	 4,	 5,	 6,	 6,	 7,	 4,	 8,	 9,	 10, 10, 11, 8,
 					 12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
-	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
+	return verts;
 }
 
-Mesh gfx::create4Pyramid(f32 side, std::string name, Material::Flags materialFlags)
+gfx::Geometry gfx::create4Pyramid(f32 side)
 {
 	f32 const s = side * 0.5f;
 	glm::vec3 const nF = glm::normalize(glm::cross(glm::vec3(-s, -s, -s), glm::vec3(s, -s, -s)));
@@ -75,7 +73,7 @@ Mesh gfx::create4Pyramid(f32 side, std::string name, Material::Flags materialFla
 	glm::vec3 const nL = glm::normalize(glm::cross(glm::vec3(-s, -s, -s), glm::vec3(-s, -s, s)));
 	glm::vec3 const nR = glm::normalize(glm::cross(glm::vec3(s, -s, -s), glm::vec3(s, -s, s)));
 	glm::vec3 const nD = -g_nUp;
-	Vertices verts;
+	Geometry verts;
 	verts.points = {
 		{-s, -s, s},  {s, -s, s},  {0.0f, s, 0.0f}, // front
 
@@ -99,10 +97,10 @@ Mesh gfx::create4Pyramid(f32 side, std::string name, Material::Flags materialFla
 		{nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z} // down
 	};
 	verts.indices = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 15, 12};
-	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
+	return verts;
 }
 
-Mesh gfx::createTetrahedron(f32 side, std::string name, Material::Flags materialFlags)
+gfx::Geometry gfx::createTetrahedron(f32 side)
 {
 	f32 const s = side * 0.5f;
 	f32 const t30 = glm::tan(glm::radians(30.0f));
@@ -115,7 +113,7 @@ Mesh gfx::createTetrahedron(f32 side, std::string name, Material::Flags material
 	glm::vec3 const nL = glm::normalize(glm::cross(p10 - p00, p02 - p00));
 	glm::vec3 const nR = glm::normalize(glm::cross(p02 - p01, p10 - p01));
 	glm::vec3 const nD = -g_nUp;
-	Vertices verts;
+	Geometry verts;
 	verts.points = {
 		{p00.x, p00.y, p00.z}, {p10.x, p10.y, p10.z}, {p01.x, p01.y, p01.z}, // front
 
@@ -134,14 +132,14 @@ Mesh gfx::createTetrahedron(f32 side, std::string name, Material::Flags material
 
 		{nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, {nD.x, nD.y, nD.z}, // down
 	};
-	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
+	return verts;
 }
 
-Mesh gfx::createCircle(f32 diam, s32 points, std::string name, Material::Flags materialFlags)
+gfx::Geometry gfx::createCircle(f32 diam, s32 points)
 {
 	ASSERT(points > 0 && points < 1000, "Max points is 1000");
 	f32 const r = diam * 0.5f;
-	Vertices verts;
+	Geometry verts;
 	f32 const angle = 360.0f / points;
 	glm::vec3 const norm(0.0f, 0.0f, 1.0f);
 	verts.reserve(1 + 1 + (u32)points, (1 + (u32)points) * 4);
@@ -161,14 +159,14 @@ Mesh gfx::createCircle(f32 diam, s32 points, std::string name, Material::Flags m
 		u32 const iv1 = verts.addVertex({x1, y1, 0.0f}, norm);
 		verts.addIndices({iCentre, iv1 - 1, iv1});
 	}
-	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
+	return verts;
 }
 
-Mesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name, Material::Flags materialFlags)
+gfx::Geometry gfx::createCone(f32 diam, f32 height, s32 points)
 {
 	ASSERT(points > 0 && points < 1000, "Max points is 1000");
 	f32 const r = diam * 0.5f;
-	Vertices verts;
+	Geometry verts;
 	f32 const angle = 360.0f / points;
 	glm::vec3 const nBase(0.0f, -1.0f, 0.0f);
 	verts.reserve(1 + (u32)points * 5, (u32)points * 5 * 3);
@@ -193,17 +191,17 @@ Mesh gfx::createCone(f32 diam, f32 height, s32 points, std::string name, Materia
 		u32 const i4 = verts.addVertex(v2, nFace);
 		verts.addIndices({i2, i3, i4});
 	}
-	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
+	return verts;
 }
 
-Mesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name, Material::Flags materialFlags)
+gfx::Geometry gfx::createCylinder(f32 diam, f32 height, s32 points)
 {
 	ASSERT(points > 0 && points < 1000, "Max points is 1000");
 	f32 const r = diam * 0.5f;
 	glm::vec3 const c0(0.0f, -height * 0.5f, 0.0f);
 	glm::vec3 const c1(0.0f, height * 0.5f, 0.0f);
 	glm::vec3 const nBase(0.0f, 1.0f, 0.0f);
-	Vertices verts;
+	Geometry verts;
 	verts.reserve(2 + 8 * (u32)points, 8 * (u32)points * 6);
 	u32 const ic0 = verts.addVertex(c0, nBase);
 	u32 const ic1 = verts.addVertex(c1, nBase);
@@ -234,13 +232,13 @@ Mesh gfx::createCylinder(f32 diam, f32 height, s32 points, std::string name, Mat
 		u32 iv3 = verts.addVertex(v10, nF);
 		verts.addIndices({iv0, iv1, iv2, iv2, iv3, iv0});
 	}
-	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
+	return verts;
 }
 
-Mesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Material::Flags materialFlags)
+gfx::Geometry gfx::createCubedSphere(f32 diam, s32 quadsPerSide)
 {
 	ASSERT(quadsPerSide > 0 && quadsPerSide < 30, "Max quads per side is 30");
-	Vertices verts;
+	Geometry verts;
 	u32 qCount = (u32)(quadsPerSide * quadsPerSide);
 	verts.reserve(qCount * 4 * 6, qCount * 6 * 6);
 	glm::vec3 const bl(-1.0f, -1.0f, 1.0f);
@@ -257,7 +255,7 @@ Mesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Materi
 		{
 			u = col * duv;
 			glm::vec3 const o = s * glm::vec3((f32)col, (f32)row, 0.0f);
-			points.emplace_back(std::make_pair(glm::vec3(bl + o), glm::vec2(u, v)));
+			points.push_back(std::make_pair(glm::vec3(bl + o), glm::vec2(u, v)));
 			points.push_back(std::make_pair(glm::vec3(bl + glm::vec3(s, 0.0f, 0.0f) + o), glm::vec2(u + duv, v)));
 			points.push_back(std::make_pair(glm::vec3(bl + glm::vec3(s, s, 0.0f) + o), glm::vec2(u + duv, v + duv)));
 			points.push_back(std::make_pair(glm::vec3(bl + glm::vec3(0.0f, s, 0.0f) + o), glm::vec2(u, v + duv)));
@@ -289,6 +287,6 @@ Mesh gfx::createCubedSphere(f32 diam, std::string name, s32 quadsPerSide, Materi
 	addSide([](auto const& p) { return glm::normalize(glm::rotate(p, glm::radians(-90.0f), g_nUp)); });
 	addSide([](auto const& p) { return glm::normalize(glm::rotate(p, glm::radians(90.0f), g_nRight)); });
 	addSide([](auto const& p) { return glm::normalize(glm::rotate(p, glm::radians(-90.0f), g_nRight)); });
-	return newMesh(std::move(name), verts, DrawType::Static, materialFlags);
+	return verts;
 }
 } // namespace le

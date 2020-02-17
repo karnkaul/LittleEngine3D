@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "")
-set(LE3D_VERSION "0.0.2.0" CACHE STRING "LittlEngine3D version" FORCE)
+set(LE3D_VERSION "0.0.4.0" CACHE STRING "LittlEngine3D version" FORCE)
+set(LE3D_LIB_TYPE STATIC CACHE STRING "LittleEngine3D Library type")
 project(LittleEngine3D VERSION ${LE3D_VERSION})
 
 # Includes
@@ -33,28 +34,28 @@ set(LE3D_COMMIT_HASH ${GIT_COMMIT_HASH} CACHE STRING "Commit hash" FORCE)
 set(LE3D_EXECUTABLE_PATH "" CACHE STRING "Force executable to build here")
 set(LE3D_LIBRARIES_PATH "" CACHE STRING "Force libraries to build here")
 
-# Test
-option(LE3D_BUILD_TEST "Build Test executable" ON)
-if(LE3D_BUILD_TEST)
-	add_subdirectory(test)
-endif()
 
 ## Dependencies
 # GLFW
-set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
-add_subdirectory(lib/glfw)
-set_relaxed_compile_options(glfw)
+option(LE3D_USE_GLFW "Use GLFW for windowing (desktop only)" ON)
+if(LE3D_USE_GLFW)
+	set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
+	set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
+	set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+	set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+	add_subdirectory(lib/glfw)
+	set_relaxed_compile_options(glfw)
+endif()
+
+# GLAD
+option(LE3D_USE_GLAD "Use GLAD for loading OpenGL functions (Win/Linux) only)" ON)
+if(LE3D_USE_GLAD)
+	add_subdirectory(lib/glad)
+endif()
 
 # GLM
 set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
 add_subdirectory(lib/glm)
-
-# GLAD
-add_subdirectory(lib/glad_debug)
-add_subdirectory(lib/glad)
 
 # stb_image
 add_subdirectory(lib/stb)
@@ -67,6 +68,12 @@ add_subdirectory(lib/physfs)
 
 ## LittleEngine3D
 add_subdirectory(le3d)
+
+# Demo
+option(LE3D_BUILD_DEMO "Build Test executable" ON)
+if(LE3D_BUILD_DEMO)
+	add_subdirectory(demo)
+endif()
 
 # Footer text
 message(STATUS "Executable path\t: ${LE3D_EXECUTABLE_PATH}")

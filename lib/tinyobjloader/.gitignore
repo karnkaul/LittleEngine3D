@@ -1,1 +1,3 @@
-tiny_obj_loader.*
+*
+!CMakeLists.txt
+!tinyobjloader.zip

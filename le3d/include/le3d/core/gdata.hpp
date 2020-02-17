@@ -1,25 +1,25 @@
 #pragma once
 #include <unordered_map>
 #include <vector>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 
 namespace le
 {
 // \brief Pseudo-JSON serialisable data container
 class GData
 {
-private:
+protected:
 	std::unordered_map<std::string, std::string> m_fieldMap;
 
 public:
 	GData();
 	// Pass serialised data to marhshall and load fields
-	GData(std::string serialised);
-	GData(GData const& rhs) = default;
-	GData(GData&&) = default;
-	GData& operator=(GData const&) = default;
-	GData& operator=(GData&&) = default;
-	~GData();
+	explicit GData(std::string serialised);
+	GData(GData&&);
+	GData& operator=(GData&&);
+	GData(GData const& rhs);
+	GData& operator=(GData const&);
+	virtual ~GData();
 
 	// Marhshalls and load fields from serialised data
 	bool marshall(std::string serialised);
@@ -29,14 +29,13 @@ public:
 	void clear();
 
 	std::string getString(std::string const& key, std::string defaultValue = "") const;
-	std::string getString(std::string const& key, char spaceDelimiter, std::string defaultValue) const;
-	bool getBool(std::string const& key, bool defaultValue = false) const;
-	s32 getS32(std::string const& key, s32 defaultValue = -1) const;
-	f64 getF64(std::string const& key, f64 defaultValue = -1.0) const;
-	GData getGData(std::string const& key) const;
+	bool getBool(std::string const& key, bool defaultValue) const;
+	s32 getS32(std::string const& key, s32 defaultValue) const;
+	f64 getF64(std::string const& key, f64 defaultValue) const;
+	std::vector<std::string> getVecString(std::string const& key) const;
 
+	GData getGData(std::string const& key) const;
 	std::vector<GData> getGDatas(std::string const& key) const;
-	std::vector<std::string> getStrs(std::string const& key) const;
 
 	std::unordered_map<std::string, std::string> const& allFields() const;
 	bool addField(std::string key, GData& gData);

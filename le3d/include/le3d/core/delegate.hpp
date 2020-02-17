@@ -3,12 +3,12 @@
  *   Copyright 2019 Karn Kaul
  * Features:
  *   - Header-only
- *   - Variadic template class providing `std::function<void(T...)>` (any number of parameters)
+ *   - Variadic template class providing `std::function<void(Args...)>` (any number of parameters)
  *   - Supports multiple callback registrants (thus `void` return type for each callback)
  *   - Token based, memory safe lifetime
  * Usage:
- *   - Create a `Delegate<>` for a simple `void()` callback, or `Delegate<T...>` for passing arguments
- *   - Call `Register()` on the object and store the received `Token` to receive the callback
+ *   - Create a `Delegate<>` for a simple `void()` callback, or `Delegate<Args...>` for passing arguments
+ *   - Call `register()` on the object and store the received `Token` to receive the callback
  *   - Invoke the object (`foo()`) to fire all callbacks; returns number of active registrants
  *   - Discard the `Token` object to unregister a callback (recommend storing as a member variable for transient lifetime objects)
  */
@@ -17,86 +17,112 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <functional>
 
 namespace le
 {
-template <typename... T>
+template <typename... Args>
 class Delegate
 {
 public:
 	using Token = std::shared_ptr<int32_t>;
-	using Callback = std::function<void(T... t)>;
+	using Callback = std::function<void(Args... t)>;
 
 private:
 	using WToken = std::weak_ptr<int32_t>;
+	using Lock = std::lock_guard<std::mutex>;
 
 private:
 	struct Wrapper
 	{
 		Callback callback;
 		WToken wToken;
-		Wrapper(Callback callback, Token token);
+		explicit Wrapper(Callback callback, Token token);
 	};
 
+private:
 	std::vector<Wrapper> m_callbacks;
+	mutable std::mutex m_mutex;
 
 public:
 	// Returns shared_ptr to be owned by caller
 	[[nodiscard]] Token subscribe(Callback callback);
-	// Execute alive callbacks; returns live count
-	uint32_t operator()(T... t);
+	// Cleans up dead callbacks; returns live count
+	uint32_t operator()(Args... t);
+	// Skips dead callbacks; returns live count
+	uint32_t operator()(Args... t) const;
 	// Returns true if any previously distributed Token is still alive
 	bool isAlive();
 	void clear();
-
-private:
 	// Remove expired weak_ptrs
-	void Cleanup();
+	void cleanup();
 };
 
-template <typename... T>
-Delegate<T...>::Wrapper::Wrapper(Callback callback, Token token) : callback(std::move(callback)), wToken(token)
+template <typename... Args>
+Delegate<Args...>::Wrapper::Wrapper(Callback callback, Token token) : callback(std::move(callback)), wToken(token)
 {
 }
 
-template <typename... T>
-typename Delegate<T...>::Token Delegate<T...>::subscribe(Callback callback)
+template <typename... Args>
+typename Delegate<Args...>::Token Delegate<Args...>::subscribe(Callback callback)
 {
+	Lock lock(m_mutex);
 	Token token = std::make_shared<int32_t>(int32_t(m_callbacks.size()));
 	m_callbacks.emplace_back(std::move(callback), token);
 	return token;
 }
 
-template <typename... T>
-uint32_t Delegate<T...>::operator()(T... t)
+template <typename... Args>
+uint32_t Delegate<Args...>::operator()(Args... t)
 {
-	Cleanup();
+	cleanup();
+	Lock lock(m_mutex);
 	for (auto const& c : m_callbacks)
 	{
 		c.callback(t...);
 	}
-	return static_cast<uint32_t>(m_callbacks.size());
+	return uint32_t(m_callbacks.size());
 }
 
-template <typename... T>
-bool Delegate<T...>::isAlive()
+template <typename... Args>
+uint32_t Delegate<Args...>::operator()(Args... t) const
 {
-	Cleanup();
+	Lock lock(m_mutex);
+	uint32_t ret = 0;
+	for (auto const& c : m_callbacks)
+	{
+		if (c.wToken.lock())
+		{
+			c.callback(t...);
+			++ret;
+		}
+	}
+	return ret;
+}
+
+template <typename... Args>
+bool Delegate<Args...>::isAlive()
+{
+	cleanup();
+	Lock lock(m_mutex);
 	return !m_callbacks.empty();
 }
 
-template <typename... T>
-void Delegate<T...>::clear()
+template <typename... Args>
+void Delegate<Args...>::clear()
 {
+	Lock lock(m_mutex);
 	m_callbacks.clear();
+	return;
 }
 
-template <typename... T>
-void Delegate<T...>::Cleanup()
+template <typename... Args>
+void Delegate<Args...>::cleanup()
 {
-	m_callbacks.erase(
-		std::remove_if(m_callbacks.begin(), m_callbacks.end(), [](Wrapper& wrapper) -> bool { return wrapper.wToken.expired(); }),
-		m_callbacks.end());
+	Lock lock(m_mutex);
+	auto iter = std::remove_if(m_callbacks.begin(), m_callbacks.end(), [](Wrapper& wrapper) -> bool { return wrapper.wToken.expired(); });
+	m_callbacks.erase(iter, m_callbacks.end());
+	return;
 }
 } // namespace le

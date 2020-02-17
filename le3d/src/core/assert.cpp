@@ -72,6 +72,7 @@ void debugBreak()
 	raise(SIGTRAP);
 #endif
 #endif
+	return;
 }
 
 void assertMsg(bool expr, char const* message, char const* fileName, long lineNumber)
@@ -91,11 +92,12 @@ void assertMsg(bool expr, char const* message, char const* fileName, long lineNu
 	}
 	else
 	{
-#if defined(DEBUGGING)
+#if defined(LE3D_DEBUG)
 		debugBreak();
 #else
 		assert(false && message);
 #endif
 	}
+	return;
 }
 } // namespace le

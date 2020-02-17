@@ -1,6 +1,6 @@
 #pragma once
 #include <chrono>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 #include "le3d/core/fixed.hpp"
 
 namespace le
@@ -14,7 +14,7 @@ private:
 
 public:
 	static Time const Zero;
-	static std::string toStr(Time time);
+	static std::string toString(Time time);
 	static Time musecs(s64 microSeconds);
 	static Time msecs(s32 milliSeconds);
 	static Time secs(f32 seconds);

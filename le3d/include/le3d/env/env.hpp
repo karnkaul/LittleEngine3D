@@ -1,7 +1,44 @@
 #pragma once
+#include <filesystem>
 #include <string>
 #include <vector>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
+
+#if (defined(_WIN32) || defined(_WIN64))
+#define LE3D_OS_WINX
+#if defined(__arm__)
+#define LE3D_ARCH_ARM64
+#elif !defined(_WIN64)
+#define LE3D_ARCH_X86
+#else
+#define LE3D_ARCH_x64
+#endif
+#elif defined(__linux__)
+#if defined(__ANDROID__)
+#define LE3D_OS_ANDROID
+#else
+#define LE3D_OS_LINUX
+#endif
+#if defined(__arm__)
+#define LE3D_ARCH_ARM64
+#elif defined(__x86_64__)
+#define LE3D_ARCH_X64
+#elif defined(__i386__)
+#define LE3D_ARCH_X86
+#else
+#define LE3D_ARCH_UNSUPPORTED
+#endif
+#else
+#define LE3D_OS_UNSUPPORTED
+#endif
+
+#if defined(_MSC_VER)
+#define LE3D_RUNTIME_MSVC
+#elif (defined(__GNUG__) || defined(__clang__))
+#define LE3D_RUNTIME_LIBSTDCXX
+#else
+#define LE3D_RUNTIME_UNKNOWN
+#endif
 
 namespace le
 {
@@ -23,6 +60,7 @@ struct EngineConfig
 				std::string ambient = "material.albedo.ambient";
 				std::string diffuse = "material.albedo.diffuse";
 				std::string specular = "material.albedo.specular";
+				std::string shininess = "material.albedo.shininess";
 			};
 
 			Albedo albedo;
@@ -33,15 +71,19 @@ struct EngineConfig
 
 			// float
 			std::string hasSpecular = "material.hasSpecular";
-			std::string shininess = "material.shininess";
 
 			// sampler2D
 			std::string diffuseTexPrefix = "material.diffuse";
 			std::string specularTexPrefix = "material.specular";
+
+			// vec4
+			std::string tint = "tint";
+
+			// samplerCube
+			std::string skybox = "skybox";
 		};
 		Transform transform;
 		Material material;
-		std::string tint = "tint";
 		std::string modelMatrix = "model";
 		std::string normalMatrix = "normals";
 	};
@@ -55,6 +97,7 @@ struct EngineConfig
 			std::string samplerWrap = "wrap";
 			std::string minFilter = "minFilter";
 			std::string magFilter = "magFilter";
+			std::string anisotropy = "anisotropy";
 
 			std::string shaders = "shaders";
 			std::string shaderID = "id";
@@ -94,7 +137,7 @@ struct Args
 void init(Args const& args);
 void setConfig(std::string json);
 std::string argv0();
-std::string dirPath(Dir dir);
+std::filesystem::path dirPath(Dir dir);
 std::vector<std::string_view> const& args();
 bool isDefined(std::string_view arg);
 } // namespace env

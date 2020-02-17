@@ -8,7 +8,7 @@
 #include "le3d/core/log.hpp"
 #include "le3d/core/gdata.hpp"
 #include "le3d/env/env.hpp"
-#include "env/threadsImpl.hpp"
+#include "env/threads_impl.hpp"
 
 namespace le
 {
@@ -28,6 +28,7 @@ void SetConfigStrIfPresent(std::string const& id, GData const& data, std::string
 		member = data.getString(id);
 		LOG_D("[EngineConfig] Extracted [%s] = [%s]", id.data(), member.data());
 	}
+	return;
 }
 
 // void SetConfigS32IfPresent(std::string const& id, GData const& data, s32& member)
@@ -64,6 +65,7 @@ void env::init(Args const& args)
 			g_args.push_back(args.argv[i]);
 		}
 	}
+	return;
 }
 
 void env::setConfig(std::string json)
@@ -76,7 +78,6 @@ void env::setConfig(std::string json)
 			GData uniforms = data.getGData("uniforms");
 			SetConfigStrIfPresent("modelMatrix", uniforms, g_config.uniforms.modelMatrix);
 			SetConfigStrIfPresent("normalMatrix", uniforms, g_config.uniforms.normalMatrix);
-			SetConfigStrIfPresent("tint", uniforms, g_config.uniforms.tint);
 			if (uniforms.contains("transform"))
 			{
 				GData transform = uniforms.getGData("uniforms");
@@ -89,15 +90,16 @@ void env::setConfig(std::string json)
 				SetConfigStrIfPresent("isLit", material, g_config.uniforms.material.isLit);
 				SetConfigStrIfPresent("isOpaque", material, g_config.uniforms.material.isOpaque);
 				SetConfigStrIfPresent("hasSpecular", material, g_config.uniforms.material.hasSpecular);
-				SetConfigStrIfPresent("shininess", material, g_config.uniforms.material.shininess);
 				SetConfigStrIfPresent("diffuseTexPrefix", material, g_config.uniforms.material.diffuseTexPrefix);
 				SetConfigStrIfPresent("specularTexPrefix", material, g_config.uniforms.material.specularTexPrefix);
+				SetConfigStrIfPresent("tint", uniforms, g_config.uniforms.material.tint);
 				if (material.contains("albedo"))
 				{
 					GData albedo = material.getGData("albedo");
 					SetConfigStrIfPresent("ambient", albedo, g_config.uniforms.material.albedo.ambient);
 					SetConfigStrIfPresent("diffuse", albedo, g_config.uniforms.material.albedo.diffuse);
 					SetConfigStrIfPresent("specular", albedo, g_config.uniforms.material.albedo.specular);
+					SetConfigStrIfPresent("shininess", albedo, g_config.uniforms.material.albedo.shininess);
 				}
 			}
 		}
@@ -126,6 +128,7 @@ void env::setConfig(std::string json)
 		}
 		SetConfigStrIfPresent("shaderPrefix", data, g_config.shaderPrefix);
 	}
+	return;
 }
 
 std::string env::argv0()
@@ -133,7 +136,7 @@ std::string env::argv0()
 	return g_exeLocation.generic_string();
 }
 
-std::string env::dirPath(Dir dir)
+stdfs::path env::dirPath(Dir dir)
 {
 	switch (dir)
 	{
@@ -143,14 +146,14 @@ std::string env::dirPath(Dir dir)
 		{
 			g_workingDir = stdfs::absolute(stdfs::current_path());
 		}
-		return g_workingDir.generic_string();
+		return g_workingDir;
 	case env::Dir::Executable:
 		if (g_exePath.empty())
 		{
 			LOG_E("[Env] Unknown executable path! Using working directory instead [%s]", g_workingDir.generic_string().data());
 			g_exePath = dirPath(Dir::Working);
 		}
-		return g_exePath.generic_string();
+		return g_exePath;
 	}
 }
 

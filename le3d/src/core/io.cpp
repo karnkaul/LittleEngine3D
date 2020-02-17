@@ -4,7 +4,7 @@
 #include "le3d/core/io.hpp"
 #include "le3d/core/log.hpp"
 #include "le3d/env/env.hpp"
-#include "ioImpl.hpp"
+#include "io_impl.hpp"
 
 namespace le
 {
@@ -39,14 +39,14 @@ std::stringstream IOReader::FStr::operator()(stdfs::path const& id) const
 	return pReader->getStr(pReader->m_prefix / id);
 }
 
-IOReader::IOReader(stdfs::path prefix) : m_prefix(std::move(prefix)), m_medium("Undefined")
+IOReader::IOReader(stdfs::path prefix) noexcept : m_prefix(std::move(prefix)), m_medium("Undefined")
 {
 	m_getBytes.pReader = this;
 	m_getStr.pReader = this;
 }
 
-IOReader::IOReader(IOReader&&) = default;
-IOReader& IOReader::operator=(IOReader&&) = default;
+IOReader::IOReader(IOReader&&) noexcept = default;
+IOReader& IOReader::operator=(IOReader&&) noexcept = default;
 IOReader::IOReader(IOReader const&) = default;
 IOReader& IOReader::operator=(IOReader const&) = default;
 IOReader::~IOReader() = default;
@@ -81,12 +81,22 @@ bool IOReader::checkPresence(stdfs::path const& id) const
 	return true;
 }
 
-FileReader::FileReader(stdfs::path prefix) : IOReader(std::move(prefix))
+bool IOReader::checkPresence(std::initializer_list<stdfs::path> ids) const
+{
+	bool bRet = true;
+	for (auto const& id : ids)
+	{
+		bRet &= checkPresence(id);
+	}
+	return bRet;
+}
+
+FileReader::FileReader(stdfs::path prefix) noexcept : IOReader(std::move(prefix))
 {
 	m_medium = "Filesystem (";
 	m_medium += std::move(m_prefix.generic_string());
 	m_medium += ")";
-	LOG_D("[%s] Filesystem mounted, idPrefix: [%s]", Typename(*this).data(), m_prefix.generic_string().data());
+	LOG_D("[%s] Filesystem mounted, idPrefix: [%s]", typeName(*this).data(), m_prefix.generic_string().data());
 }
 
 bool FileReader::isPresent(stdfs::path const& id) const
@@ -119,7 +129,7 @@ bytearray FileReader::getBytes(stdfs::path const& id) const
 			auto pos = file.tellg();
 			buf = bytearray((size_t)pos);
 			file.seekg(0, std::ios::beg);
-			file.read((char*)buf.data(), pos);
+			file.read((char*)buf.data(), (std::streamsize)pos);
 		}
 	}
 	return buf;
@@ -133,12 +143,12 @@ ZIPReader::ZIPReader(stdfs::path zipPath, stdfs::path idPrefix /* = "" */) : IOR
 	m_medium += ")";
 	if (!stdfs::is_regular_file(m_zipPath))
 	{
-		LOG_E("[%s] [%s] not found on Filesystem!", Typename<ZIPReader>().data(), m_zipPath.generic_string().data());
+		LOG_E("[%s] [%s] not found on Filesystem!", typeName<ZIPReader>().data(), m_zipPath.generic_string().data());
 	}
 	else
 	{
 		PHYSFS_mount(m_zipPath.string().data(), nullptr, 0);
-		LOG_D("[%s] [%s] archive mounted, idPrefix: [%s]", Typename(*this).data(), m_zipPath.generic_string().data(),
+		LOG_D("[%s] [%s] archive mounted, idPrefix: [%s]", typeName(*this).data(), m_zipPath.generic_string().data(),
 			  m_prefix.generic_string().data());
 	}
 }

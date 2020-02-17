@@ -1,0 +1,7 @@
+{
+	"id": "models/fox",
+	"obj": "fox2.obj",
+	"mtl": "fox_mat.mtl",
+	"scale": 0.02,
+	"sampler": "samplers/default"
+}

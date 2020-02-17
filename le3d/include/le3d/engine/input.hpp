@@ -1,26 +1,10 @@
 #pragma once
-#include <bitset>
-#include <filesystem>
-#include <string>
-#include <set>
-#include <vector>
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
-#include "le3d/core/stdtypes.hpp"
-#include "le3d/core/delegate.hpp"
+#include "le3d/core/std_types.hpp"
+#include "input_types.hpp"
 
 namespace le
 {
-namespace stdfs = std::filesystem;
-
-using OnText = Delegate<char>;
-using OnInput = Delegate<s32, s32, s32>;
-using OnMouse = Delegate<f64, f64>;
-using OnFocus = Delegate<bool>;
-using OnFiledrop = Delegate<stdfs::path const&>;
-using OnResize = Delegate<s32, s32>;
-using OnClosed = Delegate<>;
-
 enum class CursorMode
 {
 	Default = 0,
@@ -38,20 +22,20 @@ struct JoyState
 
 struct GamepadState
 {
-	GLFWgamepadstate glfwState;
+	JoyState joyState;
 	std::string name;
 	s32 id = 0;
 
-	f32 getAxis(s32 axis) const;
-	bool isPressed(s32 button) const;
+	f32 getAxis(PadAxis axis) const;
+	bool isPressed(Key button) const;
 };
 
 namespace input
 {
-std::string_view toStr(s32 key);
+std::string_view toString(s32 key);
 // Callback parameters: (char utf8)
 OnText::Token registerText(OnText::Callback callback);
-// Callback parameters: (s32 key, s32 action, s32 mods)
+// Callback parameters: (Key key, Action action, Mods mods)
 OnInput::Token registerInput(OnInput::Callback callback);
 // Callback parameters: (f64 x, f64 y)
 OnMouse::Token registerMouse(OnMouse::Callback callback);
@@ -68,7 +52,7 @@ OnClosed::Token registerClosed(OnClosed::Callback callback);
 void setCursorMode(CursorMode mode);
 CursorMode cursorMode();
 glm::vec2 cursorPos();
-void setCursorPos(glm::vec2 pos);
+void setCursorPos(glm::vec2 const& pos);
 
 JoyState getJoyState(s32 id);
 GamepadState getGamepadState(s32 id);

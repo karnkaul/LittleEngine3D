@@ -19,31 +19,35 @@ Transform::~Transform()
 	}
 }
 
-void Transform::setPosition(glm::vec3 position)
+Transform& Transform::setPosition(glm::vec3 position)
 {
 	m_position = position;
 	m_bDirty = true;
+	return *this;
 }
 
-void Transform::setOrientation(glm::quat orientation)
+Transform& Transform::setOrientation(glm::quat orientation)
 {
 	m_orientation = orientation;
 	m_bDirty = true;
+	return *this;
 }
 
-void Transform::setScale(f32 scale)
+Transform& Transform::setScale(f32 scale)
 {
 	m_scale = {scale, scale, scale};
 	m_bDirty = true;
+	return *this;
 }
 
-void Transform::setScale(glm::vec3 scale)
+Transform& Transform::setScale(glm::vec3 scale)
 {
 	m_scale = scale;
 	m_bDirty = true;
+	return *this;
 }
 
-void Transform::setParent(Transform* pParent)
+Transform& Transform::setParent(Transform* pParent)
 {
 	if (m_pParent)
 	{
@@ -54,6 +58,7 @@ void Transform::setParent(Transform* pParent)
 	{
 		m_pParent->m_children.push_back(this);
 	}
+	return *this;
 }
 
 glm::vec3 Transform::position() const

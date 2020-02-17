@@ -2,16 +2,22 @@
 
 namespace le
 {
-UByte UByte::lerp(UByte lhs, UByte rhs, f32 alpha)
+UByte::UByte(u8 value) noexcept : rawValue(value) {}
+
+UByte::UByte(f32 nValue) noexcept
 {
-	return ((1.0f - alpha) * lhs) + (alpha * rhs);
+	rawValue = u8(nValue * 255.0f);
 }
 
-UByte::UByte(u8 value) : rawValue(value) {}
-
-UByte::UByte(f32 nValue)
+UByte::UByte(std::string_view hex)
 {
-	rawValue = u8(nValue * 0xff);
+	std::string str;
+	str += hex;
+	while (str.length() < 2)
+	{
+		str += "f";
+	}
+	rawValue = (u8)stoul(str, nullptr, 16);
 }
 
 u8 UByte::toU8() const
@@ -24,7 +30,7 @@ f32 UByte::toF32() const
 	return rawValue / 255.0f;
 }
 
-std::string UByte::toStr() const
+std::string UByte::toString() const
 {
 	return std::to_string(rawValue);
 }

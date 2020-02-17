@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <sstream>
-#include "le3d/core/stdtypes.hpp"
+#include "le3d/core/std_types.hpp"
 
 namespace le
 {
@@ -41,30 +41,31 @@ protected:
 	FStr m_getStr;
 
 public:
-	IOReader(stdfs::path prefix);
-	IOReader(IOReader&&);
-	IOReader& operator=(IOReader&&);
+	explicit IOReader(stdfs::path prefix) noexcept;
+	IOReader(IOReader&&) noexcept;
+	IOReader& operator=(IOReader&&) noexcept;
 	IOReader(IOReader const&);
 	IOReader& operator=(IOReader const&);
 	virtual ~IOReader();
 
 public:
-	std::string getString(stdfs::path const& id) const;
-	FBytes bytesFunctor() const;
-	FStr strFunctor() const;
+	[[nodiscard]] std::string getString(stdfs::path const& id) const;
+	[[nodiscard]] FBytes bytesFunctor() const;
+	[[nodiscard]] FStr strFunctor() const;
 	std::string_view medium() const;
-	bool checkPresence(stdfs::path const& id) const;
+	[[nodiscard]] bool checkPresence(stdfs::path const& id) const;
+	[[nodiscard]] bool checkPresence(std::initializer_list<stdfs::path> ids) const;
 
 public:
-	virtual bool isPresent(stdfs::path const& id) const = 0;
-	virtual bytearray getBytes(stdfs::path const& id) const = 0;
-	virtual std::stringstream getStr(stdfs::path const& id) const = 0;
+	[[nodiscard]] virtual bool isPresent(stdfs::path const& id) const = 0;
+	[[nodiscard]] virtual bytearray getBytes(stdfs::path const& id) const = 0;
+	[[nodiscard]] virtual std::stringstream getStr(stdfs::path const& id) const = 0;
 };
 
 class FileReader : public IOReader
 {
 public:
-	FileReader(stdfs::path prefix = "");
+	FileReader(stdfs::path prefix = "") noexcept;
 
 public:
 	bool isPresent(stdfs::path const& id) const override;

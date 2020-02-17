@@ -1,0 +1,101 @@
+{
+	"shaders":
+	[
+		{
+			"id": "shaders/lit/textured",
+			"vertCodeID": "shaders/default.vsh",
+			"fragCodeID": "shaders/lit/textured.fsh",
+			"uboIDs": [
+				"ubos/matrices",
+				"ubos/lights"
+			]
+		},
+		{
+			"id": "shaders/lit/tinted",
+			"vertCodeID": "shaders/default.vsh",
+			"fragCodeID": "shaders/lit/tinted.fsh",
+			"uboIDs": [
+				"ubos/matrices",
+				"ubos/lights"
+			]
+		},
+		{
+			"id": "shaders/unlit/textured",
+			"vertCodeID": "shaders/default.vsh",
+			"fragCodeID": "shaders/unlit/textured.fsh",
+			"uboIDs": [
+				"ubos/matrices"
+			]
+		},
+		{
+			"id": "shaders/unlit/tinted",
+			"vertCodeID": "shaders/default.vsh",
+			"fragCodeID": "shaders/unlit/tinted.fsh",
+			"uboIDs": [
+				"ubos/matrices"
+			]
+		},
+		{
+			"id": "shaders/unlit/ui",
+			"vertCodeID": "shaders/ui.vsh",
+			"fragCodeID": "shaders/unlit/textured.fsh",
+			"uboIDs": [
+				"ubos/matrices"
+			]
+		}
+	],
+	"samplers":
+	[
+		{
+			"id": "samplers/plant",
+			"wrap": "Repeat",
+			"minFilter": "Nearest",
+			"anisotropy": 16
+		}
+	],
+	"textures":
+	[
+		{
+			"id": "textures/container.jpg",
+			"type": "Diffuse"
+		},
+		{
+			"id": "textures/container2.png",
+			"type": "Diffuse"
+		},
+		{
+			"id": "textures/container2_specular.png",
+			"type": "Specular"
+		},
+		{
+			"id": "textures/awesomeface.png",
+			"type": "Diffuse"
+		}
+	],
+	"cubemaps":
+	[
+		{
+			"id": "skyboxes/default_cubemap",
+			"right": "textures/skybox/right.jpg",
+			"left": "textures/skybox/left.jpg",
+			"up": "textures/skybox/up.jpg",
+			"down": "textures/skybox/down.jpg",
+			"front": "textures/skybox/front.jpg",
+			"back": "textures/skybox/back.jpg"
+		}
+	],
+	"skyboxes":
+	[
+		{
+			"id": "skyboxes/default",
+			"cubeVertsID": "primitives/cube",
+			"cubemapID": "skyboxes/default_cubemap",
+			"shaderID": "shaders/unlit/skybox"
+		}
+	],
+	"models":
+	[
+		"models/plant",
+		"models/test/fox"
+	]
+}

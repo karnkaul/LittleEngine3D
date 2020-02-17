@@ -1,7 +1,7 @@
 #pragma once
 #include <any>
-#include "jobs/jobHandle.hpp"
-#include "jobs/jobCatalogue.hpp"
+#include "jobs/job_handle.hpp"
+#include "jobs/job_catalogue.hpp"
 
 namespace le
 {
@@ -19,5 +19,6 @@ void waitAll(std::vector<std::shared_ptr<HJob>> const& handles);
 
 void update();
 bool areWorkersIdle();
+void waitForIdle();
 } // namespace jobs
 } // namespace le

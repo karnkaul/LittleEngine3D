@@ -11,7 +11,7 @@ struct Profiler
 	LogLevel level = LogLevel::Debug;
 	Time dt;
 
-	Profiler(std::string_view id, LogLevel level = LogLevel::Debug);
+	explicit Profiler(std::string_view id, LogLevel level = LogLevel::Debug);
 	virtual ~Profiler();
 };
 } // namespace le
