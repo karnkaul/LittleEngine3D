@@ -54,7 +54,8 @@ public:
 	[[nodiscard]] FStr strFunctor() const;
 	std::string_view medium() const;
 	[[nodiscard]] bool checkPresence(stdfs::path const& id) const;
-	[[nodiscard]] bool checkPresence(std::initializer_list<stdfs::path> ids) const;
+	[[nodiscard]] bool checkPresences(std::initializer_list<stdfs::path> ids) const;
+	[[nodiscard]] bool checkPresences(Span<stdfs::path const> ids) const;
 
 public:
 	[[nodiscard]] virtual bool isPresent(stdfs::path const& id) const = 0;

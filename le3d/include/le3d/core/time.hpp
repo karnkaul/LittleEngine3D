@@ -9,18 +9,16 @@ namespace stdch = std::chrono;
 
 struct Time
 {
-private:
 	stdch::microseconds usecs;
 
-public:
 	static std::string toString(Time time);
-	static Time musecs(s64 microSeconds);
-	static Time msecs(s32 milliSeconds);
-	static Time secs(f32 seconds);
+	static Time from_us(s64 microSeconds);
+	static Time from_ms(s32 milliSeconds);
+	static Time from_s(f32 seconds);
 	static Time elapsed();
 	static Time sinceEpoch();
 	static Time clamp(Time val, Time min, Time max);
-	static void reset();
+	static void resetElapsed();
 
 	constexpr Time() noexcept : usecs(0) {}
 	explicit constexpr Time(s64 usecs) noexcept : usecs(usecs) {}
@@ -42,9 +40,9 @@ public:
 	bool operator>(Time const& rhs);
 	bool operator>=(Time const& rhs);
 
-	f32 assecs() const;
-	s32 asmsecs() const;
-	s64 asmusecs() const;
+	f32 to_s() const;
+	s32 to_ms() const;
+	s64 to_us() const;
 };
 
 Time operator+(Time const& lhs, Time const& rhs);

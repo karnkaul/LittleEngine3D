@@ -174,7 +174,8 @@ void manifestLoader::load(Request request)
 				auto const d = cubemap.getString("down");
 				auto const f = cubemap.getString("front");
 				auto const b = cubemap.getString("back");
-				if (request.manifest.pReader->checkPresence({r, l, u, d, f, b}))
+
+				if (request.manifest.pReader->checkPresences({r, l, u, d, f, b}))
 				{
 					auto enqueue = [&](std::string texID, size_t idx) {
 						StagedLoader::Request loadReq;

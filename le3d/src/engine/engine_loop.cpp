@@ -34,7 +34,7 @@ void tickDebugTexts(Time dt)
 	static s32 fps = 0;
 	static Time elapsed;
 	++frameCount;
-	if (elapsed >= Time::secs(1.0f))
+	if (elapsed >= Time::from_s(1.0f))
 	{
 		elapsed = {};
 		fps = frameCount;
@@ -259,7 +259,8 @@ void runTest()
 		pProp0->m_fixtures.push_back(pCubeMesh);
 		pProp0->m_pShader = pGfxStore->get<gfx::Shader>("shaders/lit/tinted");
 		auto pTransform0 = pProp0->getComponent<CTransform>();
-		pTransform0->m_transform.setScale(glm::vec3(0.3f));
+		pTransform0->m_transform.setPosition({-1.0f, 0.0f, 0.0f});
+		pTransform0->m_transform.setScale(glm::vec3(0.33f));
 		entities.push_back(eProp0);
 	}
 
@@ -427,6 +428,18 @@ void runTest()
 			{
 				bWireframe = !bWireframe;
 			}
+			if (bTicking && key == Key::P && mods & Mods::CONTROL)
+			{
+				static bool s_bParented = true;
+				if (auto pTransform1 = ecsdb.getComponent<CTransform>(eProp1))
+				{
+					if (auto pTransform0 = ecsdb.getComponent<CTransform>(eProp0))
+					{
+						pTransform1->m_transform.setParent(s_bParented ? nullptr : &pTransform0->m_transform);
+						s_bParented = !s_bParented;
+					}
+				}
+			}
 			if (bTicking && key == Key::I && mods && Mods::CONTROL)
 			{
 				static bool s_bInstancesSet = false;
@@ -471,16 +484,16 @@ void runTest()
 		if (auto pProp0 = ecsdb.getComponent<CTransform>(eProp0))
 		{
 			pProp0->m_transform.setOrientation(
-				glm::rotate(pProp0->m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
+				glm::rotate(pProp0->m_transform.orientation(), glm::radians(dt.to_s() * 30), glm::vec3(1.0f, 0.3f, 0.5f)));
 		}
 		if (auto pProp1 = ecsdb.getComponent<CTransform>(eProp1))
 		{
 			pProp1->m_transform.setOrientation(
-				glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.assecs() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
+				glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.to_s() * 10), glm::vec3(1.0f, 0.3f, 0.5f)));
 			if (auto pQuad = ecsdb.getComponent<CTransform>(eQuad))
 			{
 				pQuad->m_transform.setOrientation(
-					glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.assecs() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
+					glm::rotate(pProp1->m_transform.orientation(), glm::radians(dt.to_s() * 30), glm::vec3(0.3f, 0.5f, 1.0f)));
 			}
 		}
 	};
@@ -504,7 +517,7 @@ void runTest()
 			// Tick here
 			s_clearColour = clearColour;
 			glID = pShader->gfxID();
-			vao0Transform.setOrientation(glm::rotate(vao0Transform.orientation(), glm::radians(dt.assecs() * 10), g_nUp));
+			vao0Transform.setOrientation(glm::rotate(vao0Transform.orientation(), glm::radians(dt.to_s() * 10), g_nUp));
 
 			LOGIF_D(!bTicking, "Frame: Tick: %u, Swap: %u, Render: %u", tickFrame, context::framesTicked(), context::framesRendered());
 		}

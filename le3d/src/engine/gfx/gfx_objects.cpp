@@ -125,7 +125,7 @@ glm::vec2 getTextTLOffset(Font::Text::HAlign h, Font::Text::VAlign v)
 	}
 	return textTLoffset;
 }
-} // namespace le::gfx
+} // namespace
 
 u32 Geometry::byteCount() const
 {

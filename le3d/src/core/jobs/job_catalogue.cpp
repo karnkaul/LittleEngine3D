@@ -71,7 +71,7 @@ void JobCatalog::update()
 		}
 		m_bCompleted = true;
 #if defined(LE3D_DEBUG_LOG)
-		f32 secs = (Time::elapsed() - m_startTime).assecs();
+		f32 secs = (Time::elapsed() - m_startTime).to_s();
 		LOG_D("%s completed %d jobs in %.2fs", m_logName.c_str(), m_subJobs.size(), secs);
 #endif
 	}

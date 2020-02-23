@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <glm/gtx/matrix_decompose.hpp>
+#include "le3d/core/assert.hpp"
 #include "le3d/core/transform.hpp"
 
 namespace le
@@ -16,17 +17,18 @@ Transform::~Transform()
 	for (auto pChild : m_children)
 	{
 		pChild->m_pParent = nullptr;
+		pChild->m_bDirty = true;
 	}
 }
 
-Transform& Transform::setPosition(glm::vec3 position)
+Transform& Transform::setPosition(glm::vec3 const& position)
 {
 	m_position = position;
 	m_bDirty = true;
 	return *this;
 }
 
-Transform& Transform::setOrientation(glm::quat orientation)
+Transform& Transform::setOrientation(glm::quat const& orientation)
 {
 	m_orientation = orientation;
 	m_bDirty = true;
@@ -40,7 +42,7 @@ Transform& Transform::setScale(f32 scale)
 	return *this;
 }
 
-Transform& Transform::setScale(glm::vec3 scale)
+Transform& Transform::setScale(glm::vec3 const& scale)
 {
 	m_scale = scale;
 	m_bDirty = true;
@@ -49,14 +51,19 @@ Transform& Transform::setScale(glm::vec3 scale)
 
 Transform& Transform::setParent(Transform* pParent)
 {
-	if (m_pParent)
+	ASSERT(pParent != this, "Setting parent to self!");
+	if (pParent != this && m_pParent != pParent)
 	{
-		m_pParent->m_children.remove(this);
-	}
-	m_pParent = pParent;
-	if (m_pParent)
-	{
-		m_pParent->m_children.push_back(this);
+		if (m_pParent)
+		{
+			m_pParent->m_children.remove(this);
+		}
+		m_pParent = pParent;
+		if (m_pParent)
+		{
+			m_pParent->m_children.push_back(this);
+		}
+		m_bDirty = true;
 	}
 	return *this;
 }
@@ -81,12 +88,12 @@ bool Transform::isIsotropic() const
 	return m_scale.x == m_scale.y && m_scale.y == m_scale.z && m_pParent != nullptr && m_pParent->isIsotropic();
 }
 
-glm::vec3 Transform::worldPos() const
+glm::vec3 Transform::worldPosition() const
 {
 	return glm::vec3(model()[3]);
 }
 
-glm::quat Transform::worldOrn() const
+glm::quat Transform::worldOrientation() const
 {
 	glm::vec3 pos;
 	glm::quat orn;
@@ -97,7 +104,7 @@ glm::quat Transform::worldOrn() const
 	return glm::conjugate(orn);
 }
 
-glm::vec3 Transform::worldScl() const
+glm::vec3 Transform::worldScale() const
 {
 	glm::vec3 pos;
 	glm::quat orn;
@@ -110,14 +117,16 @@ glm::vec3 Transform::worldScl() const
 
 glm::mat4 Transform::model() const
 {
-	if (m_bDirty || m_pParent)
+	if (m_bDirty)
 	{
-		m_mat = m_pParent ? m_pParent->model() : glm::mat4(1.0f);
-		m_mat = glm::translate(m_mat, m_position) * glm::toMat4(m_orientation);
-		m_mat = glm::scale(m_mat, m_scale);
+		auto const base = glm::mat4(1.0f);
+		auto const t = glm::translate(base, m_position);
+		auto const r = glm::toMat4(m_orientation);
+		auto const s = glm::scale(base, m_scale);
+		m_mat = t * r * s;
 		m_bDirty = false;
 	}
-	return m_mat;
+	return m_pParent ? m_pParent->model() * m_mat : m_mat;
 }
 
 glm::mat4 Transform::normalModel() const

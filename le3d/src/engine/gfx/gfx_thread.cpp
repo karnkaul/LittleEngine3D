@@ -248,7 +248,7 @@ void gfx::present(Deferred onSwap)
 #if defined(LE3D_HEAVY_RENDER_TOGGLE)
 		if (g_bForceHeavyRender)
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(20));
+			std::this_thread::sleep_for(stdch::milliseconds(20));
 		}
 #endif
 		onSwap();

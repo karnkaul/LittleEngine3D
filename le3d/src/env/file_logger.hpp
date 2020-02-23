@@ -1,7 +1,7 @@
 #pragma once
 #include <atomic>
 #include <filesystem>
-#include <mutex>
+#include "le3d/core/time.hpp"
 #include "le3d/env/threads.hpp"
 
 namespace le
@@ -9,15 +9,14 @@ namespace le
 class FileLogger final
 {
 private:
-	std::filesystem::path const m_path;
 	HThread m_hThread;
 	std::atomic<bool> m_bLog;
 
 public:
-	explicit FileLogger(std::filesystem::path path);
+	explicit FileLogger(std::filesystem::path path, Time pollRate = Time::from_s(0.5f));
 	~FileLogger();
 
 private:
-	void dumpToFile();
+	void dumpToFile(std::filesystem::path const& path);
 };
 } // namespace le

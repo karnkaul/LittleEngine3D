@@ -7,6 +7,6 @@ Profiler::Profiler(std::string_view id, LogLevel level) : id(id), level(level), 
 Profiler::~Profiler()
 {
 	dt = Time::elapsed() - dt;
-	LOG(level, "[Profile] [%s] [%.3fms]", id.data(), dt.assecs() * 1000.0f);
+	LOG(level, "[Profile] [%s] [%.3fms]", id.data(), dt.to_s() * 1000.0f);
 }
 } // namespace le

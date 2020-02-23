@@ -13,17 +13,17 @@ std::string Time::toString(Time time)
 {
 	std::stringstream ret;
 	ret << "[";
-	s32 h = s32(time.assecs() / 60 / 60);
+	s32 h = s32(time.to_s() / 60 / 60);
 	if (h > 0)
 	{
 		ret << h << ":";
 	}
-	s32 m = s32((time.assecs() / 60) - (h * 60));
+	s32 m = s32((time.to_s() / 60) - (h * 60));
 	if (m > 0)
 	{
 		ret << m << ":";
 	}
-	f32 s = (f32(time.asmsecs()) / 1000.0f) - (h * 60 * 60) - (m * 60);
+	f32 s = (f32(time.to_ms()) / 1000.0f) - (h * 60 * 60) - (m * 60);
 	if (s > 0.0f)
 	{
 		ret << s;
@@ -32,17 +32,17 @@ std::string Time::toString(Time time)
 	return ret.str();
 }
 
-Time Time::musecs(s64 duration)
+Time Time::from_us(s64 duration)
 {
 	return Time(duration);
 }
 
-Time Time::msecs(s32 milliSeconds)
+Time Time::from_ms(s32 milliSeconds)
 {
 	return Time(s64(milliSeconds) * 1000);
 }
 
-Time Time::secs(f32 seconds)
+Time Time::from_s(f32 seconds)
 {
 	seconds = seconds * 1000.0f * 1000.0f;
 	return Time(s64(seconds));
@@ -71,7 +71,7 @@ Time Time::clamp(Time val, Time min, Time max)
 	return val;
 }
 
-void Time::reset()
+void Time::resetElapsed()
 {
 	s_localEpoch = stdch::high_resolution_clock::now();
 }
@@ -149,17 +149,17 @@ bool Time::operator>=(Time const& rhs)
 	return usecs >= rhs.usecs;
 }
 
-f32 Time::assecs() const
+f32 Time::to_s() const
 {
 	return f32(usecs.count()) / (1000.0f * 1000.0f);
 }
 
-s32 Time::asmsecs() const
+s32 Time::to_ms() const
 {
 	return s32(usecs.count() / 1000);
 }
 
-s64 Time::asmusecs() const
+s64 Time::to_us() const
 {
 	return usecs.count();
 }

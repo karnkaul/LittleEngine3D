@@ -11,7 +11,6 @@
 #include "le3d/defines.hpp"
 #include "le3d/core/std_types.hpp"
 #include "le3d/core/log.hpp"
-#include "le3d/env/env.hpp"
 #if _MSC_VER
 #include "Windows.h"
 #endif
@@ -31,38 +30,41 @@ std::tm* TM(std::time_t const& time)
 	localtime_s(&tm, &time);
 	return &tm;
 #else
-	return localtime(&time);
+	return std::localtime(&time);
 #endif
 }
 
 void logInternal(char const* szText, [[maybe_unused]] char const* szFile, [[maybe_unused]] u64 line, LogLevel level, va_list args)
 {
-	static std::array<char, 1024> cacheStr;
-	std::lock_guard<std::mutex> lock(g_logMutex);
+	static std::array<char, 1024> s_cacheStr;
 	std::stringstream logText;
 	logText << g_prefixes.at((size_t)level);
-	std::vsnprintf(cacheStr.data(), cacheStr.size(), szText, args);
-	logText << cacheStr.data();
+	std::unique_lock<std::mutex> lock(g_logMutex);
+	std::vsnprintf(s_cacheStr.data(), s_cacheStr.size(), szText, args);
+	logText << s_cacheStr.data();
 	std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	auto pTM = TM(now);
-	std::snprintf(cacheStr.data(), cacheStr.size(), " [%02d:%02d:%02d]", pTM->tm_hour, pTM->tm_min, pTM->tm_sec);
-	logText << cacheStr.data();
+	std::snprintf(s_cacheStr.data(), s_cacheStr.size(), " [%02d:%02d:%02d]", pTM->tm_hour, pTM->tm_min, pTM->tm_sec);
+	logText << s_cacheStr.data();
+	g_logMutex.unlock();
 #if defined(LE3D_LOG_SOURCE_LOCATION)
 	static std::string const s_parentStr = "../";
-	auto fileStr = std::filesystem::path(szFile).generic_string();
+	auto const file = std::filesystem::path(szFile).generic_string();
+	std::string_view fileStr(file);
 	auto search = fileStr.find(s_parentStr);
-	while (search < std::string::npos)
+	while (search == 0)
 	{
-		fileStr.erase(search, search + s_parentStr.length());
+		fileStr = fileStr.substr(search + s_parentStr.length());
 		search = fileStr.find(s_parentStr);
 	}
 	logText << "[" << fileStr << "|" << line << "]";
 #endif
-	logText << env::g_EOL;
 	auto logStr = logText.str();
-	std::cout << logStr;
+	g_logMutex.lock();
+	std::cout << logStr << std::endl;
 #if _MSC_VER
 	OutputDebugStringA(logStr.data());
+	OutputDebugStringA("\n");
 #endif
 	g_logCache.push_back(std::move(logStr));
 	while (g_logCache.size() > g_logCacheSize)
@@ -72,17 +74,17 @@ void logInternal(char const* szText, [[maybe_unused]] char const* szFile, [[mayb
 }
 } // namespace
 
-std::deque<std::string> logCache()
-{
-	std::lock_guard<std::mutex> lock(g_logMutex);
-	return std::move(g_logCache);
-}
-
 void log(LogLevel level, char const* szText, char const* szFile, u64 line, ...)
 {
 	va_list argList;
 	va_start(argList, line);
 	logInternal(szText, szFile, line, level, argList);
 	va_end(argList);
+}
+
+std::deque<std::string> logCache()
+{
+	std::lock_guard<std::mutex> lock(g_logMutex);
+	return std::move(g_logCache);
 }
 } // namespace le

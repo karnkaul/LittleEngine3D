@@ -83,4 +83,19 @@ std::string typeName()
 {
 	return demangle<T>(typeid(T).name());
 }
+
+template <typename Type>
+struct Span
+{
+	Type* pData;
+	size_t extent;
+
+	constexpr Span() noexcept : pData(nullptr), extent(0) {}
+	constexpr Span(Type* pData, size_t extent) noexcept : pData(pData), extent(extent) {}
+
+	template <typename Container>
+	constexpr Span(Container& container) noexcept : pData(container.empty() ? nullptr : &container.front()), extent(container.size())
+	{
+	}
+};
 } // namespace le

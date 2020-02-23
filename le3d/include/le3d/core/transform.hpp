@@ -24,10 +24,10 @@ public:
 	~Transform();
 
 public:
-	Transform& setPosition(glm::vec3 position);
-	Transform& setOrientation(glm::quat orientation);
+	Transform& setPosition(glm::vec3 const& position);
+	Transform& setOrientation(glm::quat const& orientation);
 	Transform& setScale(f32 scale);
-	Transform& setScale(glm::vec3 scale);
+	Transform& setScale(glm::vec3 const& scale);
 	Transform& setParent(Transform* pParent);
 
 	glm::vec3 position() const;
@@ -35,9 +35,9 @@ public:
 	glm::vec3 scale() const;
 	bool isIsotropic() const;
 
-	glm::vec3 worldPos() const;
-	glm::quat worldOrn() const;
-	glm::vec3 worldScl() const;
+	glm::vec3 worldPosition() const;
+	glm::quat worldOrientation() const;
+	glm::vec3 worldScale() const;
 
 	glm::mat4 model() const;
 	glm::mat4 normalModel() const;

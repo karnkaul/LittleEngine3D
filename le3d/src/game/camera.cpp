@@ -125,15 +125,15 @@ void FreeCam::tick(Time dt)
 	{
 		if (pad0.isPressed(Key::GAMEPAD_BUTTON_LEFT_BUMPER))
 		{
-			m_state.dSpeed -= (dt.assecs() * 10);
+			m_state.dSpeed -= (dt.to_s() * 10);
 		}
 		else if (pad0.isPressed(Key::GAMEPAD_BUTTON_RIGHT_BUMPER))
 		{
-			m_state.dSpeed += (dt.assecs() * 10);
+			m_state.dSpeed += (dt.to_s() * 10);
 		}
 		if (m_state.dSpeed * m_state.dSpeed > 0.0f)
 		{
-			m_state.speed = maths::clamp(m_state.speed + (m_state.dSpeed * dt.assecs() * 100), m_config.minSpeed, m_config.maxSpeed);
+			m_state.speed = maths::clamp(m_state.speed + (m_state.dSpeed * dt.to_s() * 100), m_config.minSpeed, m_config.maxSpeed);
 			m_state.dSpeed = maths::lerp(m_state.dSpeed, 0.0f, 0.75f);
 			if (m_state.dSpeed * m_state.dSpeed < 0.01f)
 			{
@@ -146,11 +146,11 @@ void FreeCam::tick(Time dt)
 	f32 elevation = input::triggerToAxis(pad0.getAxis(PadAxis::RIGHT_TRIGGER)) - input::triggerToAxis(pad0.getAxis(PadAxis::LEFT_TRIGGER));
 	if (elevation * elevation > 0.01f)
 	{
-		m_position.y += (elevation * dt.assecs() * m_state.speed);
+		m_position.y += (elevation * dt.to_s() * m_state.speed);
 	}
 
 	// Look
-	f32 dLook = m_config.padLookSens * dt.assecs();
+	f32 dLook = m_config.padLookSens * dt.to_s();
 	glm::vec2 const padRight(pad0.getAxis(PadAxis::RIGHT_X), pad0.getAxis(PadAxis::RIGHT_Y));
 	if (glm::length2(padRight) > m_config.padStickEpsilon)
 	{
@@ -221,7 +221,7 @@ void FreeCam::tick(Time dt)
 	if (glm::length2(dPos) > 0.0f)
 	{
 		dPos = glm::normalize(dPos);
-		m_position += (dPos * dt.assecs() * m_state.speed);
+		m_position += (dPos * dt.to_s() * m_state.speed);
 	}
 	return;
 }

@@ -19,21 +19,21 @@ std::pair<f32, std::string_view> utils::friendlySize(u64 byteCount)
 	return std::make_pair(bytes, suffixes[idx < 4 ? idx : 3]);
 }
 
-namespace utils::strings
+namespace utils
 {
-void toLower(std::string& outString)
+void strings::toLower(std::string& outString)
 {
 	std::transform(outString.begin(), outString.end(), outString.begin(), ::tolower);
 	return;
 }
 
-void toUpper(std::string& outString)
+void strings::toUpper(std::string& outString)
 {
 	std::transform(outString.begin(), outString.end(), outString.begin(), ::toupper);
 	return;
 }
 
-bool toBool(std::string_view input, bool bDefaultValue)
+bool strings::toBool(std::string_view input, bool bDefaultValue)
 {
 	if (!input.empty())
 	{
@@ -49,7 +49,7 @@ bool toBool(std::string_view input, bool bDefaultValue)
 	return bDefaultValue;
 }
 
-s32 toS32(std::string_view input, s32 defaultValue)
+s32 strings::toS32(std::string_view input, s32 defaultValue)
 {
 	s32 ret = defaultValue;
 	if (!input.empty())
@@ -66,7 +66,7 @@ s32 toS32(std::string_view input, s32 defaultValue)
 	return ret;
 }
 
-f32 toF32(std::string_view input, f32 defaultValue)
+f32 strings::toF32(std::string_view input, f32 defaultValue)
 {
 	f32 ret = defaultValue;
 	if (!input.empty())
@@ -83,7 +83,7 @@ f32 toF32(std::string_view input, f32 defaultValue)
 	return ret;
 }
 
-f64 toF64(std::string_view input, f64 defaultValue)
+f64 strings::toF64(std::string_view input, f64 defaultValue)
 {
 	f64 ret = defaultValue;
 	if (!input.empty())
@@ -100,7 +100,7 @@ f64 toF64(std::string_view input, f64 defaultValue)
 	return ret;
 }
 
-std::string toText(bytearray rawBuffer)
+std::string strings::toText(bytearray rawBuffer)
 {
 	std::vector<char> charBuffer(rawBuffer.size() + 1, 0);
 	for (size_t i = 0; i < rawBuffer.size(); ++i)
@@ -110,14 +110,14 @@ std::string toText(bytearray rawBuffer)
 	return std::string(charBuffer.data());
 }
 
-std::pair<std::string, std::string> bisect(std::string_view input, char delimiter)
+std::pair<std::string, std::string> strings::bisect(std::string_view input, char delimiter)
 {
 	size_t idx = input.find(delimiter);
 	return idx < input.size() ? std::pair<std::string, std::string>(input.substr(0, idx), input.substr(idx + 1, input.size()))
 							  : std::pair<std::string, std::string>(std::string(input), {});
 }
 
-void removeChars(std::string& outInput, std::initializer_list<char> toRemove)
+void strings::removeChars(std::string& outInput, std::initializer_list<char> toRemove)
 {
 	auto isToRemove = [&toRemove](char c) -> bool { return std::find(toRemove.begin(), toRemove.end(), c) != toRemove.end(); };
 	auto iter = std::remove_if(outInput.begin(), outInput.end(), isToRemove);
@@ -125,7 +125,7 @@ void removeChars(std::string& outInput, std::initializer_list<char> toRemove)
 	return;
 }
 
-void trim(std::string& outInput, std::initializer_list<char> toRemove)
+void strings::trim(std::string& outInput, std::initializer_list<char> toRemove)
 {
 	auto isIgnored = [&outInput, &toRemove](size_t idx) {
 		return std::find(toRemove.begin(), toRemove.end(), outInput[idx]) != toRemove.end();
@@ -140,14 +140,14 @@ void trim(std::string& outInput, std::initializer_list<char> toRemove)
 	return;
 }
 
-void removeWhitespace(std::string& outInput)
+void strings::removeWhitespace(std::string& outInput)
 {
 	substituteChars(outInput, {std::pair<char, char>('\t', ' '), std::pair<char, char>('\n', ' '), std::pair<char, char>('\r', ' ')});
 	removeChars(outInput, {' '});
 	return;
 }
 
-std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initializer_list<std::pair<char, char>> escape)
+std::vector<std::string> strings::tokenise(std::string_view s, char delimiter, std::initializer_list<std::pair<char, char>> escape)
 {
 	auto end = s.cend();
 	auto start = end;
@@ -209,7 +209,7 @@ std::vector<std::string> tokenise(std::string_view s, char delimiter, std::initi
 	return v;
 }
 
-std::vector<std::string_view> tokeniseInPlace(char* szOutBuf, char delimiter, std::initializer_list<std::pair<char, char>> escape)
+std::vector<std::string_view> strings::tokeniseInPlace(char* szOutBuf, char delimiter, std::initializer_list<std::pair<char, char>> escape)
 {
 	if (!szOutBuf || *szOutBuf == '\0')
 	{
@@ -276,7 +276,7 @@ std::vector<std::string_view> tokeniseInPlace(char* szOutBuf, char delimiter, st
 	return v;
 }
 
-void substituteChars(std::string& outInput, std::initializer_list<std::pair<char, char>> replacements)
+void strings::substituteChars(std::string& outInput, std::initializer_list<std::pair<char, char>> replacements)
 {
 	std::string::iterator iter = outInput.begin();
 	while (iter != outInput.end())
@@ -294,11 +294,11 @@ void substituteChars(std::string& outInput, std::initializer_list<std::pair<char
 	return;
 }
 
-bool isCharEnclosedIn(std::string_view str, size_t idx, std::pair<char, char> wrapper)
+bool strings::isCharEnclosedIn(std::string_view str, size_t idx, std::pair<char, char> wrapper)
 {
 	size_t idx_1 = idx - 1;
 	size_t idx1 = idx + 1;
 	return idx_1 < str.length() && idx1 < str.length() && str[idx_1] == wrapper.first && str[idx1] == wrapper.second;
 }
-} // namespace utils::strings
+} // namespace utils
 } // namespace le

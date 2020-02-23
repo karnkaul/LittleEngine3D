@@ -27,7 +27,7 @@ void GizmoSystem::render(ECSDB const& db) const
 		{
 			gfx::setFlag(GLFlag::DepthTest, false);
 			glm::mat4 mZ = pTransform->m_transform.model();
-			glm::vec3 scale = pTransform->m_transform.worldScl();
+			glm::vec3 scale = pTransform->m_transform.worldScale();
 			mZ = glm::scale(mZ, {1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z});
 			glm::mat4 mX = glm::rotate(mZ, glm::radians(90.0f), g_nUp);
 			glm::mat4 mY = glm::rotate(mZ, glm::radians(-90.0f), g_nRight);

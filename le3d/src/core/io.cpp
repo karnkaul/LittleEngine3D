@@ -81,12 +81,22 @@ bool IOReader::checkPresence(stdfs::path const& id) const
 	return true;
 }
 
-bool IOReader::checkPresence(std::initializer_list<stdfs::path> ids) const
+bool IOReader::checkPresences(std::initializer_list<stdfs::path> ids) const
 {
 	bool bRet = true;
 	for (auto const& id : ids)
 	{
 		bRet &= checkPresence(id);
+	}
+	return bRet;
+}
+
+bool IOReader::checkPresences(Span<stdfs::path const> ids) const
+{
+	bool bRet = true;
+	for (size_t idx = 0; idx < ids.extent; ++idx)
+	{
+		bRet &= checkPresence(*(ids.pData + idx));
 	}
 	return bRet;
 }
